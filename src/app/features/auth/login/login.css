@@ -1,0 +1,204 @@
+/* ============================================================
+   Sign-in
+   The mockup's mint sits at 2.2:1 on white, so it is kept for the
+   decorative arcs only. The wordmark and the button step down to
+   greens that clear their contrast floors.
+   ============================================================ */
+
+:host {
+  --arc: #6cbf91;        /* decorative only */
+  --mark: #3fa16e;       /* wordmark, 3.21:1 - large text */
+  --action: #0a8654;     /* button label and border, 4.61:1 */
+  --ink: #1f2430;
+  --muted: #6b7280;
+}
+
+.login {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 40px 24px;
+  background: #fff;
+  overflow: hidden;
+}
+
+/* ---------- Decorative arcs ---------- */
+
+.arc {
+  position: absolute;
+  display: block;
+  background: linear-gradient(140deg, #7ec89c, var(--arc));
+  pointer-events: none;
+}
+
+.arc-tr {
+  top: 0;
+  right: 0;
+  width: clamp(180px, 30vw, 340px);
+  aspect-ratio: 1;
+  border-radius: 0 0 0 100%;
+}
+
+.arc-bl {
+  bottom: 0;
+  left: 0;
+  width: clamp(150px, 26vw, 300px);
+  aspect-ratio: 1;
+  border-radius: 0 100% 0 0;
+}
+
+/* ---------- Corner logo ---------- */
+
+.corner-logo {
+  position: absolute;
+  top: 28px;
+  left: 30px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.cbt {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 18px;
+  border-radius: 3px;
+  background: #0a7a4a;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.mixiq {
+  font-size: 12.5px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+
+/* ---------- Centre stack ---------- */
+
+.stack {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 420px;
+}
+
+.wordmark {
+  font-size: clamp(48px, 9vw, 76px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--mark);
+  margin: 0;
+}
+
+.tagline {
+  margin-top: 18px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* ---------- Sign-in button ---------- */
+
+.signin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 52px;
+  min-width: 282px;
+  margin-top: 26px;
+  padding: 0 30px;
+  border: 2px solid var(--action);
+  border-radius: var(--r-full);
+  background: #fff;
+  color: var(--action);
+  font-size: 15px;
+  font-weight: 700;
+  transition: background 0.18s, box-shadow 0.18s, transform 0.18s;
+}
+
+.signin:hover:not(:disabled) {
+  background: #f2fbf6;
+  box-shadow: 0 6px 18px rgba(10, 134, 84, 0.16);
+  transform: translateY(-1px);
+}
+
+.signin:focus-visible {
+  outline: 3px solid rgba(10, 134, 84, 0.35);
+  outline-offset: 3px;
+}
+
+.signin:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Microsoft mark */
+
+.ms-logo {
+  display: grid;
+  grid-template-columns: 8px 8px;
+  grid-template-rows: 8px 8px;
+  gap: 2px;
+  flex: none;
+}
+
+.ms-logo i {
+  display: block;
+  width: 8px;
+  height: 8px;
+}
+
+.q1 { background: #f25022; }
+.q2 { background: #7fba00; }
+.q3 { background: #00a4ef; }
+.q4 { background: #ffb900; }
+
+.note {
+  margin-top: 22px;
+  max-width: 34ch;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* Visually hidden, still read aloud */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .corner-logo {
+    top: 20px;
+    left: 20px;
+  }
+  .signin {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signin {
+    transition: none;
+  }
+  .signin:hover:not(:disabled) {
+    transform: none;
+  }
+}

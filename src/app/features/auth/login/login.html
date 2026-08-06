@@ -1,25 +1,32 @@
-<app-auth-shell>
-  <h1>Sign in</h1>
-  <p class="lede">Welcome back. Pick up where your last run left off.</p>
+<div class="login">
+  <!-- Decorative corner arcs -->
+  <span class="arc arc-tr" aria-hidden="true"></span>
+  <span class="arc arc-bl" aria-hidden="true"></span>
 
-  <button
-    class="btn sso"
-    type="button"
-    [disabled]="submitting()"
-    (click)="signInWithMicrosoft()"
-  >
-    <span class="ms-logo" aria-hidden="true">
-      <i class="q q1"></i><i class="q q2"></i><i class="q q3"></i><i class="q q4"></i>
-    </span>
-    {{ submitting() ? 'Signing in…' : 'Continue with Microsoft' }}
-  </button>
+  <header class="corner-logo">
+    <span class="cbt" aria-hidden="true">cbt</span>
+    <span class="mixiq">MIXIQ</span>
+    <span class="sr-only">CBT MIXIQ</span>
+  </header>
 
-  <p class="sso-note">
-    ROIVIO uses your organisation's Microsoft account. Single sign-on and multi-factor
-    authentication are handled by Microsoft Entra ID — there is no separate password to manage.
-  </p>
+  <main class="stack">
+    <h1 class="wordmark">ROIVIO</h1>
+    <p class="tagline">The ROI engine for modern marketers</p>
 
-  <p class="switch">
-    New to ROIVIO? <a class="link" routerLink="/signup">Create an account</a>
-  </p>
-</app-auth-shell>
+    <button
+      class="signin"
+      type="button"
+      [disabled]="submitting()"
+      (click)="signInWithMicrosoft()"
+    >
+      <span class="ms-logo" aria-hidden="true">
+        <i class="q q1"></i><i class="q q2"></i><i class="q q3"></i><i class="q q4"></i>
+      </span>
+      {{ submitting() ? 'Signing in…' : 'Sign in with Microsoft' }}
+    </button>
+
+    <p class="note">
+      Single sign-on and multi-factor authentication are handled by Microsoft Entra ID.
+    </p>
+  </main>
+</div>

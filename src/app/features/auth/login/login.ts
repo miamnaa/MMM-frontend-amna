@@ -1,14 +1,12 @@
 import { Component, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
-
-import { AuthShell } from '../auth-shell/auth-shell';
+import { Router } from '@angular/router';
 
 /** Sign-in is single sign-on only — Entra ID is the sole identity provider. */
 @Component({
   selector: 'app-login',
-  imports: [RouterLink, AuthShell],
+  imports: [],
   templateUrl: './login.html',
-  styleUrls: ['../auth-form.css'],
+  styleUrl: './login.css',
 })
 export class Login {
   private readonly router = inject(Router);
