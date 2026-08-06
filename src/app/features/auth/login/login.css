@@ -8,7 +8,6 @@
 
 :host {
   --arc: #6cbf91;        /* decorative only */
-  --mark: #3fa16e;       /* wordmark, 3.21:1 - large text */
   --action: #0a8654;     /* button label and border, 4.61:1 */
   --ink: #1f2430;
   --muted: #6b7280;
@@ -63,23 +62,21 @@
   gap: 7px;
 }
 
-.cbt {
-  display: grid;
-  place-items: center;
-  width: 22px;
-  height: 18px;
-  border-radius: 3px;
-  background: #0a7a4a;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+.logo {
+  display: block;
+  flex: none;
 }
 
-.mixiq {
-  font-size: 12.5px;
+.logo-sm {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+}
+
+.corner-name {
+  font-size: 13px;
   font-weight: 750;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
   color: var(--ink);
 }
 
@@ -95,17 +92,21 @@
   max-width: 420px;
 }
 
-.wordmark {
-  font-size: clamp(48px, 9vw, 76px);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: 0.02em;
-  color: var(--mark);
+/* The mark carries the brand here; the name sits in the corner. */
+.emblem {
   margin: 0;
+  line-height: 0;
+}
+
+.logo-lg {
+  width: clamp(84px, 13vw, 112px);
+  height: auto;
+  border-radius: 26px;
+  box-shadow: 0 14px 34px rgba(10, 134, 84, 0.22);
 }
 
 .tagline {
-  margin-top: 18px;
+  margin-top: 26px;
   font-size: 14px;
   color: var(--muted);
 }
