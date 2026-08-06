@@ -199,18 +199,18 @@
   margin-bottom: 18px;
 }
 
-/* Only the emphasis word carries the bold italic; the rest of the line
-   sits at a lighter weight so "driving" is what the eye lands on. */
+/* Only the emphasis words carry the italic; they sit one step above the
+   rest of the line rather than at full weight, so the contrast is medium. */
 .headline {
   font-size: clamp(36px, 4.6vw, 58px);
   line-height: 1.08;
   letter-spacing: -0.035em;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .headline em {
   font-style: italic;
-  font-weight: 800;
+  font-weight: 600;
   color: var(--lp-green);
 }
 
