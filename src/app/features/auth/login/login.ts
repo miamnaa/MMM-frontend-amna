@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
   selector: 'app-login',
   imports: [],
   templateUrl: './login.html',
-  styleUrls: ['../auth-page.css'],
+  styleUrl: './login.css',
 })
 export class Login {
   private readonly router = inject(Router);

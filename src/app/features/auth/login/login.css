@@ -12,6 +12,7 @@
   --action: #0a8654;     /* button label and border, 4.61:1 */
   --ink: #1f2430;
   --muted: #6b7280;
+  --arc-size: min(34vw, 46vh, 340px);
 }
 
 .login {
@@ -26,27 +27,29 @@
 
 /* ---------- Decorative arcs ---------- */
 
+/* Both arcs are the same quarter disc, point-mirrored through the centre of
+   the page, so they balance on the diagonal. Sizing off the smaller viewport
+   axis keeps them from swallowing a short window. */
 .arc {
   position: absolute;
   display: block;
-  background: linear-gradient(140deg, #7ec89c, var(--arc));
+  width: var(--arc-size);
+  height: var(--arc-size);
   pointer-events: none;
 }
 
 .arc-tr {
   top: 0;
   right: 0;
-  width: clamp(180px, 30vw, 340px);
-  aspect-ratio: 1;
   border-radius: 0 0 0 100%;
+  background: linear-gradient(215deg, #8ad0a7 0%, #64ba8b 100%);
 }
 
 .arc-bl {
   bottom: 0;
   left: 0;
-  width: clamp(150px, 26vw, 300px);
-  aspect-ratio: 1;
   border-radius: 0 100% 0 0;
+  background: linear-gradient(35deg, #8ad0a7 0%, #64ba8b 100%);
 }
 
 /* ---------- Corner logo ---------- */
@@ -200,6 +203,10 @@
 }
 
 @media (max-width: 560px) {
+  :host {
+    /* Smaller on phones so the arcs frame the stack rather than crowd it. */
+    --arc-size: min(42vw, 30vh, 200px);
+  }
   .corner-logo {
     top: 20px;
     left: 20px;
