@@ -5,9 +5,24 @@ import { MainLayout } from './layouts/main-layout/main-layout';
 export const routes: Routes = [
   {
     path: '',
+    pathMatch: 'full',
+    title: 'ROIVIO · Marketing Mix Modeling',
+    loadComponent: () => import('./features/auth/landing/landing').then((m) => m.Landing),
+  },
+  {
+    path: 'login',
+    title: 'Sign in · ROIVIO',
+    loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
+  },
+  {
+    path: 'signup',
+    title: 'Create your account · ROIVIO',
+    loadComponent: () => import('./features/auth/signup/signup').then((m) => m.Signup),
+  },
+  {
+    path: '',
     component: MainLayout,
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'overview' },
       {
         path: 'overview',
         title: 'Overview · ROIVIO',

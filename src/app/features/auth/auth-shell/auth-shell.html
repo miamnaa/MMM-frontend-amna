@@ -1,0 +1,33 @@
+<div class="auth">
+  <aside class="panel">
+    <a class="brand" routerLink="/">
+      <span class="mark" aria-hidden="true">R</span>
+      <span class="brand-name">ROIVIO</span>
+    </a>
+
+    <div class="panel-body">
+      <h2>Marketing Mix Modeling that shows its working.</h2>
+      <ul class="highlights">
+        @for (h of highlights; track h) {
+          <li>
+            <span class="tick" aria-hidden="true">✓</span>
+            {{ h }}
+          </li>
+        }
+      </ul>
+    </div>
+
+    <p class="panel-foot">Convergent BT · Available on Microsoft Marketplace</p>
+  </aside>
+
+  <main class="form-side">
+    <a class="brand mobile-brand" routerLink="/">
+      <span class="mark" aria-hidden="true">R</span>
+      <span class="brand-name">ROIVIO</span>
+    </a>
+
+    <div class="form-wrap">
+      <ng-content />
+    </div>
+  </main>
+</div>

@@ -1,0 +1,132 @@
+<app-auth-shell>
+  <h1>Create your account</h1>
+  <p class="lede">Start with one project and a single spend file.</p>
+
+  <button
+    class="btn sso"
+    type="button"
+    [disabled]="submitting()"
+    (click)="continueWithMicrosoft()"
+  >
+    <span class="ms-logo" aria-hidden="true">
+      <i class="q q1"></i><i class="q q2"></i><i class="q q3"></i><i class="q q4"></i>
+    </span>
+    Continue with Microsoft
+  </button>
+
+  <p class="sso-note">
+    Subscribed through Microsoft Marketplace? Continue with Microsoft — your tenant is
+    provisioned automatically.
+  </p>
+
+  <div class="divider"><span>or sign up with email</span></div>
+
+  <form (submit)="submit($event)" novalidate>
+    <div class="two-up">
+      <div class="field">
+        <label class="label" for="name">Full name</label>
+        <input
+          id="name"
+          class="input"
+          type="text"
+          autocomplete="name"
+          placeholder="Amna Minhas"
+          [class.invalid]="nameError()"
+          [value]="fullName()"
+          (input)="set('fullName', $any($event.target).value)"
+        />
+        @if (nameError(); as msg) {
+          <span class="field-error">{{ msg }}</span>
+        }
+      </div>
+
+      <div class="field">
+        <label class="label" for="company">Company</label>
+        <input
+          id="company"
+          class="input"
+          type="text"
+          autocomplete="organization"
+          placeholder="Convergent BT"
+          [class.invalid]="companyError()"
+          [value]="company()"
+          (input)="set('company', $any($event.target).value)"
+        />
+        @if (companyError(); as msg) {
+          <span class="field-error">{{ msg }}</span>
+        }
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label" for="email">Work email</label>
+      <input
+        id="email"
+        class="input"
+        type="email"
+        autocomplete="email"
+        placeholder="you@company.com"
+        [class.invalid]="emailError()"
+        [value]="email()"
+        (input)="set('email', $any($event.target).value)"
+      />
+      @if (emailError(); as msg) {
+        <span class="field-error">{{ msg }}</span>
+      }
+    </div>
+
+    <div class="field">
+      <label class="label" for="password">Password</label>
+      <input
+        id="password"
+        class="input"
+        type="password"
+        autocomplete="new-password"
+        placeholder="At least 12 characters"
+        [class.invalid]="passwordError()"
+        [value]="password()"
+        (input)="set('password', $any($event.target).value)"
+      />
+
+      @if (password()) {
+        <div class="strength">
+          <div class="meter" [class]="strength().className">
+            @for (bar of [1, 2, 3, 4, 5]; track bar) {
+              <span [class.on]="bar <= strength().score"></span>
+            }
+          </div>
+          <span class="strength-label">{{ strength().label }}</span>
+        </div>
+      }
+
+      @if (passwordError(); as msg) {
+        <span class="field-error">{{ msg }}</span>
+      } @else {
+        <span class="hint">12 characters minimum. Mixed case, a number and a symbol help.</span>
+      }
+    </div>
+
+    <label class="remember terms">
+      <input
+        type="checkbox"
+        [checked]="acceptedTerms()"
+        (change)="toggleTerms($any($event.target).checked)"
+      />
+      <span>
+        I agree to the <a class="link" routerLink="/signup">terms of service</a> and
+        <a class="link" routerLink="/signup">privacy policy</a>.
+      </span>
+    </label>
+    @if (termsError(); as msg) {
+      <span class="field-error">{{ msg }}</span>
+    }
+
+    <button class="btn btn-primary submit" type="submit" [disabled]="submitting()">
+      {{ submitting() ? 'Creating account…' : 'Create account' }}
+    </button>
+  </form>
+
+  <p class="switch">
+    Already have an account? <a class="link" routerLink="/login">Sign in</a>
+  </p>
+</app-auth-shell>

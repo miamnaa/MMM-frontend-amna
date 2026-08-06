@@ -1,0 +1,78 @@
+<app-auth-shell>
+  <h1>Sign in</h1>
+  <p class="lede">Welcome back. Pick up where your last run left off.</p>
+
+  <button
+    class="btn sso"
+    type="button"
+    [disabled]="submitting()"
+    (click)="signInWithMicrosoft()"
+  >
+    <span class="ms-logo" aria-hidden="true">
+      <i class="q q1"></i><i class="q q2"></i><i class="q q3"></i><i class="q q4"></i>
+    </span>
+    Continue with Microsoft
+  </button>
+
+  <div class="divider"><span>or use your email</span></div>
+
+  @if (error(); as e) {
+    <p class="form-error" role="alert">{{ e }}</p>
+  }
+
+  <form (submit)="submit($event)" novalidate>
+    <div class="field">
+      <label class="label" for="email">Work email</label>
+      <input
+        id="email"
+        class="input"
+        type="email"
+        autocomplete="email"
+        placeholder="you@company.com"
+        [class.invalid]="emailError()"
+        [value]="email()"
+        (input)="setEmail($any($event.target).value)"
+      />
+      @if (emailError(); as msg) {
+        <span class="field-error">{{ msg }}</span>
+      }
+    </div>
+
+    <div class="field">
+      <div class="label-row">
+        <label class="label" for="password">Password</label>
+        <a class="link small" routerLink="/login">Forgot password?</a>
+      </div>
+      <input
+        id="password"
+        class="input"
+        type="password"
+        autocomplete="current-password"
+        placeholder="••••••••"
+        [class.invalid]="passwordError()"
+        [value]="password()"
+        (input)="setPassword($any($event.target).value)"
+      />
+      @if (passwordError(); as msg) {
+        <span class="field-error">{{ msg }}</span>
+      }
+    </div>
+
+    <label class="remember">
+      <input
+        type="checkbox"
+        [checked]="remember()"
+        (change)="toggleRemember($any($event.target).checked)"
+      />
+      <span>Keep me signed in on this device</span>
+    </label>
+
+    <button class="btn btn-primary submit" type="submit" [disabled]="submitting()">
+      {{ submitting() ? 'Signing in…' : 'Sign in' }}
+    </button>
+  </form>
+
+  <p class="switch">
+    New to ROIVIO? <a class="link" routerLink="/signup">Create an account</a>
+  </p>
+</app-auth-shell>
