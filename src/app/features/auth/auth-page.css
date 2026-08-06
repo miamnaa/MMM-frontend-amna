@@ -1,5 +1,6 @@
 /* ============================================================
-   Sign-in
+   Shared auth page — sign-in and sign-up
+   A white canvas with the wordmark centred over a single action.
    The mockup's mint sits at 2.2:1 on white, so it is kept for the
    decorative arcs only. The wordmark and the button step down to
    greens that clear their contrast floors.
@@ -169,6 +170,21 @@
   font-size: 12.5px;
   line-height: 1.6;
   color: var(--muted);
+}
+
+.switch {
+  margin-top: 26px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.switch a {
+  color: var(--action);
+  font-weight: 650;
+}
+
+.switch a:hover {
+  text-decoration: underline;
 }
 
 /* Visually hidden, still read aloud */

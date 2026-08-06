@@ -1,14 +1,12 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
-import { AuthShell } from '../auth-shell/auth-shell';
-
 /** Sign-up is single sign-on only — accounts come from Microsoft Entra ID. */
 @Component({
   selector: 'app-signup',
-  imports: [RouterLink, AuthShell],
+  imports: [RouterLink],
   templateUrl: './signup.html',
-  styleUrls: ['../auth-form.css'],
+  styleUrls: ['../auth-page.css'],
 })
 export class Signup {
   private readonly router = inject(Router);
