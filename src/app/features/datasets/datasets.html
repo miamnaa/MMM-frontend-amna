@@ -1,0 +1,157 @@
+<app-page-header
+  title="Datasets"
+  subtitle="Files stream straight to blob storage. Only the metadata and validation result are stored in Postgres."
+/>
+
+<section
+  class="dropzone"
+  [class.active]="dragging()"
+  [class.busy]="uploading()"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave()"
+  (drop)="onDrop($event)"
+>
+  <div class="drop-inner">
+    <span class="drop-icon" aria-hidden="true">↥</span>
+    <div class="drop-text">
+      <strong>{{ uploading() ? 'Uploading…' : 'Drop a file here, or browse' }}</strong>
+      <span class="muted">CSV, XLSX or Parquet · one row per period per geo</span>
+    </div>
+
+    <div class="drop-actions">
+      <select
+        class="select project-select"
+        [value]="targetProjectId()"
+        (change)="setProject($any($event.target).value)"
+        aria-label="Target project"
+      >
+        @for (p of projects(); track p.id) {
+          <option [value]="p.id">{{ p.name }}</option>
+        }
+      </select>
+
+      <label class="btn btn-primary">
+        Browse files
+        <input type="file" [accept]="accepted" (change)="onPick($event)" hidden />
+      </label>
+    </div>
+  </div>
+
+  @if (uploadError(); as err) {
+    <p class="drop-error">{{ err }}</p>
+  }
+</section>
+
+<section class="split">
+  <div class="card">
+    <div class="card-header">
+      <h2>All datasets</h2>
+      <span class="muted">{{ datasets().length }} total</span>
+    </div>
+
+    @if (loading()) {
+      <p class="loading muted">Loading datasets…</p>
+    } @else if (datasets().length === 0) {
+      <app-empty-state icon="↥" title="No datasets" message="Upload a file to get started." />
+    } @else {
+      <div class="scroll-x">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Dataset</th>
+              <th>Rows</th>
+              <th>Size</th>
+              <th>Status</th>
+              <th>Uploaded</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of datasets(); track d.id) {
+              <tr
+                class="clickable"
+                [class.selected]="d.id === selectedId()"
+                (click)="select(d.id)"
+              >
+                <td>
+                  <div class="ds-name">{{ d.name }}</div>
+                  <div class="muted mono">{{ d.fileName }}</div>
+                </td>
+                <td>{{ d.rowCount ? d.rowCount.toLocaleString() : '—' }}</td>
+                <td>{{ fileSize(d.sizeBytes) }}</td>
+                <td><app-status-badge [status]="d.validationStatus" /></td>
+                <td class="muted">{{ relativeTime(d.uploadedAt) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <aside class="card detail">
+    @if (selected(); as d) {
+      <div class="card-header">
+        <div>
+          <h2>{{ d.name }}</h2>
+          <p class="muted sub">{{ d.uploadedBy }} · {{ shortDate(d.uploadedAt) }}</p>
+        </div>
+        <app-status-badge [status]="d.validationStatus" />
+      </div>
+
+      <div class="card-body detail-body">
+        @if (d.validationStatus === 'invalid') {
+          <div class="issues">
+            <strong>Validation failed</strong>
+            <p class="muted">Fix these columns and upload again.</p>
+            <ul>
+              @for (issue of d.issues; track issue.column + issue.message) {
+                <li>
+                  <code class="mono">{{ issue.column }}</code>
+                  <span>{{ issue.message }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+
+        @if (d.validationStatus === 'pending') {
+          <div class="pending-note">
+            <strong>Validating…</strong>
+            <p class="muted">Schema checks are running. This usually takes under a minute.</p>
+          </div>
+        }
+
+        @if (d.dateRange; as range) {
+          <div class="meta-row">
+            <span class="label">Date coverage</span>
+            <span>{{ shortDate(range.start) }} → {{ shortDate(range.end) }}</span>
+          </div>
+        }
+
+        <div class="meta-row">
+          <span class="label">Rows</span>
+          <span>{{ d.rowCount ? d.rowCount.toLocaleString() : '—' }}</span>
+        </div>
+
+        @if (d.columns.length) {
+          <div class="columns">
+            <span class="label">Columns ({{ d.columns.length }})</span>
+            <ul class="col-list">
+              @for (c of d.columns; track c.name) {
+                <li>
+                  <span class="col-name mono">{{ c.name }}</span>
+                  <span class="role role-{{ c.role }}">{{ c.role.replace('_', ' ') }}</span>
+                  @if (c.nullCount > 0) {
+                    <span class="nulls">{{ c.nullCount }} null</span>
+                  }
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+    } @else {
+      <app-empty-state icon="◇" title="No dataset selected" message="Pick a row to see its schema." />
+    }
+  </aside>
+</section>

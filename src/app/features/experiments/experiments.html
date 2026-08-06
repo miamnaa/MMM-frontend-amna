@@ -1,0 +1,145 @@
+<app-page-header
+  title="Experiments"
+  subtitle="Every run is queued onto the service bus and picked up by a worker. Nothing fits a model inside a request."
+>
+  <a class="btn btn-primary" routerLink="/model-studio">Configure a run</a>
+</app-page-header>
+
+<div class="toolbar">
+  <div class="filters" role="tablist" aria-label="Filter by status">
+    @for (f of filters; track f.value) {
+      <button
+        class="chip"
+        type="button"
+        role="tab"
+        [attr.aria-selected]="filter() === f.value"
+        [class.active]="filter() === f.value"
+        (click)="setFilter(f.value)"
+      >
+        {{ f.label }}
+        <span class="chip-count">{{ countFor(f.value) }}</span>
+      </button>
+    }
+  </div>
+
+  <input
+    class="input search"
+    type="search"
+    placeholder="Search by name or project"
+    [value]="query()"
+    (input)="setQuery($any($event.target).value)"
+    aria-label="Search experiments"
+  />
+</div>
+
+<div class="card">
+  @if (loading()) {
+    <p class="loading muted">Loading experiments…</p>
+  } @else if (visible().length === 0) {
+    <app-empty-state
+      icon="▷"
+      title="Nothing matches"
+      message="Try a different status filter or clear the search."
+    />
+  } @else {
+    <div class="scroll-x">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Experiment</th>
+            <th>Engine</th>
+            <th>Status</th>
+            <th>Duration</th>
+            <th>Created</th>
+            <th class="right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of visible(); track e.id) {
+            <tr class="clickable" (click)="toggleDetail(e)">
+              <td>
+                <div class="exp-name">{{ e.name }}</div>
+                <div class="muted">{{ e.projectName }}</div>
+              </td>
+              <td class="muted">{{ engineLabel(e.engine) }}</td>
+              <td>
+                <app-status-badge [status]="e.status" />
+                @if (e.status === 'running') {
+                  <div class="progress" [attr.aria-label]="e.progress + ' percent complete'">
+                    <div class="progress-bar" [style.width.%]="e.progress"></div>
+                  </div>
+                }
+              </td>
+              <td>{{ duration(e.durationSeconds) }}</td>
+              <td class="muted">{{ relativeTime(e.createdAt) }}</td>
+              <td class="right actions">
+                <a
+                  class="btn btn-ghost btn-sm"
+                  [routerLink]="['/model-studio', e.id]"
+                  (click)="$event.stopPropagation()"
+                >
+                  Configure
+                </a>
+                @if (e.status === 'completed') {
+                  <a
+                    class="btn btn-secondary btn-sm"
+                    [routerLink]="['/results', e.id]"
+                    (click)="$event.stopPropagation()"
+                  >
+                    Results
+                  </a>
+                }
+                @if (canRun(e)) {
+                  <button class="btn btn-primary btn-sm" type="button" (click)="run(e, $event)">
+                    Run
+                  </button>
+                }
+              </td>
+            </tr>
+
+            @if (expandedId() === e.id) {
+              <tr class="detail-row">
+                <td colspan="6">
+                  <div class="detail">
+                    @if (e.errorMessage) {
+                      <div class="error-box">
+                        <strong>Run failed</strong>
+                        <p>{{ e.errorMessage }}</p>
+                      </div>
+                    }
+
+                    @if (e.config; as c) {
+                      <div class="config-grid">
+                        <div><span class="label">KPI</span><span class="mono">{{ c.kpiColumn }}</span></div>
+                        <div><span class="label">Date column</span><span class="mono">{{ c.dateColumn }}</span></div>
+                        <div><span class="label">Media channels</span><span>{{ c.mediaColumns.length }}</span></div>
+                        <div><span class="label">Controls</span><span>{{ c.controlColumns.length }}</span></div>
+                        <div><span class="label">Adstock lag</span><span>{{ c.adstock.maxLag }} weeks</span></div>
+                        <div><span class="label">Saturation</span><span class="cap">{{ c.saturation.type }}</span></div>
+                        <div><span class="label">Chains × draws</span><span>{{ c.chains }} × {{ c.draws }}</span></div>
+                        <div><span class="label">Seasonality</span><span>{{ c.seasonality ? 'On' : 'Off' }}</span></div>
+                      </div>
+                    } @else {
+                      <p class="muted">This experiment has not been configured yet.</p>
+                    }
+
+                    @if (logs().length) {
+                      <div class="logs">
+                        <span class="label">Worker log</span>
+                        <div class="log-body">
+                          @for (line of logs(); track $index) {
+                            <div class="log-line">{{ line }}</div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

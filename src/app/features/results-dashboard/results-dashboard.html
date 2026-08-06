@@ -1,0 +1,159 @@
+<app-page-header
+  title="Results & Insights"
+  subtitle="Contribution, efficiency and saturation for a completed model run."
+>
+  @if (completed().length) {
+    <select
+      class="select run-select"
+      [value]="selectedId() ?? ''"
+      (change)="select($any($event.target).value)"
+      aria-label="Select a completed run"
+    >
+      @for (e of completed(); track e.id) {
+        <option [value]="e.id">{{ e.name }} — {{ e.projectName }}</option>
+      }
+    </select>
+    <button class="btn btn-secondary" type="button" (click)="exportReport()">Export CSV</button>
+  }
+</app-page-header>
+
+@if (loading()) {
+  <p class="loading muted">Loading results…</p>
+} @else if (!result()) {
+  <div class="card">
+    <app-empty-state
+      icon="◨"
+      title="No completed runs yet"
+      message="Once a run finishes, its contribution and response curves appear here."
+    >
+      <a class="btn btn-primary" routerLink="/model-studio">Configure a run</a>
+    </app-empty-state>
+  </div>
+} @else if (result(); as r) {
+  <section class="tiles">
+    <app-stat-tile
+      label="Modelled revenue"
+      [value]="currency(r.totalRevenue)"
+      caption="Across the fitted period"
+    />
+    <app-stat-tile
+      label="Incremental from media"
+      [value]="currency(incrementalRevenue())"
+      [caption]="percent(1 - r.baselineContribution) + ' of total'"
+      trend="up"
+    />
+    <app-stat-tile label="Total spend" [value]="currency(r.totalSpend)" caption="All paid channels" />
+    <app-stat-tile label="Blended ROI" [value]="blendedRoi()" caption="Incremental ÷ spend" trend="up" />
+  </section>
+
+  <section class="fit card">
+    <div class="card-header">
+      <h2>Model fit</h2>
+      <span class="muted">Diagnostics decide whether these numbers are trustworthy</span>
+    </div>
+    <div class="card-body metric-grid">
+      <div class="metric">
+        <span class="label">R²</span>
+        <strong>{{ r.metrics.rSquared.toFixed(3) }}</strong>
+        <span class="muted">Variance explained</span>
+      </div>
+      <div class="metric">
+        <span class="label">MAPE</span>
+        <strong>{{ r.metrics.mape.toFixed(1) }}%</strong>
+        <span class="muted">Mean absolute % error</span>
+      </div>
+      <div class="metric">
+        <span class="label">NRMSE</span>
+        <strong>{{ r.metrics.nrmse.toFixed(3) }}</strong>
+        <span class="muted">Normalised RMSE</span>
+      </div>
+      <div class="metric">
+        <span class="label">Max R̂</span>
+        <strong [class.warn]="r.metrics.rhatMax > 1.05">{{ r.metrics.rhatMax.toFixed(2) }}</strong>
+        <span class="muted">Convergence, want ≤ 1.05</span>
+      </div>
+      <div class="metric">
+        <span class="label">Divergences</span>
+        <strong [class.warn]="r.metrics.divergences > 0">{{ r.metrics.divergences }}</strong>
+        <span class="muted">Sampler warnings</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="split">
+    <div class="card">
+      <div class="card-header">
+        <h2>Revenue contribution</h2>
+        <span class="muted">Share of modelled revenue</span>
+      </div>
+      <div class="card-body">
+        <app-bar-chart [data]="contributionBars()" />
+        <p class="footnote">
+          Baseline (everything not paid media) accounts for
+          {{ percent(r.baselineContribution) }}.
+        </p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Return on investment</h2>
+        <span class="muted">Incremental revenue per $1</span>
+      </div>
+      <div class="card-body">
+        <app-bar-chart [data]="roiBars()" />
+        <p class="footnote">A channel below 1.00x is returning less than it costs.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <h2>Response curves</h2>
+        <p class="muted sub">
+          Where each channel starts to saturate. The dot marks current spend.
+        </p>
+      </div>
+    </div>
+    <div class="card-body">
+      <app-line-chart
+        [series]="curves()"
+        xLabel="Spend"
+        [formatX]="formatSpend"
+        [formatY]="formatResponse"
+      />
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <h2>Channel detail</h2>
+      <span class="muted">The same numbers as the charts, in full</span>
+    </div>
+    <div class="scroll-x">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Channel</th>
+            <th>Spend</th>
+            <th>Contribution</th>
+            <th>ROI</th>
+            <th>CPA</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of r.contributions; track c.channel) {
+            <tr>
+              <td class="strong">{{ c.channel }}</td>
+              <td>{{ currency(c.spend) }}</td>
+              <td>{{ percent(c.contribution) }}</td>
+              <td>{{ c.roi.toFixed(2) }}x</td>
+              <td>{{ currency(c.cpa, 2) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+}

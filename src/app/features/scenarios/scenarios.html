@@ -1,0 +1,128 @@
+<app-page-header
+  title="Scenario Planner"
+  subtitle="Move budget between channels and read the predicted revenue off the fitted response curves."
+>
+  <button class="btn btn-secondary" type="button" (click)="reset()">Reset</button>
+  <button class="btn btn-primary" type="button" (click)="optimize()">Optimise allocation</button>
+</app-page-header>
+
+@if (loading()) {
+  <p class="loading muted">Loading the fitted model…</p>
+} @else if (rows().length === 0) {
+  <div class="card">
+    <app-empty-state
+      icon="◈"
+      title="No fitted model to plan against"
+      message="The planner needs a completed run with response curves."
+    >
+      <a class="btn btn-primary" routerLink="/model-studio">Configure a run</a>
+    </app-empty-state>
+  </div>
+} @else {
+  <section class="tiles">
+    <app-stat-tile label="Current budget" [value]="currency(currentBudget())" caption="Fitted period" />
+    <app-stat-tile
+      label="Proposed budget"
+      [value]="currency(proposedBudget())"
+      [caption]="(budgetDelta() >= 0 ? '+' : '') + currency(budgetDelta()) + ' vs current'"
+      [trend]="budgetDelta() >= 0 ? 'up' : 'down'"
+    />
+    <app-stat-tile
+      label="Predicted revenue"
+      [value]="currency(proposedRevenue())"
+      caption="From the hill response"
+    />
+    <app-stat-tile
+      label="Predicted lift"
+      [value]="percent(lift())"
+      caption="Against the current split"
+      [trend]="lift() >= 0 ? 'up' : 'down'"
+    />
+  </section>
+
+  <section class="split">
+    <div class="card">
+      <div class="card-header">
+        <h2>Allocation</h2>
+        <span class="muted">Drag to move budget</span>
+      </div>
+      <div class="card-body planner">
+        @for (row of rows(); track row.channel) {
+          <div class="plan-row">
+            <div class="plan-head">
+              <strong>{{ row.channel }}</strong>
+              <span class="plan-spend">{{ currency(row.proposedSpend) }}</span>
+              <span
+                class="plan-delta"
+                [class.up]="channelDelta(row) > 0"
+                [class.down]="channelDelta(row) < 0"
+              >
+                {{ channelDelta(row) >= 0 ? '+' : '' }}{{ percent(channelDelta(row), 0) }}
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              [max]="maxSpend(row)"
+              step="10000"
+              [value]="row.proposedSpend"
+              (input)="setSpend(row.channel, $any($event.target).value)"
+              [attr.aria-label]="row.channel + ' spend'"
+            />
+            <div class="plan-foot muted">
+              <span>Current {{ currency(row.currentSpend) }}</span>
+              <span>Saturates near {{ currency(row.saturationPoint) }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Proposed split</h2>
+        <span class="muted">Spend by channel</span>
+      </div>
+      <div class="card-body">
+        <app-bar-chart [data]="allocationBars()" />
+        <p class="footnote">
+          Predicted revenue assumes the transforms and saturation of the fitted model hold at the
+          new spend levels. Extrapolating far past current spend is unreliable.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <h2>Scenario detail</h2>
+      <span class="muted">Per-channel effect of the proposed split</span>
+    </div>
+    <div class="scroll-x">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Channel</th>
+            <th>Current spend</th>
+            <th>Proposed spend</th>
+            <th>Change</th>
+            <th>Predicted revenue</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.channel) {
+            <tr>
+              <td class="strong">{{ row.channel }}</td>
+              <td>{{ currency(row.currentSpend) }}</td>
+              <td>{{ currency(row.proposedSpend) }}</td>
+              <td [class.pos]="channelDelta(row) > 0" [class.neg]="channelDelta(row) < 0">
+                {{ channelDelta(row) >= 0 ? '+' : '' }}{{ percent(channelDelta(row), 0) }}
+              </td>
+              <td>{{ currency(channelRevenue(row)) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+}

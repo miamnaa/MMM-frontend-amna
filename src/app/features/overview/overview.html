@@ -1,0 +1,83 @@
+<app-page-header
+  title="Overview"
+  subtitle="Where every project, dataset and model run stands right now."
+>
+  <a class="btn btn-secondary" routerLink="/datasets">Upload dataset</a>
+  <a class="btn btn-primary" routerLink="/projects">New project</a>
+</app-page-header>
+
+<section class="tiles">
+  <app-stat-tile label="Active projects" [value]="projects().length.toString()" caption="Across the tenant" />
+  <app-stat-tile label="Datasets" [value]="datasets().length.toString()" caption="Stored in blob" />
+  <app-stat-tile
+    label="Runs in flight"
+    [value]="activeRuns().length.toString()"
+    caption="Queued or running"
+  />
+  <app-stat-tile
+    label="Blended ROI"
+    [value]="blendedRoi()"
+    caption="Latest completed model"
+    trend="up"
+  />
+</section>
+
+@if (needsAttention().failedRuns > 0 || needsAttention().invalidDatasets > 0) {
+  <div class="alert">
+    <span class="alert-icon" aria-hidden="true">!</span>
+    <div>
+      <strong>Needs attention</strong>
+      <p>
+        {{ needsAttention().failedRuns }} failed run(s) and
+        {{ needsAttention().invalidDatasets }} dataset(s) that did not pass schema validation.
+      </p>
+    </div>
+    <a class="btn btn-secondary btn-sm" routerLink="/experiments">Review</a>
+  </div>
+}
+
+<section class="split">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2>Media contribution</h2>
+        <p class="muted sub">Latest completed model · Retail FY26 Media Mix</p>
+      </div>
+      <a class="btn btn-ghost btn-sm" routerLink="/results/e-1">Open results</a>
+    </div>
+    <div class="card-body">
+      @if (contributionBars().length) {
+        <app-bar-chart [data]="contributionBars()" />
+        <p class="footnote">
+          Share of modelled revenue attributed to each paid channel. The remainder is baseline.
+        </p>
+      } @else {
+        <app-empty-state
+          icon="◨"
+          title="No completed model yet"
+          message="Contribution appears here once a run finishes."
+        />
+      }
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Recent activity</h2>
+      <a class="btn btn-ghost btn-sm" routerLink="/experiments">All experiments</a>
+    </div>
+    <ul class="activity">
+      @for (e of recentExperiments(); track e.id) {
+        <li>
+          <div class="act-main">
+            <a class="act-name" [routerLink]="['/model-studio', e.id]">{{ e.name }}</a>
+            <span class="muted act-meta">{{ e.projectName }} · {{ relativeTime(e.createdAt) }}</span>
+          </div>
+          <app-status-badge [status]="e.status" />
+        </li>
+      } @empty {
+        <li class="none"><span class="muted">Nothing has run yet.</span></li>
+      }
+    </ul>
+  </div>
+</section>

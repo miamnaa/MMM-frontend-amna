@@ -1,0 +1,113 @@
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 900px;
+}
+
+.sub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 18px;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+}
+
+.note {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.pill {
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: var(--r-full);
+  background: var(--brand-50);
+  color: var(--brand-700);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.pill.invited {
+  background: var(--amber-50);
+  color: var(--amber-700);
+}
+
+.strong {
+  font-weight: 550;
+}
+
+.prefs {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pref {
+  display: flex;
+  gap: 11px;
+  cursor: pointer;
+}
+
+.pref input {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  flex: none;
+  accent-color: var(--brand-600);
+  cursor: pointer;
+}
+
+.pref div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 13px;
+}
+
+.pref .muted {
+  font-size: 12px;
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.account div {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+}
+
+.account .muted {
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.account .pill {
+  margin-left: auto;
+  background: var(--blue-50);
+  color: var(--blue-600);
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--brand-100);
+  color: var(--brand-700);
+  font-size: 14px;
+  font-weight: 700;
+}

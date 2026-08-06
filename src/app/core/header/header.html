@@ -1,0 +1,48 @@
+<header class="topbar">
+  <div class="search">
+    <span class="search-icon" aria-hidden="true">⌕</span>
+    <input
+      class="search-input"
+      type="search"
+      placeholder="Search projects, datasets, experiments"
+      aria-label="Search"
+    />
+  </div>
+
+  <div class="right">
+    <button class="icon-btn" type="button" (click)="togglePanel()" aria-label="Notifications">
+      <span aria-hidden="true">◔</span>
+      @if (unreadCount() > 0) {
+        <span class="count">{{ unreadCount() }}</span>
+      }
+    </button>
+
+    <div class="user">
+      <span class="avatar" aria-hidden="true">{{ user().initials }}</span>
+      <span class="user-text">
+        <strong>{{ user().name }}</strong>
+        <small>{{ user().role }}</small>
+      </span>
+    </div>
+  </div>
+
+  @if (panelOpen()) {
+    <div class="panel">
+      <div class="panel-head">
+        <strong>Notifications</strong>
+        <button class="btn btn-ghost btn-sm" type="button" (click)="togglePanel()">Close</button>
+      </div>
+      @for (n of notifications(); track n.id) {
+        <div class="note">
+          <span class="note-dot" [class]="'kind-' + n.kind" aria-hidden="true"></span>
+          <div>
+            <strong>{{ n.title }}</strong>
+            <p class="muted">{{ n.body }}</p>
+          </div>
+        </div>
+      } @empty {
+        <p class="muted empty">Nothing yet.</p>
+      }
+    </div>
+  }
+</header>

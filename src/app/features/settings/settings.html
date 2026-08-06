@@ -1,0 +1,118 @@
+<app-page-header
+  title="Settings"
+  subtitle="Tenant, membership and notification preferences."
+/>
+
+<div class="settings">
+  <section class="card">
+    <div class="card-header"><h2>Subscription</h2></div>
+    <div class="card-body sub-grid">
+      <div class="meta">
+        <span class="label">Tenant</span>
+        <strong>Convergent BT</strong>
+      </div>
+      <div class="meta">
+        <span class="label">Plan</span>
+        <strong>Growth</strong>
+      </div>
+      <div class="meta">
+        <span class="label">Source</span>
+        <strong>Microsoft Marketplace</strong>
+      </div>
+      <div class="meta">
+        <span class="label">Status</span>
+        <span class="pill">Active</span>
+      </div>
+      <p class="note muted">
+        Plan changes, suspension and cancellation are handled in Microsoft Marketplace. The
+        platform reacts to the lifecycle webhook — it does not manage billing itself.
+      </p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <h2>Members</h2>
+      <button class="btn btn-secondary btn-sm" type="button">Invite member</button>
+    </div>
+    <div class="scroll-x">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of members(); track m.email) {
+            <tr>
+              <td class="strong">{{ m.name }}</td>
+              <td class="muted">{{ m.email }}</td>
+              <td>{{ m.role }}</td>
+              <td>
+                <span class="pill" [class.invited]="m.status === 'invited'">
+                  {{ m.status === 'invited' ? 'Invited' : 'Active' }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header"><h2>Notifications</h2></div>
+    <div class="card-body prefs">
+      <label class="pref">
+        <input
+          type="checkbox"
+          [checked]="preferences().emailOnRunComplete"
+          (change)="togglePreference('emailOnRunComplete')"
+        />
+        <div>
+          <strong>Email me when a run completes</strong>
+          <span class="muted">Sent once the worker writes results back.</span>
+        </div>
+      </label>
+
+      <label class="pref">
+        <input
+          type="checkbox"
+          [checked]="preferences().emailOnRunFailed"
+          (change)="togglePreference('emailOnRunFailed')"
+        />
+        <div>
+          <strong>Email me when a run fails</strong>
+          <span class="muted">Includes the error message saved against the job.</span>
+        </div>
+      </label>
+
+      <label class="pref">
+        <input
+          type="checkbox"
+          [checked]="preferences().weeklyDigest"
+          (change)="togglePreference('weeklyDigest')"
+        />
+        <div>
+          <strong>Weekly digest</strong>
+          <span class="muted">A Monday summary of runs and dataset changes.</span>
+        </div>
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header"><h2>Signed in as</h2></div>
+    <div class="card-body account">
+      <span class="avatar">{{ user().initials }}</span>
+      <div>
+        <strong>{{ user().name }}</strong>
+        <span class="muted">{{ user().email }} · {{ user().role }}</span>
+      </div>
+      <span class="pill">Microsoft Entra ID</span>
+    </div>
+  </section>
+</div>

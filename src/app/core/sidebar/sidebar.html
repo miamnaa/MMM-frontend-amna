@@ -1,0 +1,58 @@
+<nav class="sidebar" aria-label="Main navigation">
+  <a class="brand" routerLink="/overview">
+    <span class="mark" aria-hidden="true">R</span>
+    <span class="brand-text">
+      <strong>ROIVIO</strong>
+      <small>Marketing Mix Modeling</small>
+    </span>
+  </a>
+
+  <div class="nav-scroll">
+    <ul class="nav-group">
+      @for (item of primary; track item.path) {
+        <li>
+          <a
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: false }"
+          >
+            <span class="icon" aria-hidden="true">{{ item.icon }}</span>
+            <span class="nav-label">{{ item.label }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+
+    <p class="group-label">Analysis</p>
+    <ul class="nav-group">
+      @for (item of analysis; track item.path) {
+        <li>
+          <a [routerLink]="item.path" routerLinkActive="active">
+            <span class="icon" aria-hidden="true">{{ item.icon }}</span>
+            <span class="nav-label">{{ item.label }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+
+    <p class="group-label">System</p>
+    <ul class="nav-group">
+      @for (item of system; track item.path) {
+        <li>
+          <a [routerLink]="item.path" routerLinkActive="active">
+            <span class="icon" aria-hidden="true">{{ item.icon }}</span>
+            <span class="nav-label">{{ item.label }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </div>
+
+  <div class="tenant">
+    <span class="tenant-dot" aria-hidden="true"></span>
+    <div class="tenant-text">
+      <strong>Convergent BT</strong>
+      <small>Growth plan · Marketplace</small>
+    </div>
+  </div>
+</nav>

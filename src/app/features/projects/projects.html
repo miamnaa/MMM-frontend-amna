@@ -1,0 +1,103 @@
+<app-page-header
+  title="Projects"
+  subtitle="A project groups the datasets, model configurations and runs for one business question."
+>
+  <button class="btn btn-primary" type="button" (click)="openDialog()">New project</button>
+</app-page-header>
+
+@if (loading()) {
+  <div class="skeleton-grid">
+    @for (i of [1, 2, 3]; track i) {
+      <div class="card skeleton"></div>
+    }
+  </div>
+} @else if (projects().length === 0) {
+  <div class="card">
+    <app-empty-state
+      icon="▤"
+      title="No projects yet"
+      message="Create a project to start uploading data and configuring a model."
+    >
+      <button class="btn btn-primary" type="button" (click)="openDialog()">New project</button>
+    </app-empty-state>
+  </div>
+} @else {
+  <div class="project-grid">
+    @for (p of projects(); track p.id) {
+      <article class="card project">
+        <div class="project-top">
+          <span class="engine-pill">{{ engineLabel(p.engine) }}</span>
+          <span class="muted updated">{{ relativeTime(p.updatedAt) }}</span>
+        </div>
+        <h2>{{ p.name }}</h2>
+        <p class="muted desc">{{ p.description }}</p>
+        <div class="project-stats">
+          <span><strong>{{ p.experimentCount }}</strong> experiments</span>
+          <span><strong>{{ p.datasetCount }}</strong> datasets</span>
+        </div>
+        <div class="project-foot">
+          <span class="muted owner">{{ p.ownerName }}</span>
+          <a class="btn btn-secondary btn-sm" routerLink="/experiments">Open</a>
+        </div>
+      </article>
+    }
+  </div>
+}
+
+@if (dialogOpen()) {
+  <div class="backdrop" (click)="closeDialog()"></div>
+  <div class="dialog card" role="dialog" aria-modal="true" aria-label="Create project">
+    <div class="card-header">
+      <h2>New project</h2>
+      <button class="btn btn-ghost btn-sm" type="button" (click)="closeDialog()">Cancel</button>
+    </div>
+    <div class="card-body dialog-body">
+      <div class="field">
+        <label class="label" for="p-name">Project name</label>
+        <input
+          id="p-name"
+          class="input"
+          [value]="form().name"
+          (input)="updateField('name', $any($event.target).value)"
+          placeholder="e.g. Retail FY27 Media Mix"
+        />
+      </div>
+
+      <div class="field">
+        <label class="label" for="p-desc">Description</label>
+        <textarea
+          id="p-desc"
+          class="textarea"
+          [value]="form().description"
+          (input)="updateField('description', $any($event.target).value)"
+          placeholder="What business question does this project answer?"
+        ></textarea>
+      </div>
+
+      <div class="field">
+        <label class="label" for="p-engine">Modeling engine</label>
+        <select
+          id="p-engine"
+          class="select"
+          [value]="form().engine"
+          (change)="updateEngine($any($event.target).value)"
+        >
+          <option value="meridian">Google Meridian</option>
+          <option value="pymc">PyMC-Marketing</option>
+        </select>
+        <span class="hint">The engine is fixed once the first run starts.</span>
+      </div>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-secondary" type="button" (click)="closeDialog()">Cancel</button>
+      <button
+        class="btn btn-primary"
+        type="button"
+        [disabled]="!form().name.trim() || saving()"
+        (click)="submit()"
+      >
+        {{ saving() ? 'Creating…' : 'Create project' }}
+      </button>
+    </div>
+  </div>
+}

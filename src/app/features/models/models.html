@@ -1,0 +1,307 @@
+<app-page-header
+  title="Model Studio"
+  subtitle="Configure the transforms and sampler, validate, then hand the run to the queue."
+>
+  <button class="btn btn-secondary" type="button" [disabled]="!isValid()" (click)="save()">
+    {{ saved() ? 'Saved' : 'Save configuration' }}
+  </button>
+  <button class="btn btn-primary" type="button" [disabled]="!isValid()" (click)="runNow()">
+    Save and run
+  </button>
+</app-page-header>
+
+@if (queued()) {
+  <div class="banner success">
+    <strong>Run queued.</strong>
+    <span>The message is on the service bus. A worker will pick it up shortly.</span>
+    <button class="btn btn-secondary btn-sm" type="button" (click)="goToExperiments()">
+      View experiments
+    </button>
+  </div>
+}
+
+<div class="studio">
+  <div class="config-column">
+    <section class="card">
+      <div class="card-header">
+        <h2>Experiment</h2>
+        @if (experiment(); as e) {
+          <app-status-badge [status]="e.status" />
+        }
+      </div>
+      <div class="card-body grid-2">
+        <div class="field">
+          <label class="label" for="exp">Configuring</label>
+          <select
+            id="exp"
+            class="select"
+            [value]="selectedId() ?? ''"
+            (change)="selectExperiment($any($event.target).value)"
+          >
+            @for (e of experiments(); track e.id) {
+              <option [value]="e.id">{{ e.name }} — {{ e.projectName }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="label" for="engine">Modeling engine</label>
+          <select
+            id="engine"
+            class="select"
+            [value]="config().engine"
+            (change)="setEngine($any($event.target).value)"
+          >
+            <option value="meridian">Google Meridian</option>
+            <option value="pymc">PyMC-Marketing</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2>Columns</h2>
+        @if (dataset(); as d) {
+          <span class="muted">{{ d.name }}</span>
+        }
+      </div>
+
+      <div class="card-body">
+        @if (!dataset()) {
+          <p class="muted">
+            This experiment has no dataset attached. Attach one from the Datasets page before
+            configuring columns.
+          </p>
+        } @else {
+          <div class="grid-2">
+            <div class="field">
+              <label class="label" for="kpi">KPI column</label>
+              <select
+                id="kpi"
+                class="select"
+                [value]="config().kpiColumn"
+                (change)="patch('kpiColumn', $any($event.target).value)"
+              >
+                <option value="">Select a column…</option>
+                @for (c of numericColumns(); track c) {
+                  <option [value]="c">{{ c }}</option>
+                }
+              </select>
+              <span class="hint">What the model explains — revenue, orders, sign-ups.</span>
+            </div>
+
+            <div class="field">
+              <label class="label" for="datecol">Date column</label>
+              <select
+                id="datecol"
+                class="select"
+                [value]="config().dateColumn"
+                (change)="patch('dateColumn', $any($event.target).value)"
+              >
+                <option value="">Select a column…</option>
+                @for (c of dateColumns(); track c) {
+                  <option [value]="c">{{ c }}</option>
+                }
+              </select>
+              <span class="hint">One row per period. Weekly is typical.</span>
+            </div>
+          </div>
+
+          <div class="field picker">
+            <span class="label">Media channels</span>
+            <div class="chips">
+              @for (c of numericColumns(); track c) {
+                <button
+                  class="pick"
+                  type="button"
+                  [class.on]="isSelected('mediaColumns', c)"
+                  (click)="toggleColumn('mediaColumns', c)"
+                >
+                  {{ c }}
+                </button>
+              }
+            </div>
+            <span class="hint">Spend or impressions columns the model attributes revenue to.</span>
+          </div>
+
+          <div class="field picker">
+            <span class="label">Control variables</span>
+            <div class="chips">
+              @for (c of numericColumns(); track c) {
+                <button
+                  class="pick"
+                  type="button"
+                  [class.on]="isSelected('controlColumns', c)"
+                  (click)="toggleColumn('controlColumns', c)"
+                >
+                  {{ c }}
+                </button>
+              }
+            </div>
+            <span class="hint">Price, promotions, distribution — anything not paid media.</span>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2>Transforms</h2></div>
+      <div class="card-body">
+        <div class="grid-2">
+          <div class="field">
+            <label class="label" for="lag">
+              Adstock max lag
+              <span class="val">{{ config().adstock.maxLag }} weeks</span>
+            </label>
+            <input
+              id="lag"
+              type="range"
+              min="1"
+              max="26"
+              step="1"
+              [value]="config().adstock.maxLag"
+              (input)="setAdstock('maxLag', $any($event.target).value)"
+            />
+            <span class="hint">How long an impression keeps working after it is served.</span>
+          </div>
+
+          <div class="field">
+            <label class="label" for="decay">
+              Adstock decay
+              <span class="val">{{ config().adstock.decay }}</span>
+            </label>
+            <input
+              id="decay"
+              type="range"
+              min="0.1"
+              max="0.95"
+              step="0.05"
+              [value]="config().adstock.decay"
+              (input)="setAdstock('decay', $any($event.target).value)"
+            />
+            <span class="hint">Higher decay means the effect lingers longer.</span>
+          </div>
+
+          <div class="field">
+            <label class="label" for="sat">Saturation</label>
+            <select
+              id="sat"
+              class="select"
+              [value]="config().saturation.type"
+              (change)="setSaturationType($any($event.target).value)"
+            >
+              <option value="hill">Hill</option>
+              <option value="logistic">Logistic</option>
+              <option value="none">None</option>
+            </select>
+            <span class="hint">Models diminishing returns as spend rises.</span>
+          </div>
+
+          <div class="field">
+            <label class="label" for="split">
+              Train / test split
+              <span class="val">{{ (config().trainTestSplit * 100).toFixed(0) }}%</span>
+            </label>
+            <input
+              id="split"
+              type="range"
+              min="0.5"
+              max="0.95"
+              step="0.05"
+              [value]="config().trainTestSplit"
+              (input)="setSplit($any($event.target).value)"
+            />
+            <span class="hint">Share of periods used to fit; the rest is held out.</span>
+          </div>
+        </div>
+
+        <label class="toggle">
+          <input
+            type="checkbox"
+            [checked]="config().seasonality"
+            (change)="patch('seasonality', $any($event.target).checked)"
+          />
+          <span>Fit seasonality — recommended when you have two or more years of data</span>
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2>Sampler</h2>
+        <span class="muted">Estimated runtime {{ estimatedRuntime() }}</span>
+      </div>
+      <div class="card-body grid-3">
+        <div class="field">
+          <label class="label" for="chains">Chains</label>
+          <input
+            id="chains"
+            class="input"
+            type="number"
+            min="1"
+            max="8"
+            [value]="config().chains"
+            (input)="setNumber('chains', $any($event.target).value)"
+          />
+        </div>
+        <div class="field">
+          <label class="label" for="draws">Draws</label>
+          <input
+            id="draws"
+            class="input"
+            type="number"
+            min="200"
+            max="8000"
+            step="100"
+            [value]="config().draws"
+            (input)="setNumber('draws', $any($event.target).value)"
+          />
+        </div>
+        <div class="field">
+          <label class="label" for="tune">Tune steps</label>
+          <input
+            id="tune"
+            class="input"
+            type="number"
+            min="100"
+            max="4000"
+            step="100"
+            [value]="config().tuneSteps"
+            (input)="setNumber('tuneSteps', $any($event.target).value)"
+          />
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <aside class="side">
+    <section class="card sticky">
+      <div class="card-header">
+        <h2>Preflight</h2>
+        <span class="check-count" [class.pass]="isValid()">
+          {{ isValid() ? 'Ready' : 'Blocked' }}
+        </span>
+      </div>
+      <ul class="checks">
+        @for (c of checks(); track c.label) {
+          <li [class.ok]="c.ok">
+            <span class="tick" aria-hidden="true">{{ c.ok ? '✓' : '✕' }}</span>
+            <div>
+              <strong>{{ c.label }}</strong>
+              <span class="muted">{{ c.detail }}</span>
+            </div>
+          </li>
+        }
+      </ul>
+      <div class="side-foot">
+        <button class="btn btn-primary" type="button" [disabled]="!isValid()" (click)="runNow()">
+          Save and run
+        </button>
+        <p class="hint">
+          Running enqueues one message. The API never fits a model inside the request.
+        </p>
+      </div>
+    </section>
+  </aside>
+</div>
