@@ -56,6 +56,13 @@ h1 {
   color: var(--text-muted);
 }
 
+.terms-note {
+  margin-top: 20px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
 .divider {
   display: flex;
   align-items: center;
