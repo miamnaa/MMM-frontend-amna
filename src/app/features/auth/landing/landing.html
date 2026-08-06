@@ -1,123 +1,143 @@
 <div class="page">
   <header class="nav">
-    <a class="brand" routerLink="/">
-      <span class="mark" aria-hidden="true">R</span>
-      <span class="brand-name">ROIVIO</span>
-    </a>
+    <div class="nav-inner">
+      <a class="brand" routerLink="/">
+        <span class="mark" aria-hidden="true">R</span>
+        <span class="brand-name">ROIVIO</span>
+      </a>
 
-    <nav class="nav-links" aria-label="Sections">
-      <a href="#features">Product</a>
-      <a href="#how">How it works</a>
-      <a href="#engines">Engines</a>
-    </nav>
+      <nav class="nav-links" aria-label="Sections">
+        <a href="#why">Why ROIVIO</a>
+        <a href="#how">How it works</a>
+        <a href="#faqs">FAQs</a>
+      </nav>
 
-    <div class="nav-actions">
-      <a class="btn btn-ghost" routerLink="/login">Sign in</a>
-      <a class="btn btn-primary" routerLink="/signup">Get started</a>
+      <div class="nav-actions">
+        <a class="pill pill-ghost" routerLink="/login">Sign in</a>
+        <a class="pill pill-solid" routerLink="/signup">Run a free model <span aria-hidden="true">→</span></a>
+      </div>
     </div>
   </header>
 
-  <section class="hero">
-    <div class="hero-text">
-      <span class="eyebrow">Marketing Mix Modeling</span>
-      <h1>Know what your marketing spend is actually worth.</h1>
-      <p>
-        ROIVIO fits Bayesian media mix models on your own data and turns them into
-        contribution, ROI and saturation you can take into a budget meeting — without
-        a data science team standing behind you.
-      </p>
-      <div class="hero-actions">
-        <a class="btn btn-primary btn-lg" routerLink="/signup">Start free trial</a>
-        <a class="btn btn-secondary btn-lg" routerLink="/login">Sign in</a>
-      </div>
-      <p class="hero-note">
-        Subscribe through Microsoft Marketplace · Single sign-on with Microsoft Entra ID
-      </p>
-    </div>
+  <main>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="wrap">
+        <p class="eyebrow-green">Marketing mix modeling, reimagined</p>
 
-    <div class="hero-visual" aria-hidden="true">
-      <div class="visual-card">
-        <div class="visual-head">
-          <span class="visual-title">Revenue contribution</span>
-          <span class="visual-pill">Completed</span>
-        </div>
-        <div class="visual-bars">
-          <div class="vbar"><span class="vlabel">Paid search</span><span class="vtrack"><i style="width: 78%; background: #2a78d6"></i></span><span class="vval">16.8%</span></div>
-          <div class="vbar"><span class="vlabel">Television</span><span class="vtrack"><i style="width: 62%; background: #eb6834"></i></span><span class="vval">13.2%</span></div>
-          <div class="vbar"><span class="vlabel">Paid social</span><span class="vtrack"><i style="width: 56%; background: #1baf7a"></i></span><span class="vval">12.1%</span></div>
-          <div class="vbar"><span class="vlabel">Retail media</span><span class="vtrack"><i style="width: 29%; background: #eda100"></i></span><span class="vval">6.1%</span></div>
-        </div>
-        <div class="visual-foot">
-          <div><span>Blended ROI</span><strong>2.21x</strong></div>
-          <div><span>R²</span><strong>0.874</strong></div>
-          <div><span>MAPE</span><strong>6.8%</strong></div>
+        <h1 class="headline">
+          Know exactly what's <em>driving</em> every dollar of revenue.
+        </h1>
+
+        <p class="lede">
+          Roivio turns fragmented media spend into one clear model — channel contribution,
+          saturation curves, and budget scenarios, updated weekly, not quarterly.
+        </p>
+
+        <div class="hero-actions">
+          <a class="pill pill-solid pill-lg" routerLink="/signup">
+            Run a free model <span aria-hidden="true">→</span>
+          </a>
+          <a class="pill pill-ghost pill-lg" routerLink="/login">Sign in</a>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="features" id="features">
-    <h2 class="section-title">Everything a media mix study needs, in one place</h2>
-    <div class="feature-grid">
-      @for (f of features; track f.title) {
-        <article class="feature">
-          <span class="feature-icon" aria-hidden="true">{{ f.icon }}</span>
-          <h3>{{ f.title }}</h3>
-          <p>{{ f.body }}</p>
-        </article>
-      }
-    </div>
-  </section>
+    <!-- Why teams switch -->
+    <section class="why" id="why">
+      <div class="wrap">
+        <p class="eyebrow-muted">Why teams switch to ROIVIO</p>
+        <h2 class="section-head">Spend gets easier to defend, not harder.</h2>
 
-  <section class="how" id="how">
-    <h2 class="section-title">From raw spend file to a defensible number</h2>
-    <div class="steps">
-      @for (s of steps; track s.number) {
-        <article class="step">
-          <span class="step-number">{{ s.number }}</span>
-          <h3>{{ s.title }}</h3>
-          <p>{{ s.body }}</p>
-        </article>
-      }
-    </div>
-  </section>
+        <div class="benefit-grid">
+          @for (b of benefits; track b.title) {
+            <article class="benefit">
+              <span class="benefit-icon" aria-hidden="true">{{ b.icon }}</span>
+              <h3>{{ b.title }}</h3>
+              <p>{{ b.body }}</p>
+            </article>
+          }
+        </div>
+      </div>
+    </section>
 
-  <section class="engines" id="engines">
-    <div class="engine-copy">
-      <h2>Your model, not a black box</h2>
-      <p>
-        Every run records the engine, the transforms and the sampler settings that produced it.
-        Runs are queued to a dedicated worker and stream their logs back, so a long fit never
-        dies in a browser tab — and a failed run tells you why.
-      </p>
-    </div>
-    <div class="engine-cards">
-      <article class="engine-card">
-        <h3>Google Meridian</h3>
-        <p>Geo-hierarchical Bayesian MMM with reach and frequency support.</p>
-      </article>
-      <article class="engine-card">
-        <h3>PyMC-Marketing</h3>
-        <p>Flexible priors and custom adstock for teams that want to go deeper.</p>
-      </article>
-    </div>
-  </section>
+    <!-- How it works -->
+    <section class="how" id="how">
+      <div class="wrap">
+        <div class="how-panel">
+          <p class="eyebrow-dark">How it works</p>
+          <h2 class="how-head">
+            From raw spend data to a defensible number, in three moves.
+          </h2>
 
-  <section class="cta">
-    <h2>Put a number on every channel</h2>
-    <p>Start with one project and a single spend file. You can have a fitted model today.</p>
-    <a class="btn btn-lg cta-btn" routerLink="/signup">Get started</a>
-  </section>
+          <div class="move-grid">
+            @for (m of moves; track m.number) {
+              <article class="move">
+                <span class="move-number">{{ m.number }}</span>
+                <h3>{{ m.label }}</h3>
+                <p>{{ m.body }}</p>
+              </article>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQs -->
+    <section class="faqs" id="faqs">
+      <h2 class="faq-title">FAQs</h2>
+
+      <div class="faq-list">
+        @for (f of faqs; track f.question; let i = $index) {
+          <div class="faq" [class.open]="openFaq() === i">
+            <h3>
+              <button
+                class="faq-q"
+                type="button"
+                [attr.aria-expanded]="openFaq() === i"
+                [attr.aria-controls]="'faq-panel-' + i"
+                (click)="toggleFaq(i)"
+              >
+                <span>{{ f.question }}</span>
+                <span class="chevron" aria-hidden="true">⌄</span>
+              </button>
+            </h3>
+
+            @if (openFaq() === i) {
+              <div class="faq-a" [id]="'faq-panel-' + i">
+                <p>{{ f.answer }}</p>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Closing CTA -->
+    <section class="cta">
+      <div class="wrap cta-inner">
+        <div>
+          <h2>Put a number on every channel.</h2>
+          <p>Start with one project and a single spend file.</p>
+        </div>
+        <a class="pill pill-solid pill-lg" routerLink="/signup">
+          Run a free model <span aria-hidden="true">→</span>
+        </a>
+      </div>
+    </section>
+  </main>
 
   <footer class="footer">
-    <div class="footer-brand">
-      <span class="mark small" aria-hidden="true">R</span>
-      <span>ROIVIO · Convergent BT</span>
-    </div>
-    <div class="footer-links">
-      <a routerLink="/login">Sign in</a>
-      <a routerLink="/signup">Create account</a>
-      <a href="#features">Product</a>
+    <div class="wrap footer-inner">
+      <div class="footer-brand">
+        <span class="mark small" aria-hidden="true">R</span>
+        <span>ROIVIO · Convergent BT</span>
+      </div>
+      <div class="footer-links">
+        <a routerLink="/login">Sign in</a>
+        <a routerLink="/signup">Create account</a>
+        <a href="#faqs">FAQs</a>
+      </div>
     </div>
   </footer>
 </div>
