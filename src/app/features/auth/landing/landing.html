@@ -10,12 +10,22 @@
         <a href="#features">Product</a>
         <a href="#how">How it works</a>
         <a href="#engines">Engines</a>
+        <a href="#faqs">FAQs</a>
       </nav>
 
       <div class="nav-actions">
         <a class="pill pill-ghost" routerLink="/login">Sign in</a>
         <a class="pill pill-solid" routerLink="/signup">
-          Run a free model <span aria-hidden="true">→</span>
+          Run a free model
+          <svg class="arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path
+              d="M2.9 8h10.2M9.3 4.2 13.1 8l-3.8 3.8"
+              stroke="currentColor"
+              stroke-width="1.9"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
         </a>
       </div>
     </div>
@@ -36,7 +46,16 @@
 
       <div class="hero-actions">
         <a class="pill pill-solid pill-lg" routerLink="/signup">
-          Run a free model <span aria-hidden="true">→</span>
+          Run a free model
+          <svg class="arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path
+              d="M2.9 8h10.2M9.3 4.2 13.1 8l-3.8 3.8"
+              stroke="currentColor"
+              stroke-width="1.9"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
         </a>
         <a class="pill pill-ghost pill-lg" routerLink="/login">Sign in</a>
       </div>
@@ -114,11 +133,61 @@
     </div>
   </section>
 
+  <section class="faqs" id="faqs">
+    <div class="faq-inner">
+      <h2 class="section-title">Frequently asked questions</h2>
+
+      <div class="faq-list">
+        @for (f of faqs; track f.question; let i = $index) {
+          <div class="faq" [class.open]="openFaq() === i">
+            <h3 class="faq-heading">
+              <button
+                class="faq-q"
+                type="button"
+                [attr.aria-expanded]="openFaq() === i"
+                [attr.aria-controls]="'faq-panel-' + i"
+                (click)="toggleFaq(i)"
+              >
+                <span class="faq-text">{{ f.question }}</span>
+                <span class="chevron" aria-hidden="true">
+                  <svg viewBox="0 0 16 16" fill="none">
+                    <path
+                      d="m4 6 4 4 4-4"
+                      stroke="currentColor"
+                      stroke-width="1.9"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </span>
+              </button>
+            </h3>
+
+            @if (openFaq() === i) {
+              <div class="faq-a" [id]="'faq-panel-' + i">
+                <p>{{ f.answer }}</p>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
   <section class="cta">
     <h2>Put a number on every channel</h2>
     <p>Start with one project and a single spend file. You can have a fitted model today.</p>
     <a class="pill pill-lg cta-btn" routerLink="/signup">
-      Run a free model <span aria-hidden="true">→</span>
+      Run a free model
+      <svg class="arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path
+          d="M2.9 8h10.2M9.3 4.2 13.1 8l-3.8 3.8"
+          stroke="currentColor"
+          stroke-width="1.9"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
     </a>
   </section>
 
@@ -130,7 +199,7 @@
     <div class="footer-links">
       <a routerLink="/login">Sign in</a>
       <a routerLink="/signup">Create account</a>
-      <a href="#features">Product</a>
+      <a href="#faqs">FAQs</a>
     </div>
   </footer>
 </div>

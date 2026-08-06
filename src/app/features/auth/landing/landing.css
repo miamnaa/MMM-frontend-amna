@@ -30,10 +30,13 @@
   border-bottom: 1px solid #ececec;
 }
 
+/* Three tracks so the links sit dead centre of the page, independent of
+   how wide the brand and the action buttons happen to be. */
 .nav-inner {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 30px;
+  gap: 24px;
   height: 68px;
   max-width: 1180px;
   margin: 0 auto;
@@ -44,6 +47,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  justify-self: start;
 }
 
 .mark {
@@ -73,19 +77,45 @@
 
 .nav-links {
   display: flex;
-  gap: 26px;
+  justify-self: center;
+  gap: 30px;
   font-size: 13.5px;
+  font-weight: 500;
   color: var(--lp-body);
+  white-space: nowrap;
+}
+
+.nav-links a {
+  position: relative;
+  padding: 4px 0;
+  transition: color 0.15s;
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--lp-green-deep);
+  transform: scaleX(0);
+  transition: transform 0.18s ease;
 }
 
 .nav-links a:hover {
   color: var(--lp-ink);
 }
 
+.nav-links a:hover::after {
+  transform: scaleX(1);
+}
+
 .nav-actions {
-  margin-left: auto;
   display: flex;
   align-items: center;
+  justify-self: end;
   gap: 9px;
 }
 
@@ -132,6 +162,24 @@
   background: #fafbfa;
 }
 
+/* Arrow: drawn as an SVG so its stroke weight matches the label and it
+   centres on the text baseline instead of riding high like a glyph. */
+.arrow {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  transition: transform 0.18s ease;
+}
+
+.pill-lg .arrow {
+  width: 16px;
+  height: 16px;
+}
+
+.pill:hover .arrow {
+  transform: translateX(2px);
+}
+
 /* ---------- Hero ---------- */
 
 .hero {
@@ -151,15 +199,18 @@
   margin-bottom: 18px;
 }
 
+/* Only the emphasis word carries the bold italic; the rest of the line
+   sits at a lighter weight so "driving" is what the eye lands on. */
 .headline {
   font-size: clamp(36px, 4.6vw, 58px);
   line-height: 1.08;
   letter-spacing: -0.035em;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .headline em {
   font-style: italic;
+  font-weight: 800;
   color: var(--lp-green);
 }
 
@@ -422,6 +473,104 @@
   color: var(--lp-body);
 }
 
+/* ---------- FAQs ---------- */
+
+.faqs {
+  padding: 84px 40px;
+  background: var(--lp-page);
+  border-top: 1px solid #ececec;
+}
+
+.faq-inner {
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.faq {
+  background: var(--surface);
+  border: 1px solid #dfe3e0;
+  border-radius: var(--r-md);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.faq:hover {
+  border-color: #b9c2bc;
+}
+
+.faq.open {
+  border-color: var(--lp-green);
+  box-shadow: 0 2px 10px rgba(10, 134, 84, 0.07);
+}
+
+.faq-heading {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.faq-q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  padding: 16px 20px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 14.5px;
+  font-weight: 550;
+  line-height: 1.45;
+  color: var(--lp-ink);
+  border-radius: var(--r-md);
+}
+
+.faq-q:focus-visible {
+  outline: 2px solid var(--lp-green-deep);
+  outline-offset: 2px;
+}
+
+.chevron {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 50%;
+  color: #8b9299;
+  transition: transform 0.2s ease, color 0.15s, background 0.15s;
+}
+
+.chevron svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+}
+
+.faq.open .chevron {
+  transform: rotate(180deg);
+  background: var(--brand-50);
+  color: var(--lp-green-deep);
+}
+
+.faq-a {
+  padding: 0 20px 18px;
+}
+
+.faq-a p {
+  padding-top: 14px;
+  border-top: 1px solid #eef0ef;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--lp-body);
+}
+
 /* ---------- Closing CTA ---------- */
 
 .cta {
@@ -505,7 +654,8 @@
     padding-bottom: 56px;
   }
   .features,
-  .how {
+  .how,
+  .faqs {
     padding: 56px 20px;
   }
   .cta {
@@ -517,11 +667,17 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pill {
+  .pill,
+  .arrow,
+  .chevron,
+  .nav-links a::after {
     transition: none;
   }
   .pill-solid:hover,
   .cta-btn:hover {
+    transform: none;
+  }
+  .pill:hover .arrow {
     transform: none;
   }
 }
