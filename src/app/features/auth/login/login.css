@@ -62,17 +62,6 @@
   gap: 7px;
 }
 
-.logo {
-  display: block;
-  flex: none;
-}
-
-.logo-sm {
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
-}
-
 .corner-name {
   font-size: 13px;
   font-weight: 750;
@@ -99,8 +88,6 @@
 }
 
 .logo-lg {
-  width: clamp(84px, 13vw, 112px);
-  height: auto;
   border-radius: 26px;
   box-shadow: 0 14px 34px rgba(10, 134, 84, 0.22);
 }

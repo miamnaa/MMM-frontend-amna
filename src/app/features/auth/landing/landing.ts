@@ -1,6 +1,8 @@
 import { Component, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { Logo } from '../../../shared/ui/logo/logo';
+
 interface Feature {
   icon: string;
   title: string;
@@ -20,7 +22,7 @@ interface Faq {
 
 @Component({
   selector: 'app-landing',
-  imports: [RouterLink],
+  imports: [RouterLink, Logo],
   templateUrl: './landing.html',
   styleUrl: './landing.css',
 })

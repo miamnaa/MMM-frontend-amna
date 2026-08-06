@@ -50,25 +50,6 @@
   justify-self: start;
 }
 
-.mark {
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  border-radius: 8px;
-  background: var(--lp-green-deep);
-  color: #fff;
-  font-weight: 700;
-  font-size: 15px;
-}
-
-.mark.small {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  font-size: 12px;
-}
-
 .brand-name {
   font-size: 15px;
   font-weight: 700;

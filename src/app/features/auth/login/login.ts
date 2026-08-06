@@ -1,10 +1,12 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
+import { Logo } from '../../../shared/ui/logo/logo';
+
 /** Sign-in is single sign-on only — Entra ID is the sole identity provider. */
 @Component({
   selector: 'app-login',
-  imports: [RouterLink],
+  imports: [RouterLink, Logo],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })

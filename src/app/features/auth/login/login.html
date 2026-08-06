@@ -4,39 +4,13 @@
   <span class="arc arc-bl" aria-hidden="true"></span>
 
   <header class="corner-logo">
-    <svg class="logo logo-sm" viewBox="0 0 64 64" aria-hidden="true">
-      <rect width="64" height="64" rx="16" fill="#0a8654" />
-      <path
-        d="M14 46c9 0 13-9 19-16 4-5 9-8 17-9"
-        fill="none"
-        stroke="#fff"
-        stroke-width="5"
-        stroke-linecap="round"
-      />
-      <circle cx="49" cy="21" r="4.5" fill="#8ad0a7" />
-    </svg>
+    <app-logo [size]="26" [flat]="true" />
     <span class="corner-name">ROIVIO</span>
   </header>
 
   <main class="stack">
     <h1 class="emblem">
-      <svg class="logo logo-lg" viewBox="0 0 64 64" aria-hidden="true">
-        <defs>
-          <linearGradient id="roivioMark" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#12a066" />
-            <stop offset="100%" stop-color="#077045" />
-          </linearGradient>
-        </defs>
-        <rect width="64" height="64" rx="16" fill="url(#roivioMark)" />
-        <path
-          d="M14 46c9 0 13-9 19-16 4-5 9-8 17-9"
-          fill="none"
-          stroke="#fff"
-          stroke-width="5"
-          stroke-linecap="round"
-        />
-        <circle cx="49" cy="21" r="4.5" fill="#8ad0a7" />
-      </svg>
+      <app-logo class="logo-lg" [size]="104" />
       <span class="sr-only">ROIVIO</span>
     </h1>
 

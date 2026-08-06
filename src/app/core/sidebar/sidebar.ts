@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
+import { Logo } from '../../shared/ui/logo/logo';
+
 interface NavItem {
   label: string;
   path: string;
@@ -9,7 +11,7 @@ interface NavItem {
 
 @Component({
   selector: 'app-sidebar',
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, Logo],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css',
 })
