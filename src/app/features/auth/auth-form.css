@@ -49,6 +49,13 @@ h1 {
 .q3 { background: #00a4ef; }
 .q4 { background: #ffb900; }
 
+.sso-note {
+  margin-top: 14px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
 .divider {
   display: flex;
   align-items: center;
