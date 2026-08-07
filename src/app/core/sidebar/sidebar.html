@@ -45,13 +45,14 @@
           </a>
         </li>
       }
+      <li>
+        <button class="nav-action" type="button" (click)="signOut()">
+          <span class="icon" aria-hidden="true">⤶</span>
+          <span class="nav-label">Sign out</span>
+        </button>
+      </li>
     </ul>
   </div>
-
-  <button class="signout" type="button" (click)="signOut()">
-    <span class="icon" aria-hidden="true">⤶</span>
-    <span class="nav-label">Sign out</span>
-  </button>
 
   <div class="tenant">
     <span class="tenant-dot" aria-hidden="true"></span>
