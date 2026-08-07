@@ -32,7 +32,7 @@
   padding: 0 12px 0 32px;
   border: 1px solid var(--border);
   border-radius: var(--r-md);
-  background: var(--gray-50);
+  background: var(--surface);
   font: inherit;
   font-size: 13px;
   color: var(--text);
