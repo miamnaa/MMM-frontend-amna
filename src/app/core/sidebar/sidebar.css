@@ -69,6 +69,12 @@
   color: #fff;
   text-align: left;
   transition: background 0.15s, color 0.15s;
+  /* Colour the icon halo picks up — follows the item's own fill. */
+  --icon-halo: var(--sidebar-bg);
+}
+
+.nav-group a:hover {
+  --icon-halo: #43b57e;
 }
 
 .nav-group a:hover,
@@ -85,13 +91,32 @@
   background: #fff;
   color: var(--sidebar-bg-deep);
   font-weight: 650;
+  --icon-halo: #fff;
 }
 
 .icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 16px;
+  flex: none;
   text-align: center;
   font-size: 13px;
   opacity: 0.9;
+}
+
+.icon .db {
+  width: 17px;
+  height: 17px;
+  display: block;
+}
+
+/* The front stack is haloed in the item's own background so it reads as a
+   separate cylinder rather than merging into the one behind it. */
+.db-front {
+  stroke: var(--icon-halo);
+  stroke-width: 2.6;
+  paint-order: stroke fill;
 }
 
 .tenant {

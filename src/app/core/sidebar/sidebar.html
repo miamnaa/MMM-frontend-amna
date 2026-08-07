@@ -16,7 +16,36 @@
             routerLinkActive="active"
             [routerLinkActiveOptions]="{ exact: false }"
           >
-            <span class="icon" aria-hidden="true">{{ item.icon }}</span>
+            <span class="icon" aria-hidden="true">
+              @if (item.icon === 'database') {
+                <svg class="db" viewBox="0 0 32 32" fill="currentColor">
+                  <!-- back stack -->
+                  <ellipse cx="11.5" cy="7" rx="9.5" ry="3.4" />
+                  <rect x="2" y="7" width="19" height="3" />
+                  <ellipse cx="11.5" cy="10" rx="9.5" ry="3.4" />
+                  <ellipse cx="11.5" cy="14.5" rx="9.5" ry="3.4" />
+                  <rect x="2" y="14.5" width="19" height="3" />
+                  <ellipse cx="11.5" cy="17.5" rx="9.5" ry="3.4" />
+                  <ellipse cx="11.5" cy="22" rx="9.5" ry="3.4" />
+                  <rect x="2" y="22" width="19" height="3" />
+                  <ellipse cx="11.5" cy="25" rx="9.5" ry="3.4" />
+                  <!-- front stack, haloed so it reads separately from the back -->
+                  <g class="db-front">
+                    <ellipse cx="22.5" cy="13" rx="7.5" ry="2.8" />
+                    <rect x="15" y="13" width="15" height="2.6" />
+                    <ellipse cx="22.5" cy="15.6" rx="7.5" ry="2.8" />
+                    <ellipse cx="22.5" cy="19.4" rx="7.5" ry="2.8" />
+                    <rect x="15" y="19.4" width="15" height="2.6" />
+                    <ellipse cx="22.5" cy="22" rx="7.5" ry="2.8" />
+                    <ellipse cx="22.5" cy="25.8" rx="7.5" ry="2.8" />
+                    <rect x="15" y="25.8" width="15" height="2.6" />
+                    <ellipse cx="22.5" cy="28.4" rx="7.5" ry="2.8" />
+                  </g>
+                </svg>
+              } @else {
+                {{ item.icon }}
+              }
+            </span>
             <span class="nav-label">{{ item.label }}</span>
           </a>
         </li>
