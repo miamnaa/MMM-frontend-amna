@@ -163,6 +163,18 @@
   color: var(--muted);
 }
 
+.error {
+  margin-top: 18px;
+  max-width: 36ch;
+  padding: 10px 16px;
+  border: 1px solid #f3b7b7;
+  border-radius: var(--r-md, 8px);
+  background: #fdecec;
+  color: #b42323;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .switch {
   margin-top: 26px;
   font-size: 13px;

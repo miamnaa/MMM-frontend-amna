@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { MsalService } from '@azure/msal-angular';
 
 import { Logo } from '../../shared/ui/logo/logo';
 
@@ -17,6 +18,7 @@ interface NavItem {
 })
 export class Sidebar {
   private readonly router = inject(Router);
+  private readonly msalService = inject(MsalService);
 
   readonly primary: NavItem[] = [
     { label: 'Overview', path: '/overview', icon: '◱' },
@@ -34,7 +36,9 @@ export class Sidebar {
   readonly system: NavItem[] = [{ label: 'Settings', path: '/settings', icon: '⚒' }];
 
   signOut(): void {
-    // TODO: clear the Entra token and call the API's sign-out once auth lands.
-    this.router.navigate(['/login']);
+    this.msalService.logoutPopup().subscribe({
+      next: () => this.router.navigate(['/login']),
+      error: (err: unknown) => console.error('Sign-out failed', err),
+    });
   }
 }

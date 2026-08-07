@@ -28,6 +28,10 @@
       {{ submitting() ? 'Signing in…' : 'Sign in with Microsoft' }}
     </button>
 
+    @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+    }
+
     <p class="note">
       Single sign-on and multi-factor authentication are handled by Microsoft Entra ID.
     </p>

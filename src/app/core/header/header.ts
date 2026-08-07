@@ -1,5 +1,6 @@
 import { Component, ElementRef, HostListener, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { MsalService } from '@azure/msal-angular';
 
 import { SessionService } from '../services/notification.service';
 import { ThemeService } from '../services/theme.service';
@@ -13,6 +14,7 @@ import { ThemeService } from '../services/theme.service';
 export class Header {
   private readonly session = inject(SessionService);
   private readonly themeService = inject(ThemeService);
+  private readonly msalService = inject(MsalService);
   private readonly router = inject(Router);
   private readonly host = inject(ElementRef<HTMLElement>);
 
@@ -43,8 +45,10 @@ export class Header {
 
   signOut(): void {
     this.menuOpen.set(false);
-    // TODO: clear the Entra token and call the API's sign-out once auth lands.
-    this.router.navigate(['/login']);
+    this.msalService.logoutPopup().subscribe({
+      next: () => this.router.navigate(['/login']),
+      error: (err: unknown) => console.error('Sign-out failed', err),
+    });
   }
 
   /** Both overlays are dismissible the way users expect. */

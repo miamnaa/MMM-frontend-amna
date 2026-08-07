@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { MsalGuard } from '@azure/msal-angular';
 
 import { MainLayout } from './layouts/main-layout/main-layout';
 
@@ -22,6 +23,9 @@ export const routes: Routes = [
   {
     path: '',
     component: MainLayout,
+    // MsalGuard on canActivateChild, not per-child canActivate: one place to
+    // update, and it also covers routes added here later.
+    canActivateChild: [MsalGuard],
     children: [
       {
         path: 'overview',
