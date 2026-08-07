@@ -12,7 +12,7 @@
   padding: 13px 16px;
   margin-bottom: 18px;
   background: var(--amber-50);
-  border: 1px solid #fde68a;
+  border: 1px solid color-mix(in srgb, var(--amber-500) 42%, transparent);
   border-radius: var(--r-lg);
   font-size: 13px;
 }

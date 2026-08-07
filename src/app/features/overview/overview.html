@@ -1,5 +1,5 @@
 <app-page-header
-  title="Overview"
+  [title]="'Welcome back, ' + firstName()"
   subtitle="Where every project, dataset and model run stands right now."
 >
   <a class="btn btn-secondary" routerLink="/datasets">Upload dataset</a>

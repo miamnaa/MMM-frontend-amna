@@ -117,7 +117,7 @@
   padding: 12px 14px;
   border-radius: var(--r-md);
   background: var(--red-50);
-  border: 1px solid #fecaca;
+  border: 1px solid color-mix(in srgb, var(--red-500) 38%, transparent);
   font-size: 12.5px;
 }
 

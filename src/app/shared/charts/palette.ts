@@ -22,10 +22,7 @@ export function seriesColor(index: number): string {
   return SERIES_COLORS[index % SERIES_COLORS.length];
 }
 
-export const CHART_INK = {
-  grid: '#e2e8f0',
-  axis: '#cbd5e1',
-  label: '#64748b',
-  text: '#0f172a',
-  surface: '#ffffff',
-};
+/**
+ * Chart chrome is styled through CSS classes rather than attributes, so it
+ * follows the theme tokens. SVG presentation attributes cannot resolve var().
+ */

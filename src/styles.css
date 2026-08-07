@@ -57,6 +57,16 @@
   --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
   --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.12);
 
+  /* Brand surface — the sidebar and other brand-filled chrome */
+  --sidebar-bg: #2ea96a;
+  --sidebar-bg-deep: #248a56;
+
+  /* Chart chrome, so charts follow the theme */
+  --chart-grid: var(--gray-200);
+  --chart-axis: var(--gray-300);
+  --chart-label: var(--gray-500);
+  --chart-text: var(--gray-900);
+
   /* Layout */
   --sidebar-w: 248px;
   --header-h: 64px;
@@ -64,6 +74,66 @@
   /* Type */
   --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-mono: 'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace;
+}
+
+/* ------------------------------------------------------------
+   Dark theme
+   The neutral ramp is inverted rather than re-listed per component:
+   every surface and every piece of text in the app already reads its
+   colour from these steps, so flipping the ramp carries the whole UI.
+   The tinted accents are re-stepped by hand — a light wash does not
+   invert into a usable dark one.
+   ------------------------------------------------------------ */
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --gray-50: #12161c;
+  --gray-100: #1a1f27;
+  --gray-200: #242b34;
+  --gray-300: #333c47;
+  --gray-400: #6d7885;
+  --gray-500: #99a3af;
+  --gray-600: #b7bfc8;
+  --gray-700: #d3d9df;
+  --gray-800: #e8ecf0;
+  --gray-900: #f3f6f8;
+
+  --surface: #171c23;
+  --surface-alt: #0f1319;
+  --border: #262e38;
+  --border-strong: #333c47;
+  --text: var(--gray-900);
+  --text-muted: var(--gray-500);
+  --text-subtle: var(--gray-400);
+
+  /* Accent washes, re-stepped for a dark surface */
+  --brand-50: #102b21;
+  --brand-100: #17392c;
+  --brand-200: #1f4d3b;
+  --brand-500: #10b981;
+  --brand-600: #0d9c6c;
+  --brand-700: #4bd79b;
+  --brand-900: #a7f3d0;
+
+  --blue-50: #132540;
+  --blue-500: #60a5fa;
+  --blue-600: #85bcff;
+
+  --amber-50: #2c2210;
+  --amber-500: #f59e0b;
+  --amber-700: #f3bd5c;
+
+  --red-50: #301619;
+  --red-500: #ef4444;
+  --red-600: #f79191;
+
+  --sidebar-bg: #24875a;
+  --sidebar-bg-deep: #1b6b46;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
 }
 
 *,

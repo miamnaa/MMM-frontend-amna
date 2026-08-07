@@ -1,6 +1,6 @@
 import { Component, computed, input, signal } from '@angular/core';
 
-import { CHART_INK, seriesColor } from '../palette';
+import { seriesColor } from '../palette';
 
 export interface LineSeries {
   name: string;
@@ -36,14 +36,14 @@ const PAD = { top: 16, right: 116, bottom: 34, left: 58 };
             [attr.x2]="W - PAD.right"
             [attr.y1]="t.y"
             [attr.y2]="t.y"
-            [attr.stroke]="ink.grid"
+            class="grid-line"
             stroke-width="1"
           />
           <text
             [attr.x]="PAD.left - 10"
             [attr.y]="t.y + 4"
             text-anchor="end"
-            [attr.fill]="ink.label"
+            class="tick"
             font-size="11"
           >
             {{ t.label }}
@@ -56,7 +56,7 @@ const PAD = { top: 16, right: 116, bottom: 34, left: 58 };
           [attr.x2]="W - PAD.right"
           [attr.y1]="H - PAD.bottom"
           [attr.y2]="H - PAD.bottom"
-          [attr.stroke]="ink.axis"
+          class="axis-line"
           stroke-width="1"
         />
         @for (t of xTicks(); track t.value) {
@@ -64,7 +64,7 @@ const PAD = { top: 16, right: 116, bottom: 34, left: 58 };
             [attr.x]="t.x"
             [attr.y]="H - PAD.bottom + 18"
             text-anchor="middle"
-            [attr.fill]="ink.label"
+            class="tick"
             font-size="11"
           >
             {{ t.label }}
@@ -78,7 +78,7 @@ const PAD = { top: 16, right: 116, bottom: 34, left: 58 };
             [attr.x2]="hoverX()"
             [attr.y1]="PAD.top"
             [attr.y2]="H - PAD.bottom"
-            [attr.stroke]="ink.axis"
+            class="axis-line"
             stroke-width="1"
             stroke-dasharray="3 3"
           />
@@ -93,14 +93,14 @@ const PAD = { top: 16, right: 116, bottom: 34, left: 58 };
               [attr.cy]="s.marker.cy"
               r="5"
               [attr.fill]="s.color"
-              [attr.stroke]="ink.surface"
+              class="marker-ring"
               stroke-width="2"
             />
           }
           <text
             [attr.x]="W - PAD.right + 10"
             [attr.y]="s.endY + 4"
-            [attr.fill]="ink.text"
+            class="series-label"
             font-size="11.5"
             font-weight="600"
           >
@@ -131,6 +131,22 @@ const PAD = { top: 16, right: 116, bottom: 34, left: 58 };
       width: 100%;
       height: auto;
       display: block;
+    }
+    /* Chrome reads the theme tokens; only the series keep fixed hues. */
+    .grid-line {
+      stroke: var(--chart-grid);
+    }
+    .axis-line {
+      stroke: var(--chart-axis);
+    }
+    .tick {
+      fill: var(--chart-label);
+    }
+    .series-label {
+      fill: var(--chart-text);
+    }
+    .marker-ring {
+      stroke: var(--surface);
     }
     .tooltip {
       position: absolute;
@@ -183,7 +199,6 @@ export class LineChart {
   protected readonly W = W;
   protected readonly H = H;
   protected readonly PAD = PAD;
-  protected readonly ink = CHART_INK;
   protected readonly hoverX = signal<number | null>(null);
 
   private readonly bounds = computed(() => {

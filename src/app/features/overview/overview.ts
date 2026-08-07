@@ -2,6 +2,7 @@ import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 
+import { SessionService } from '../../core/services/notification.service';
 import { DatasetService } from '../../core/services/dataset.service';
 import { ExperimentService } from '../../core/services/experiment.service';
 import { ProjectService } from '../../core/services/project.service';
@@ -22,6 +23,10 @@ export class Overview {
   private readonly projectService = inject(ProjectService);
   private readonly datasetService = inject(DatasetService);
   private readonly experimentService = inject(ExperimentService);
+  private readonly session = inject(SessionService);
+
+  /** Greet by first name — the full name reads stiff in a welcome line. */
+  readonly firstName = computed(() => this.session.user().name.split(' ')[0]);
 
   readonly projects = toSignal(this.projectService.list(), { initialValue: [] });
   readonly datasets = toSignal(this.datasetService.list(), { initialValue: [] });

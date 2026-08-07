@@ -110,7 +110,7 @@
   padding: 13px 14px;
   border-radius: var(--r-md);
   background: var(--red-50);
-  border: 1px solid #fecaca;
+  border: 1px solid color-mix(in srgb, var(--red-500) 38%, transparent);
 }
 
 .issues p {
@@ -141,7 +141,7 @@
   padding: 13px 14px;
   border-radius: var(--r-md);
   background: var(--amber-50);
-  border: 1px solid #fde68a;
+  border: 1px solid color-mix(in srgb, var(--amber-500) 42%, transparent);
 }
 
 .pending-note p {
@@ -202,7 +202,10 @@
 .role-kpi { background: var(--brand-100); color: var(--brand-700); }
 .role-date { background: var(--blue-50); color: var(--blue-600); }
 .role-media_spend,
-.role-media_impressions { background: #ede9fe; color: #6d28d9; }
+.role-media_impressions {
+  background: color-mix(in srgb, var(--violet-500) 18%, transparent);
+  color: color-mix(in srgb, var(--violet-500) 88%, var(--text));
+}
 .role-unassigned { background: var(--amber-50); color: var(--amber-700); }
 
 .nulls {

@@ -67,6 +67,13 @@
 
 .icon-btn:hover {
   background: var(--gray-50);
+  color: var(--text);
+}
+
+.icon-btn svg {
+  width: 17px;
+  height: 17px;
+  display: block;
 }
 
 .count {
@@ -89,8 +96,30 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  padding-left: 14px;
+  height: 42px;
+  padding: 0 8px 0 14px;
+  border: none;
   border-left: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: none;
+  color: inherit;
+  text-align: left;
+}
+
+.user:hover {
+  background: var(--gray-50);
+}
+
+.caret {
+  display: grid;
+  place-items: center;
+  color: var(--text-subtle);
+}
+
+.caret svg {
+  width: 14px;
+  height: 14px;
+  display: block;
 }
 
 .avatar {
@@ -119,6 +148,94 @@
   font-size: 11px;
   color: var(--text-muted);
   text-transform: capitalize;
+}
+
+/* ---------- User menu ---------- */
+
+.menu {
+  position: absolute;
+  top: calc(var(--header-h) - 6px);
+  right: 24px;
+  width: 244px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 21;
+}
+
+.menu-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px 12px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.avatar.lg {
+  width: 36px;
+  height: 36px;
+  font-size: 13px;
+}
+
+.menu-id {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.menu-id strong {
+  font-size: 13px;
+}
+
+.menu-id small {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: var(--r-md);
+  background: none;
+  color: var(--gray-700);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.menu-item:hover {
+  background: var(--gray-100);
+  color: var(--text);
+}
+
+.menu-item.danger {
+  color: var(--red-600);
+}
+
+.menu-item.danger:hover {
+  background: var(--red-50);
+}
+
+.mi-icon {
+  width: 16px;
+  text-align: center;
+  font-size: 13px;
+}
+
+.menu-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--border);
 }
 
 .panel {
