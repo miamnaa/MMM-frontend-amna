@@ -1,5 +1,4 @@
 import { Component, ElementRef, HostListener, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
 import { MsalService } from '@azure/msal-angular';
 
 import { SessionService } from '../services/notification.service';
@@ -15,7 +14,6 @@ export class Header {
   private readonly session = inject(SessionService);
   private readonly themeService = inject(ThemeService);
   private readonly msalService = inject(MsalService);
-  private readonly router = inject(Router);
   private readonly host = inject(ElementRef<HTMLElement>);
 
   readonly user = this.session.user;
@@ -45,8 +43,10 @@ export class Header {
 
   signOut(): void {
     this.menuOpen.set(false);
-    this.msalService.logoutPopup().subscribe({
-      next: () => this.router.navigate(['/login']),
+    // logoutRedirect navigates the browser away on success, landing on
+    // postLogoutRedirectUri (/login) - same COOP reasoning as sign-in, a
+    // logout popup would hit the identical window.opener failure.
+    this.msalService.logoutRedirect().subscribe({
       error: (err: unknown) => console.error('Sign-out failed', err),
     });
   }

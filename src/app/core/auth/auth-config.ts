@@ -33,7 +33,7 @@ export function msalConfig(): Configuration {
       clientId: environment.entra.clientId,
       authority: `https://login.microsoftonline.com/${environment.entra.tenantId}`,
       redirectUri: window.location.origin,
-      postLogoutRedirectUri: window.location.origin,
+      postLogoutRedirectUri: `${window.location.origin}/login`,
     },
     cache: {
       cacheLocation: BrowserCacheLocation.LocalStorage,
@@ -54,15 +54,21 @@ export function msalInstanceFactory(): IPublicClientApplication {
   return new PublicClientApplication(msalConfig());
 }
 
-/** Popup, not redirect - a redirect would blow away the whole SPA state on every sign-in. */
+/**
+ * Redirect, not popup. Popup completion depends on the main window reading
+ * `window.opener` off the popup once Microsoft redirects it back — a
+ * Cross-Origin-Opener-Policy header (Vercel's default, or Angular's) blocks
+ * exactly that, so the popup finishes a real sign-in and the app never finds
+ * out. Redirect has no second window, so there's nothing for COOP to sever.
+ */
 export function msalGuardConfigFactory(): MsalGuardConfiguration {
   return {
-    interactionType: InteractionType.Popup,
+    interactionType: InteractionType.Redirect,
     authRequest: {
       scopes: API_SCOPES,
     },
-    // If the popup is dismissed rather than completed, land on the real
-    // sign-in page instead of leaving the guard's own error unhandled.
+    // If the redirect flow errors out, land on the real sign-in page
+    // instead of leaving the guard's own error unhandled.
     loginFailedRoute: '/login',
   };
 }
@@ -78,7 +84,10 @@ export function msalInterceptorConfigFactory(): MsalInterceptorConfiguration {
   protectedResourceMap.set(`${environment.apiBaseUrl}/*`, API_SCOPES);
 
   return {
-    interactionType: InteractionType.Popup,
+    // Matches the guard - an interactive token refresh from here would open
+    // a popup while the guard uses redirect, and MSAL doesn't like the two
+    // interaction types racing each other.
+    interactionType: InteractionType.Redirect,
     protectedResourceMap,
   };
 }

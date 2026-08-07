@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MsalService } from '@azure/msal-angular';
 
 import { Logo } from '../../shared/ui/logo/logo';
@@ -17,7 +17,6 @@ interface NavItem {
   styleUrl: './sidebar.css',
 })
 export class Sidebar {
-  private readonly router = inject(Router);
   private readonly msalService = inject(MsalService);
 
   readonly primary: NavItem[] = [
@@ -36,8 +35,7 @@ export class Sidebar {
   readonly system: NavItem[] = [{ label: 'Settings', path: '/settings', icon: '⚒' }];
 
   signOut(): void {
-    this.msalService.logoutPopup().subscribe({
-      next: () => this.router.navigate(['/login']),
+    this.msalService.logoutRedirect().subscribe({
       error: (err: unknown) => console.error('Sign-out failed', err),
     });
   }

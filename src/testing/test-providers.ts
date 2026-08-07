@@ -7,14 +7,22 @@ import { of } from 'rxjs';
 
 /**
  * Stands in for the real MsalService, which needs a live PublicClientApplication
- * and a browser popup - neither exists in a unit test. Login/logout resolve
- * immediately so components exercising the happy path don't hang.
+ * and a browser redirect round-trip - neither exists in a unit test. Login/
+ * logout resolve immediately so components exercising the happy path don't
+ * hang, and `instance` covers the direct getActiveAccount() checks components
+ * make outside the interceptor/guard (e.g. login.ts's redirect-back check).
  */
 class MsalServiceStub {
-  loginPopup() {
-    return of(null);
+  readonly instance = {
+    getActiveAccount: () => null,
+    getAllAccounts: () => [],
+    setActiveAccount: () => undefined,
+  };
+
+  loginRedirect() {
+    return of(undefined);
   }
-  logoutPopup() {
+  logoutRedirect() {
     return of(undefined);
   }
   initialize() {
