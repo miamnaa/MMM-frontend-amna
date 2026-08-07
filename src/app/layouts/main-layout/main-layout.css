@@ -15,7 +15,8 @@
   flex: 1;
   overflow-y: auto;
   padding: 26px 28px 48px;
-  background: var(--surface-alt);
+  /* Plain surface, not the tinted one — cards separate on their borders. */
+  background: var(--surface);
 }
 
 @media (max-width: 720px) {
