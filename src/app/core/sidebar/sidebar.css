@@ -82,6 +82,35 @@
   opacity: 0.9;
 }
 
+/* Sits with the tenant block rather than in the nav list — it is an action,
+   not a destination, so it should not read as another page. */
+.signout {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: calc(100% - 24px);
+  margin: 0 12px 12px;
+  padding: 9px 10px;
+  border: none;
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 550;
+  text-align: left;
+  flex: none;
+  transition: background 0.15s;
+}
+
+.signout:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.signout:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
 .tenant {
   display: flex;
   align-items: center;
@@ -126,7 +155,13 @@
   .nav-label {
     display: none;
   }
-  .nav-group a {
+  .nav-group a,
+  .signout {
     justify-content: center;
+  }
+  .signout {
+    width: calc(100% - 16px);
+    margin: 0 8px 12px;
+    padding: 9px 0;
   }
 }
