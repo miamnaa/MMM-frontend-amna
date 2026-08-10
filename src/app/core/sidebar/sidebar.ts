@@ -35,8 +35,12 @@ export class Sidebar {
   readonly system: NavItem[] = [{ label: 'Settings', path: '/settings', icon: '⚒' }];
 
   signOut(): void {
-    this.msalService.logoutRedirect().subscribe({
-      error: (err: unknown) => console.error('Sign-out failed', err),
-    });
+    // See header.ts's signOut() for why the account/logoutHint are passed -
+    // without them Microsoft's own logout page asks the user to pick which
+    // account to sign out of instead of just doing it.
+    const account = this.msalService.instance.getActiveAccount();
+    this.msalService
+      .logoutRedirect({ account, logoutHint: account?.username })
+      .subscribe({ error: (err: unknown) => console.error('Sign-out failed', err) });
   }
 }

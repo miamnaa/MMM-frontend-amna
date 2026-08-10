@@ -46,9 +46,14 @@ export class Header {
     // logoutRedirect navigates the browser away on success, landing on
     // postLogoutRedirectUri (/login) - same COOP reasoning as sign-in, a
     // logout popup would hit the identical window.opener failure.
-    this.msalService.logoutRedirect().subscribe({
-      error: (err: unknown) => console.error('Sign-out failed', err),
-    });
+    // Passing the active account + logoutHint tells Microsoft's own logout
+    // page exactly which session to end, so it skips its "pick an account"
+    // prompt instead of asking - without this it can't tell which of
+    // possibly several signed-in accounts on the device we mean.
+    const account = this.msalService.instance.getActiveAccount();
+    this.msalService
+      .logoutRedirect({ account, logoutHint: account?.username })
+      .subscribe({ error: (err: unknown) => console.error('Sign-out failed', err) });
   }
 
   /** Both overlays are dismissible the way users expect. */
