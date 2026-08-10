@@ -1,72 +1,33 @@
-import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
-import { Observable, delay, of } from 'rxjs';
+import { Injectable } from '@angular/core';
+import { Observable, of, throwError } from 'rxjs';
 
-import { environment } from '../../../environments/environment';
-import { DATASETS } from '../mock/mock-data';
 import { Dataset } from '../models/domain.models';
 
-const LATENCY = 320;
+const notAvailable = () =>
+  throwError(() => new Error('Datasets are not connected to a backend yet.'));
 
-/** No /datasets route exists on the real API yet - stays mocked until it does. */
+/**
+ * No /datasets route exists on the real API yet (API-REFERENCE.md, "What is
+ * not built yet"). Reads return empty rather than fabricated rows; writes
+ * fail loudly instead of faking a success that never happened. Once the
+ * route ships, replace these bodies with real HttpClient calls - see
+ * ProjectService for the exact shape to copy.
+ */
 @Injectable({ providedIn: 'root' })
 export class DatasetService {
-  private readonly http = inject(HttpClient);
-  private readonly url = `${environment.apiBaseUrl}/datasets`;
-  private datasets = [...DATASETS];
-
-  list(projectId?: string): Observable<Dataset[]> {
-    if (!environment.mock.datasets) {
-      return this.http.get<Dataset[]>(this.url, {
-        params: projectId ? { projectId } : {},
-      });
-    }
-    const rows = projectId ? this.datasets.filter((d) => d.projectId === projectId) : this.datasets;
-    return of(rows).pipe(delay(LATENCY));
+  list(_projectId?: string): Observable<Dataset[]> {
+    return of([]);
   }
 
-  get(id: string): Observable<Dataset | undefined> {
-    if (!environment.mock.datasets) {
-      return this.http.get<Dataset>(`${this.url}/${id}`);
-    }
-    return of(this.datasets.find((d) => d.id === id)).pipe(delay(LATENCY));
+  get(_id: string): Observable<Dataset | undefined> {
+    return of(undefined);
   }
 
-  /**
-   * The real upload streams straight to Blob Storage; the API only records
-   * metadata and kicks off schema validation. Here we simulate the outcome.
-   */
-  upload(file: File, projectId: string): Observable<Dataset> {
-    if (!environment.mock.datasets) {
-      const form = new FormData();
-      form.append('file', file);
-      form.append('projectId', projectId);
-      return this.http.post<Dataset>(this.url, form);
-    }
-
-    const dataset: Dataset = {
-      id: `d-${this.datasets.length + 1}`,
-      projectId,
-      name: file.name.replace(/\.[^.]+$/, ''),
-      fileName: file.name,
-      sizeBytes: file.size,
-      rowCount: 0,
-      uploadedAt: new Date().toISOString(),
-      uploadedBy: 'Amna Minhas',
-      validationStatus: 'pending',
-      columns: [],
-      issues: [],
-      dateRange: null,
-    };
-    this.datasets = [dataset, ...this.datasets];
-    return of(dataset).pipe(delay(900));
+  upload(_file: File, _projectId: string): Observable<Dataset> {
+    return notAvailable();
   }
 
-  remove(id: string): Observable<void> {
-    if (!environment.mock.datasets) {
-      return this.http.delete<void>(`${this.url}/${id}`);
-    }
-    this.datasets = this.datasets.filter((d) => d.id !== id);
-    return of(undefined).pipe(delay(LATENCY));
+  remove(_id: string): Observable<void> {
+    return notAvailable();
   }
 }

@@ -7,6 +7,19 @@
   margin-bottom: 16px;
 }
 
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+  margin-bottom: 16px;
+  background: var(--red-50);
+  border-color: color-mix(in srgb, var(--red-500) 38%, transparent);
+  font-size: 13px;
+  color: var(--red-600);
+}
+
 .filters {
   display: flex;
   gap: 6px;

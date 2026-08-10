@@ -15,6 +15,12 @@
   color: var(--brand-900);
 }
 
+.banner.error {
+  background: var(--red-50);
+  border: 1px solid color-mix(in srgb, var(--red-500) 38%, transparent);
+  color: var(--red-600);
+}
+
 .banner .btn {
   margin-left: auto;
 }

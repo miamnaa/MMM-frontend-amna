@@ -27,7 +27,7 @@ export class Datasets {
   readonly uploading = signal(false);
   readonly uploadError = signal<string | null>(null);
   readonly selectedId = signal<string | null>(null);
-  readonly targetProjectId = signal<string>('p-1');
+  readonly targetProjectId = signal<string>('');
 
   readonly accepted = ACCEPTED.join(',');
   readonly fileSize = fileSize;
@@ -42,9 +42,12 @@ export class Datasets {
       this.selectedId.set(rows[0]?.id ?? null);
       this.loading.set(false);
     });
-    this.projectService.list().subscribe((rows) => {
-      this.projects.set(rows);
-      if (rows.length) this.targetProjectId.set(rows[0].id);
+    this.projectService.list().subscribe({
+      next: (rows) => {
+        this.projects.set(rows);
+        if (rows.length) this.targetProjectId.set(rows[0].id);
+      },
+      error: (err: unknown) => console.error('Failed to load projects', err),
     });
   }
 
@@ -94,8 +97,8 @@ export class Datasets {
         this.selectedId.set(dataset.id);
         this.uploading.set(false);
       },
-      error: () => {
-        this.uploadError.set('Upload failed. Check your connection and try again.');
+      error: (err: unknown) => {
+        this.uploadError.set(err instanceof Error ? err.message : 'Upload failed.');
         this.uploading.set(false);
       },
     });

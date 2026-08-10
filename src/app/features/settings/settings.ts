@@ -21,12 +21,8 @@ export class Settings {
 
   readonly user = this.session.user;
 
-  readonly members = signal<Member[]>([
-    { name: 'Amna Minhas', email: 'amna@convergentbt.com', role: 'Admin', status: 'active' },
-    { name: 'Muhammad Anas', email: 'anas@convergentbt.com', role: 'Analyst', status: 'active' },
-    { name: 'Hammad Ahmed', email: 'hammad@convergentbt.com', role: 'Analyst', status: 'active' },
-    { name: 'Farhan Ahmed', email: 'farhan@convergentbt.com', role: 'Admin', status: 'invited' },
-  ]);
+  /** No /members or /users route exists on the real API yet - nothing to fetch or fabricate. */
+  readonly members = signal<Member[]>([]);
 
   readonly preferences = signal({
     emailOnRunComplete: true,

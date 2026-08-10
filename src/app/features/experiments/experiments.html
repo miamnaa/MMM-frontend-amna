@@ -32,9 +32,21 @@
   />
 </div>
 
+@if (runError(); as err) {
+  <div class="card error-banner">
+    <span>{{ err }}</span>
+  </div>
+}
+
 <div class="card">
   @if (loading()) {
     <p class="loading muted">Loading experiments…</p>
+  } @else if (experiments().length === 0) {
+    <app-empty-state
+      icon="▷"
+      title="No experiments"
+      message="Experiments aren't connected to a backend yet."
+    />
   } @else if (visible().length === 0) {
     <app-empty-state
       icon="▷"

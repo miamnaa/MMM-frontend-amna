@@ -1,8 +1,6 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { ExperimentService } from '../../core/services/experiment.service';
-import { ChannelContribution } from '../../core/models/domain.models';
 import { BarChart, BarDatum } from '../../shared/charts/bar-chart/bar-chart';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
@@ -28,10 +26,14 @@ interface PlannerRow {
   styleUrl: './scenarios.css',
 })
 export class Scenarios {
-  private readonly experimentService = inject(ExperimentService);
-
+  /**
+   * No way to plan against a fitted model without a real Experiments
+   * backend (API-REFERENCE.md) - rows stay empty until one exists, rather
+   * than fetching a specific experiment id that only existed in the old
+   * mock dataset.
+   */
   readonly rows = signal<PlannerRow[]>([]);
-  readonly loading = signal(true);
+  readonly loading = signal(false);
 
   readonly currency = currency;
   readonly percent = percent;
@@ -62,30 +64,12 @@ export class Scenarios {
     })),
   );
 
-  constructor() {
-    this.experimentService.results('e-1').subscribe((result) => {
-      if (result) {
-        this.rows.set(
-          result.responseCurves.map((curve) => {
-            const contribution = result.contributions.find(
-              (c: ChannelContribution) => c.channel === curve.channel,
-            );
-            const spend = contribution?.spend ?? curve.currentSpend;
-            return {
-              channel: curve.channel,
-              currentSpend: spend,
-              proposedSpend: spend,
-              saturationPoint: curve.saturationPoint,
-              // Back out the hill ceiling from the observed point on the curve.
-              ceiling: (result.totalRevenue * (contribution?.contribution ?? 0.1) *
-                (curve.saturationPoint + spend)) / Math.max(spend, 1),
-            };
-          }),
-        );
-      }
-      this.loading.set(false);
-    });
-  }
+  /**
+   * When a real Experiments backend exists, wire this back up to
+   * ExperimentService.results(id) for whichever run the user is planning
+   * against, and rebuild this same PlannerRow[] mapping from
+   * responseCurves/contributions.
+   */
 
   setSpend(channel: string, value: string): void {
     const parsed = Number(value);

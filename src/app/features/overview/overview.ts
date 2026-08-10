@@ -1,11 +1,13 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { catchError, of } from 'rxjs';
 
 import { SessionService } from '../../core/services/notification.service';
 import { DatasetService } from '../../core/services/dataset.service';
 import { ExperimentService } from '../../core/services/experiment.service';
 import { ProjectService } from '../../core/services/project.service';
+import { ExperimentResult } from '../../core/models/domain.models';
 import { BarChart, BarDatum } from '../../shared/charts/bar-chart/bar-chart';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
@@ -28,10 +30,23 @@ export class Overview {
   /** Greet by first name — the full name reads stiff in a welcome line. */
   readonly firstName = computed(() => this.session.user().name.split(' ')[0]);
 
-  readonly projects = toSignal(this.projectService.list(), { initialValue: [] });
+  /**
+   * The only genuinely live call on this page - a real 401/network failure
+   * here would otherwise crash the whole render, since toSignal rethrows an
+   * upstream error the next time the signal is read.
+   */
+  readonly projects = toSignal(
+    this.projectService.list().pipe(catchError(() => of([]))),
+    { initialValue: [] },
+  );
   readonly datasets = toSignal(this.datasetService.list(), { initialValue: [] });
   readonly experiments = toSignal(this.experimentService.list(), { initialValue: [] });
-  readonly topResult = toSignal(this.experimentService.results('e-1'), { initialValue: undefined });
+  /**
+   * No way to know "the latest completed model" without a real Experiments
+   * backend - stays empty until that exists, rather than pointing at a
+   * specific id that only ever existed in the old mock dataset.
+   */
+  readonly topResult = signal<ExperimentResult | undefined>(undefined);
 
   readonly relativeTime = relativeTime;
 

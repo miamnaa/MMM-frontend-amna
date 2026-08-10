@@ -52,7 +52,11 @@
     @if (loading()) {
       <p class="loading muted">Loading datasets…</p>
     } @else if (datasets().length === 0) {
-      <app-empty-state icon="↥" title="No datasets" message="Upload a file to get started." />
+      <app-empty-state
+        icon="↥"
+        title="No datasets"
+        message="Dataset upload isn't connected to a backend yet."
+      />
     } @else {
       <div class="scroll-x">
         <table class="table">

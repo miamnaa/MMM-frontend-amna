@@ -46,6 +46,7 @@ export class Models {
   readonly config = signal<ModelConfig>({ ...DEFAULT_CONFIG });
   readonly saved = signal(false);
   readonly queued = signal(false);
+  readonly saveError = signal<string | null>(null);
 
   readonly experiment = computed(
     () => this.experiments().find((e) => e.id === this.selectedId()) ?? null,
@@ -175,20 +176,37 @@ export class Models {
   save(): void {
     const id = this.selectedId();
     if (!id || !this.isValid()) return;
-    this.experimentService.saveConfig(id, this.config()).subscribe((updated) => {
-      this.experiments.update((list) => list.map((e) => (e.id === updated.id ? { ...updated } : e)));
-      this.saved.set(true);
+    this.saveError.set(null);
+    this.experimentService.saveConfig(id, this.config()).subscribe({
+      next: (updated) => {
+        this.experiments.update((list) => list.map((e) => (e.id === updated.id ? { ...updated } : e)));
+        this.saved.set(true);
+      },
+      error: (err: unknown) => {
+        this.saveError.set(err instanceof Error ? err.message : 'Could not save this configuration.');
+      },
     });
   }
 
   runNow(): void {
     const id = this.selectedId();
     if (!id || !this.isValid()) return;
-    this.experimentService.saveConfig(id, this.config()).subscribe(() => {
-      this.experimentService.run(id).subscribe((updated) => {
-        this.experiments.update((list) => list.map((e) => (e.id === updated.id ? { ...updated } : e)));
-        this.queued.set(true);
-      });
+    this.saveError.set(null);
+    this.experimentService.saveConfig(id, this.config()).subscribe({
+      next: () => {
+        this.experimentService.run(id).subscribe({
+          next: (updated) => {
+            this.experiments.update((list) => list.map((e) => (e.id === updated.id ? { ...updated } : e)));
+            this.queued.set(true);
+          },
+          error: (err: unknown) => {
+            this.saveError.set(err instanceof Error ? err.message : 'Could not start this run.');
+          },
+        });
+      },
+      error: (err: unknown) => {
+        this.saveError.set(err instanceof Error ? err.message : 'Could not save this configuration.');
+      },
     });
   }
 

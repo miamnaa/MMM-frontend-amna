@@ -34,6 +34,7 @@ export class Experiments {
   readonly query = signal('');
   readonly expandedId = signal<string | null>(null);
   readonly logs = signal<string[]>([]);
+  readonly runError = signal<string | null>(null);
 
   readonly filters = FILTERS;
   readonly duration = duration;
@@ -89,8 +90,14 @@ export class Experiments {
 
   run(experiment: Experiment, event: Event): void {
     event.stopPropagation();
-    this.experimentService.run(experiment.id).subscribe((updated) => {
-      this.experiments.update((list) => list.map((e) => (e.id === updated.id ? { ...updated } : e)));
+    this.runError.set(null);
+    this.experimentService.run(experiment.id).subscribe({
+      next: (updated) => {
+        this.experiments.update((list) => list.map((e) => (e.id === updated.id ? { ...updated } : e)));
+      },
+      error: (err: unknown) => {
+        this.runError.set(err instanceof Error ? err.message : 'Could not start this run.');
+      },
     });
   }
 

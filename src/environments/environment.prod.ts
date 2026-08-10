@@ -1,14 +1,8 @@
 export const environment = {
   production: true,
   // Auth and Projects have a real backend behind them (API-REFERENCE.md).
-  // Datasets and Experiments don't exist as routes yet - stay mocked so the
-  // app shows sample data instead of a wall of 404s.
-  mock: {
-    auth: false,
-    projects: false,
-    datasets: true,
-    experiments: true,
-  },
+  // DatasetService/ExperimentService return empty on their own until their
+  // routes exist - no flag needed here to switch them off.
   apiBaseUrl: 'https://mmm-back-end-anas.onrender.com/api/v1',
   entra: {
     clientId: 'fa733969-d53d-46ed-81fc-119c740a5cc9',

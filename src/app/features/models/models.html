@@ -20,6 +20,13 @@
   </div>
 }
 
+@if (saveError(); as err) {
+  <div class="banner error">
+    <strong>Could not complete that action.</strong>
+    <span>{{ err }}</span>
+  </div>
+}
+
 <div class="studio">
   <div class="config-column">
     <section class="card">

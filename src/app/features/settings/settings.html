@@ -33,34 +33,40 @@
   <section class="card">
     <div class="card-header">
       <h2>Members</h2>
-      <button class="btn btn-secondary btn-sm" type="button">Invite member</button>
+      <button class="btn btn-secondary btn-sm" type="button" disabled>Invite member</button>
     </div>
-    <div class="scroll-x">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (m of members(); track m.email) {
+    @if (members().length === 0) {
+      <div class="card-body">
+        <p class="muted">Member management isn't connected to a backend yet.</p>
+      </div>
+    } @else {
+      <div class="scroll-x">
+        <table class="table">
+          <thead>
             <tr>
-              <td class="strong">{{ m.name }}</td>
-              <td class="muted">{{ m.email }}</td>
-              <td>{{ m.role }}</td>
-              <td>
-                <span class="pill" [class.invited]="m.status === 'invited'">
-                  {{ m.status === 'invited' ? 'Invited' : 'Active' }}
-                </span>
-              </td>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
             </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            @for (m of members(); track m.email) {
+              <tr>
+                <td class="strong">{{ m.name }}</td>
+                <td class="muted">{{ m.email }}</td>
+                <td>{{ m.role }}</td>
+                <td>
+                  <span class="pill" [class.invited]="m.status === 'invited'">
+                    {{ m.status === 'invited' ? 'Invited' : 'Active' }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
   </section>
 
   <section class="card">
