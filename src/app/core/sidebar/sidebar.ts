@@ -36,10 +36,7 @@ export class Sidebar {
 
   /** Local sign-out - see header.ts's signOut() for why, in full, including why it hard-reloads instead of routing. */
   signOut(): void {
-  const account = this.msalService.instance.getActiveAccount();
-
   this.msalService.logoutRedirect({
-    account: account ?? undefined,
     postLogoutRedirectUri: `${window.location.origin}/login`,
   });
 }}
