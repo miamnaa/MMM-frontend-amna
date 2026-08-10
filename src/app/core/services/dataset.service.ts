@@ -8,6 +8,7 @@ import { Dataset } from '../models/domain.models';
 
 const LATENCY = 320;
 
+/** No /datasets route exists on the real API yet - stays mocked until it does. */
 @Injectable({ providedIn: 'root' })
 export class DatasetService {
   private readonly http = inject(HttpClient);
@@ -15,7 +16,7 @@ export class DatasetService {
   private datasets = [...DATASETS];
 
   list(projectId?: string): Observable<Dataset[]> {
-    if (!environment.useMockApi) {
+    if (!environment.mock.datasets) {
       return this.http.get<Dataset[]>(this.url, {
         params: projectId ? { projectId } : {},
       });
@@ -25,7 +26,7 @@ export class DatasetService {
   }
 
   get(id: string): Observable<Dataset | undefined> {
-    if (!environment.useMockApi) {
+    if (!environment.mock.datasets) {
       return this.http.get<Dataset>(`${this.url}/${id}`);
     }
     return of(this.datasets.find((d) => d.id === id)).pipe(delay(LATENCY));
@@ -36,7 +37,7 @@ export class DatasetService {
    * metadata and kicks off schema validation. Here we simulate the outcome.
    */
   upload(file: File, projectId: string): Observable<Dataset> {
-    if (!environment.useMockApi) {
+    if (!environment.mock.datasets) {
       const form = new FormData();
       form.append('file', file);
       form.append('projectId', projectId);
@@ -62,7 +63,7 @@ export class DatasetService {
   }
 
   remove(id: string): Observable<void> {
-    if (!environment.useMockApi) {
+    if (!environment.mock.datasets) {
       return this.http.delete<void>(`${this.url}/${id}`);
     }
     this.datasets = this.datasets.filter((d) => d.id !== id);

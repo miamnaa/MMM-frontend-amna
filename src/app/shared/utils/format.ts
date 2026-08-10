@@ -1,3 +1,11 @@
+/** "Amna Minhas" -> "AM". Falls back to the first two characters for a single word. */
+export function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 export function currency(value: number, digits = 0): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',

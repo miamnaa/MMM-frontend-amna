@@ -13,6 +13,7 @@ import {
 
 const LATENCY = 320;
 
+/** No /experiments or /jobs route exists on the real API yet - stays mocked until they do. */
 @Injectable({ providedIn: 'root' })
 export class ExperimentService {
   private readonly http = inject(HttpClient);
@@ -20,7 +21,7 @@ export class ExperimentService {
   private experiments = [...EXPERIMENTS];
 
   list(projectId?: string): Observable<Experiment[]> {
-    if (!environment.useMockApi) {
+    if (!environment.mock.experiments) {
       return this.http.get<Experiment[]>(this.url, {
         params: projectId ? { projectId } : {},
       });
@@ -32,14 +33,14 @@ export class ExperimentService {
   }
 
   get(id: string): Observable<Experiment | undefined> {
-    if (!environment.useMockApi) {
+    if (!environment.mock.experiments) {
       return this.http.get<Experiment>(`${this.url}/${id}`);
     }
     return of(this.experiments.find((e) => e.id === id)).pipe(delay(LATENCY));
   }
 
   saveConfig(id: string, config: ModelConfig): Observable<Experiment> {
-    if (!environment.useMockApi) {
+    if (!environment.mock.experiments) {
       return this.http.put<Experiment>(`${this.url}/${id}/config`, config);
     }
     const experiment = this.experiments.find((e) => e.id === id);
@@ -53,7 +54,7 @@ export class ExperimentService {
 
   /** Enqueues the run. The API never fits a model in the request path. */
   run(id: string): Observable<Experiment> {
-    if (!environment.useMockApi) {
+    if (!environment.mock.experiments) {
       return this.http.post<Experiment>(`${this.url}/${id}/run`, {});
     }
     const experiment = this.experiments.find((e) => e.id === id);
@@ -67,21 +68,21 @@ export class ExperimentService {
   }
 
   logs(id: string): Observable<string[]> {
-    if (!environment.useMockApi) {
+    if (!environment.mock.experiments) {
       return this.http.get<string[]>(`${this.url}/${id}/logs`);
     }
     return of(EXPERIMENT_LOGS[id] ?? []).pipe(delay(LATENCY));
   }
 
   results(id: string): Observable<ExperimentResult | undefined> {
-    if (!environment.useMockApi) {
+    if (!environment.mock.experiments) {
       return this.http.get<ExperimentResult>(`${this.url}/${id}/results`);
     }
     return of(RESULTS[id]).pipe(delay(LATENCY));
   }
 
   scenarios(experimentId?: string): Observable<Scenario[]> {
-    if (!environment.useMockApi) {
+    if (!environment.mock.experiments) {
       return this.http.get<Scenario[]>(`${environment.apiBaseUrl}/scenarios`, {
         params: experimentId ? { experimentId } : {},
       });

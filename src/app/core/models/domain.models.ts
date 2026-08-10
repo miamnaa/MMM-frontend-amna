@@ -25,11 +25,17 @@ export interface User {
   initials: string;
 }
 
+/**
+ * Mirrors the real /projects response exactly (see API-REFERENCE.md) except
+ * for ownerName, experimentCount and datasetCount, which the backend doesn't
+ * return - ProjectService derives them (owner name from the signed-in
+ * account, counts at 0 until Datasets/Experiments have their own backends).
+ */
 export interface Project {
   id: string;
   name: string;
   description: string;
-  engine: ModelingEngine;
+  status: 'active' | 'archived';
   createdAt: string;
   updatedAt: string;
   ownerName: string;

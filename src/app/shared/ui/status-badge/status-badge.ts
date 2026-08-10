@@ -12,6 +12,8 @@ const TONES: Record<string, BadgeTone> = {
   valid: 'success',
   invalid: 'danger',
   pending: 'warning',
+  active: 'success',
+  archived: 'neutral',
 };
 
 const LABELS: Record<string, string> = {
@@ -24,6 +26,8 @@ const LABELS: Record<string, string> = {
   valid: 'Valid',
   invalid: 'Invalid',
   pending: 'Validating',
+  active: 'Active',
+  archived: 'Archived',
 };
 
 /** Status is never carried by color alone — the badge always shows a dot plus a label. */

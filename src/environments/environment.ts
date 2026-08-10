@@ -1,12 +1,24 @@
 export const environment = {
   production: false,
   /**
-   * While the NestJS API is still in progress, every service reads from the
-   * in-memory mock backend. Flip this to false once `apiBaseUrl` is live —
-   * each service already has the HttpClient path written alongside the mock.
+   * Per-domain switches rather than one global flag: the real backend only
+   * has Auth and Projects endpoints today (see API-REFERENCE.md). Datasets
+   * and Experiments have no route at all yet, so pointing those services at
+   * apiBaseUrl would just 404 — they stay mocked until their own backends
+   * land, independently of whatever auth/projects are doing.
+   *
+   * Auth and Projects are live against the shared Render Dev instance, so
+   * `ng serve` shows real signed-in data rather than the sample account. If
+   * you're running the NestJS API locally instead, switch apiBaseUrl below
+   * to http://localhost:3000/api/v1.
    */
-  useMockApi: true,
-  apiBaseUrl: 'http://localhost:3000/api/v1',
+  mock: {
+    auth: false,
+    projects: false,
+    datasets: true,
+    experiments: true,
+  },
+  apiBaseUrl: 'https://mmm-back-end-anas.onrender.com/api/v1',
   /**
    * Real Entra app registration - the backend already validates tokens
    * issued for this exact client/tenant, so local dev talks to the same
