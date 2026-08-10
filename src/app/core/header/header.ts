@@ -1,4 +1,5 @@
 import { Component, ElementRef, HostListener, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { MsalService } from '@azure/msal-angular';
 
 import { SessionService } from '../services/notification.service';
@@ -14,6 +15,7 @@ export class Header {
   private readonly session = inject(SessionService);
   private readonly themeService = inject(ThemeService);
   private readonly msalService = inject(MsalService);
+  private readonly router = inject(Router);
   private readonly host = inject(ElementRef<HTMLElement>);
 
   readonly user = this.session.user;
@@ -41,19 +43,30 @@ export class Header {
     this.themeService.toggle();
   }
 
+  /**
+   * Local sign-out, not logoutRedirect(). logoutRedirect() hits Microsoft's
+   * own end-session endpoint, which - for an account "Connected to
+   * Windows" (device-level SSO) - shows its own account-picker
+   * confirmation no matter what request options are passed; that's
+   * Microsoft's platform behaviour, not something this app can override.
+   * clearCache() only clears MSAL's local browser storage, so it never
+   * navigates anywhere - this app forgets the session and sends the user
+   * to /login itself, with zero Microsoft page in between. The tradeoff:
+   * this doesn't end the Microsoft/Windows-level session itself, only this
+   * app's - a plain "Sign in with Microsoft" click right after can silently
+   * re-authenticate via that still-active SSO session, which is standard
+   * for apps that only need to sign out of themselves.
+   */
   signOut(): void {
     this.menuOpen.set(false);
-    // logoutRedirect navigates the browser away on success, landing on
-    // postLogoutRedirectUri (/login) - same COOP reasoning as sign-in, a
-    // logout popup would hit the identical window.opener failure.
-    // Passing the active account + logoutHint tells Microsoft's own logout
-    // page exactly which session to end, so it skips its "pick an account"
-    // prompt instead of asking - without this it can't tell which of
-    // possibly several signed-in accounts on the device we mean.
     const account = this.msalService.instance.getActiveAccount();
-    this.msalService
-      .logoutRedirect({ account, logoutHint: account?.username })
-      .subscribe({ error: (err: unknown) => console.error('Sign-out failed', err) });
+    this.msalService.instance
+      .clearCache({ account })
+      .then(() => {
+        this.msalService.instance.setActiveAccount(null);
+        this.router.navigate(['/login']);
+      })
+      .catch((err: unknown) => console.error('Sign-out failed', err));
   }
 
   /** Both overlays are dismissible the way users expect. */

@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { MsalService } from '@azure/msal-angular';
 
 import { Logo } from '../../shared/ui/logo/logo';
@@ -18,6 +18,7 @@ interface NavItem {
 })
 export class Sidebar {
   private readonly msalService = inject(MsalService);
+  private readonly router = inject(Router);
 
   readonly primary: NavItem[] = [
     { label: 'Overview', path: '/overview', icon: '◱' },
@@ -34,13 +35,15 @@ export class Sidebar {
 
   readonly system: NavItem[] = [{ label: 'Settings', path: '/settings', icon: '⚒' }];
 
+  /** Local sign-out - see header.ts's signOut() for why, in full. */
   signOut(): void {
-    // See header.ts's signOut() for why the account/logoutHint are passed -
-    // without them Microsoft's own logout page asks the user to pick which
-    // account to sign out of instead of just doing it.
     const account = this.msalService.instance.getActiveAccount();
-    this.msalService
-      .logoutRedirect({ account, logoutHint: account?.username })
-      .subscribe({ error: (err: unknown) => console.error('Sign-out failed', err) });
+    this.msalService.instance
+      .clearCache({ account })
+      .then(() => {
+        this.msalService.instance.setActiveAccount(null);
+        this.router.navigate(['/login']);
+      })
+      .catch((err: unknown) => console.error('Sign-out failed', err));
   }
 }
