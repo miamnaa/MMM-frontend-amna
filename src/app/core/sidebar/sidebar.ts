@@ -35,15 +35,13 @@ export class Sidebar {
 
   readonly system: NavItem[] = [{ label: 'Settings', path: '/settings', icon: '⚒' }];
 
-  /** Local sign-out - see header.ts's signOut() for why, in full. */
+  /** Local sign-out - see header.ts's signOut() for why, in full, including why it wipes storage directly. */
   signOut(): void {
-    const account = this.msalService.instance.getActiveAccount();
-    this.msalService.instance
-      .clearCache({ account })
-      .then(() => {
-        this.msalService.instance.setActiveAccount(null);
-        this.router.navigate(['/login']);
-      })
-      .catch((err: unknown) => console.error('Sign-out failed', err));
+    const theme = localStorage.getItem('roivio-theme');
+    this.msalService.instance.setActiveAccount(null);
+    localStorage.clear();
+    sessionStorage.clear();
+    if (theme) localStorage.setItem('roivio-theme', theme);
+    this.router.navigate(['/login']);
   }
 }

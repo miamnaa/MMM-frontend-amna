@@ -49,24 +49,31 @@ export class Header {
    * Windows" (device-level SSO) - shows its own account-picker
    * confirmation no matter what request options are passed; that's
    * Microsoft's platform behaviour, not something this app can override.
-   * clearCache() only clears MSAL's local browser storage, so it never
-   * navigates anywhere - this app forgets the session and sends the user
-   * to /login itself, with zero Microsoft page in between. The tradeoff:
-   * this doesn't end the Microsoft/Windows-level session itself, only this
-   * app's - a plain "Sign in with Microsoft" click right after can silently
-   * re-authenticate via that still-active SSO session, which is standard
-   * for apps that only need to sign out of themselves.
+   *
+   * Wipes localStorage/sessionStorage directly rather than trusting only
+   * MsalService.instance.clearCache() - clearCache()'s own internal error
+   * handling swallows failures and still resolves "successfully" even when
+   * it didn't fully clear the cache (confirmed by reading msal-browser's
+   * source), which was a real bug here: sign-out looked like it worked but
+   * a stale session survived and silently signed back in on the next
+   * visit. Wiping storage directly leaves nothing to survive, regardless
+   * of what happened inside the SDK. The theme preference is the only
+   * other thing this app keeps in storage, so it's saved and restored
+   * around the wipe rather than lost.
+   *
+   * Tradeoff, same as before: this signs out of this app only, not the
+   * Microsoft/Windows-level session - a plain "Sign in with Microsoft"
+   * click right after can silently re-authenticate via that still-active
+   * SSO session. That's expected for an app that only signs itself out.
    */
   signOut(): void {
     this.menuOpen.set(false);
-    const account = this.msalService.instance.getActiveAccount();
-    this.msalService.instance
-      .clearCache({ account })
-      .then(() => {
-        this.msalService.instance.setActiveAccount(null);
-        this.router.navigate(['/login']);
-      })
-      .catch((err: unknown) => console.error('Sign-out failed', err));
+    const theme = localStorage.getItem('roivio-theme');
+    this.msalService.instance.setActiveAccount(null);
+    localStorage.clear();
+    sessionStorage.clear();
+    if (theme) localStorage.setItem('roivio-theme', theme);
+    this.router.navigate(['/login']);
   }
 
   /** Both overlays are dismissible the way users expect. */
