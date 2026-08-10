@@ -71,15 +71,12 @@ export class Header {
    * SSO session. That's expected for an app that only signs itself out.
    */
   signOut(): void {
-    this.menuOpen.set(false);
-    const theme = localStorage.getItem('roivio-theme');
-    this.msalService.instance.setActiveAccount(null);
-    localStorage.clear();
-    sessionStorage.clear();
-    if (theme) localStorage.setItem('roivio-theme', theme);
-    window.location.href = '/login';
-  }
+  this.menuOpen.set(false);
 
+  this.msalService.logoutRedirect({
+    postLogoutRedirectUri: `${window.location.origin}/login`,
+  });
+}
   /** Both overlays are dismissible the way users expect. */
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
