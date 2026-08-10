@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MsalService } from '@azure/msal-angular';
 
 import { Logo } from '../../shared/ui/logo/logo';
@@ -18,7 +18,6 @@ interface NavItem {
 })
 export class Sidebar {
   private readonly msalService = inject(MsalService);
-  private readonly router = inject(Router);
 
   readonly primary: NavItem[] = [
     { label: 'Overview', path: '/overview', icon: '◱' },
@@ -35,13 +34,13 @@ export class Sidebar {
 
   readonly system: NavItem[] = [{ label: 'Settings', path: '/settings', icon: '⚒' }];
 
-  /** Local sign-out - see header.ts's signOut() for why, in full, including why it wipes storage directly. */
+  /** Local sign-out - see header.ts's signOut() for why, in full, including why it hard-reloads instead of routing. */
   signOut(): void {
     const theme = localStorage.getItem('roivio-theme');
     this.msalService.instance.setActiveAccount(null);
     localStorage.clear();
     sessionStorage.clear();
     if (theme) localStorage.setItem('roivio-theme', theme);
-    this.router.navigate(['/login']);
+    window.location.href = '/login';
   }
 }

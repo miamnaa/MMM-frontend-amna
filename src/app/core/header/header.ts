@@ -1,5 +1,4 @@
 import { Component, ElementRef, HostListener, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
 import { MsalService } from '@azure/msal-angular';
 
 import { SessionService } from '../services/notification.service';
@@ -15,7 +14,6 @@ export class Header {
   private readonly session = inject(SessionService);
   private readonly themeService = inject(ThemeService);
   private readonly msalService = inject(MsalService);
-  private readonly router = inject(Router);
   private readonly host = inject(ElementRef<HTMLElement>);
 
   readonly user = this.session.user;
@@ -54,15 +52,21 @@ export class Header {
    * MsalService.instance.clearCache() - clearCache()'s own internal error
    * handling swallows failures and still resolves "successfully" even when
    * it didn't fully clear the cache (confirmed by reading msal-browser's
-   * source), which was a real bug here: sign-out looked like it worked but
-   * a stale session survived and silently signed back in on the next
-   * visit. Wiping storage directly leaves nothing to survive, regardless
-   * of what happened inside the SDK. The theme preference is the only
-   * other thing this app keeps in storage, so it's saved and restored
-   * around the wipe rather than lost.
+   * source), which was a real bug: sign-out looked like it worked but a
+   * stale session survived. The theme preference is the only other thing
+   * this app keeps in storage, so it's saved and restored around the wipe
+   * rather than lost.
    *
-   * Tradeoff, same as before: this signs out of this app only, not the
-   * Microsoft/Windows-level session - a plain "Sign in with Microsoft"
+   * Ends with a full page reload (window.location.href), not
+   * router.navigate(). A router-only navigation leaves this tab's running
+   * app - SessionService's cached user signal, the in-memory MSAL
+   * instance, every singleton - untouched in memory even though storage is
+   * clean. A hard reload forces the entire app to restart from zero, so
+   * there is no window where anything in this tab still thinks someone is
+   * signed in after this call returns.
+   *
+   * Tradeoff, unchanged from before: this signs out of this app only, not
+   * the Microsoft/Windows-level session - a plain "Sign in with Microsoft"
    * click right after can silently re-authenticate via that still-active
    * SSO session. That's expected for an app that only signs itself out.
    */
@@ -73,7 +77,7 @@ export class Header {
     localStorage.clear();
     sessionStorage.clear();
     if (theme) localStorage.setItem('roivio-theme', theme);
-    this.router.navigate(['/login']);
+    window.location.href = '/login';
   }
 
   /** Both overlays are dismissible the way users expect. */
