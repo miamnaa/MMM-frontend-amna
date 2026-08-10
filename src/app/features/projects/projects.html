@@ -48,6 +48,7 @@
           <span class="muted owner">{{ p.ownerName }}</span>
           <div class="project-actions">
             <button class="btn btn-ghost btn-sm" type="button" (click)="confirmDelete(p)">Delete</button>
+            <button class="btn btn-ghost btn-sm" type="button" (click)="openEdit(p)">Edit</button>
             <a class="btn btn-secondary btn-sm" routerLink="/experiments">Open</a>
           </div>
         </div>
@@ -99,6 +100,63 @@
         (click)="submit()"
       >
         {{ saving() ? 'Creating…' : 'Create project' }}
+      </button>
+    </div>
+  </div>
+}
+
+@if (editTarget()) {
+  <div class="backdrop" (click)="closeEdit()"></div>
+  <div class="dialog card" role="dialog" aria-modal="true" aria-label="Edit project">
+    <div class="card-header">
+      <h2>Edit project</h2>
+      <button class="btn btn-ghost btn-sm" type="button" (click)="closeEdit()">Cancel</button>
+    </div>
+    <div class="card-body dialog-body">
+      @if (editError(); as err) {
+        <p class="field-error">{{ err }}</p>
+      }
+
+      <div class="field">
+        <label class="label" for="p-edit-name">Project name</label>
+        <input
+          id="p-edit-name"
+          class="input"
+          [value]="editForm().name"
+          (input)="updateEditField('name', $any($event.target).value)"
+          placeholder="e.g. Retail FY27 Media Mix"
+        />
+      </div>
+
+      <div class="field">
+        <label class="label" for="p-edit-desc">Description</label>
+        <textarea
+          id="p-edit-desc"
+          class="textarea"
+          [value]="editForm().description"
+          (input)="updateEditField('description', $any($event.target).value)"
+          placeholder="What business question does this project answer?"
+        ></textarea>
+      </div>
+
+      <label class="toggle">
+        <input
+          type="checkbox"
+          [checked]="editForm().status === 'archived'"
+          (change)="toggleEditStatus()"
+        />
+        <span>Archived — hides it from active work without deleting it</span>
+      </label>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-secondary" type="button" (click)="closeEdit()">Cancel</button>
+      <button
+        class="btn btn-primary"
+        type="button"
+        [disabled]="!editForm().name.trim() || editSaving()"
+        (click)="submitEdit()"
+      >
+        {{ editSaving() ? 'Saving…' : 'Save changes' }}
       </button>
     </div>
   </div>

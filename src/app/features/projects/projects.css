@@ -11,6 +11,24 @@
   color: var(--red-600);
 }
 
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--brand-600);
+  cursor: pointer;
+}
+
 .field-error {
   padding: 9px 12px;
   border-radius: var(--r-md);

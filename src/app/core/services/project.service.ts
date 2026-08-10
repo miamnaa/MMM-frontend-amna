@@ -46,6 +46,17 @@ export class ProjectService {
   }
 
   /**
+   * Partial update - only send fields that are actually changing. The
+   * backend leaves omitted fields untouched (a real bug where they used to
+   * get wiped to null was fixed 2026-08-06 and is now covered by a
+   * regression test on their side, per API-REFERENCE.md). Same ownership
+   * rule as remove(): a non-owner gets a 403.
+   */
+  update(id: string, changes: Partial<{ name: string; description: string; status: 'active' | 'archived' }>): Observable<Project> {
+    return this.http.patch<ApiProject>(`${this.url}/${id}`, changes).pipe(map((r) => this.toProject(r)));
+  }
+
+  /**
    * Soft delete - the row stays in the database with deletedAt set, but
    * disappears from list()/get() immediately after. Only the project's
    * owner may do this; a non-owner gets a 403 the caller surfaces as a

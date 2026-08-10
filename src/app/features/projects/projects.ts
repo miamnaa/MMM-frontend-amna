@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -8,6 +9,21 @@ import { EmptyState } from '../../shared/ui/empty-state/empty-state';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
 import { StatusBadge } from '../../shared/ui/status-badge/status-badge';
 import { relativeTime } from '../../shared/utils/format';
+
+/**
+ * The backend's error body always has a `message` - a string for most
+ * failures, an array of strings for validation errors (API-REFERENCE.md,
+ * "Response conventions"). Prefer that real message (e.g. "Only the
+ * project owner can do this.") over a generic fallback whenever it's there.
+ */
+function backendErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof HttpErrorResponse) {
+    const message: unknown = err.error?.message;
+    if (typeof message === 'string') return message;
+    if (Array.isArray(message)) return message.join(' ');
+  }
+  return fallback;
+}
 
 @Component({
   selector: 'app-projects',
@@ -26,6 +42,15 @@ export class Projects {
   readonly saveError = signal<string | null>(null);
 
   readonly form = signal<{ name: string; description: string }>({ name: '', description: '' });
+
+  readonly editTarget = signal<Project | null>(null);
+  readonly editForm = signal<{ name: string; description: string; status: 'active' | 'archived' }>({
+    name: '',
+    description: '',
+    status: 'active',
+  });
+  readonly editSaving = signal(false);
+  readonly editError = signal<string | null>(null);
 
   readonly deleteTarget = signal<Project | null>(null);
   readonly deleting = signal(false);
@@ -76,9 +101,68 @@ export class Projects {
         this.saving.set(false);
         this.dialogOpen.set(false);
       },
-      error: () => {
-        this.saveError.set('Could not create the project. Try again.');
+      error: (err: unknown) => {
+        this.saveError.set(backendErrorMessage(err, 'Could not create the project. Try again.'));
         this.saving.set(false);
+      },
+    });
+  }
+
+  openEdit(project: Project): void {
+    this.editError.set(null);
+    this.editForm.set({
+      name: project.name,
+      description: project.description,
+      status: project.status,
+    });
+    this.editTarget.set(project);
+  }
+
+  closeEdit(): void {
+    this.editTarget.set(null);
+  }
+
+  updateEditField(key: 'name' | 'description', value: string): void {
+    this.editForm.update((f) => ({ ...f, [key]: value }));
+  }
+
+  toggleEditStatus(): void {
+    this.editForm.update((f) => ({ ...f, status: f.status === 'active' ? 'archived' : 'active' }));
+  }
+
+  /**
+   * The API is a genuine partial update - it leaves any field you don't
+   * send untouched. Sending unchanged fields back would still be correct,
+   * but diffing against the original keeps the request honest about what
+   * the user actually changed, and matches API-REFERENCE.md's own example
+   * (a rename that deliberately omits description).
+   */
+  submitEdit(): void {
+    const target = this.editTarget();
+    const form = this.editForm();
+    if (!target || !form.name.trim() || this.editSaving()) return;
+
+    const changes: Partial<{ name: string; description: string; status: 'active' | 'archived' }> = {};
+    if (form.name !== target.name) changes.name = form.name;
+    if (form.description !== target.description) changes.description = form.description;
+    if (form.status !== target.status) changes.status = form.status;
+
+    if (Object.keys(changes).length === 0) {
+      this.editTarget.set(null);
+      return;
+    }
+
+    this.editSaving.set(true);
+    this.editError.set(null);
+    this.projectService.update(target.id, changes).subscribe({
+      next: (updated) => {
+        this.projects.update((list) => list.map((p) => (p.id === updated.id ? updated : p)));
+        this.editSaving.set(false);
+        this.editTarget.set(null);
+      },
+      error: (err: unknown) => {
+        this.editError.set(backendErrorMessage(err, 'Could not update this project. Try again.'));
+        this.editSaving.set(false);
       },
     });
   }
@@ -103,8 +187,8 @@ export class Projects {
         this.deleting.set(false);
         this.deleteTarget.set(null);
       },
-      error: () => {
-        this.deleteError.set('Could not delete this project. Only the owner can delete it.');
+      error: (err: unknown) => {
+        this.deleteError.set(backendErrorMessage(err, 'Could not delete this project.'));
         this.deleting.set(false);
       },
     });
