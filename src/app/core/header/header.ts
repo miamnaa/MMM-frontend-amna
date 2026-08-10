@@ -73,7 +73,10 @@ export class Header {
   signOut(): void {
   this.menuOpen.set(false);
 
+  const account = this.msalService.instance.getActiveAccount();
+
   this.msalService.logoutRedirect({
+    account: account ?? undefined,
     postLogoutRedirectUri: `${window.location.origin}/login`,
   });
 }

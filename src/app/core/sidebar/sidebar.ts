@@ -36,11 +36,10 @@ export class Sidebar {
 
   /** Local sign-out - see header.ts's signOut() for why, in full, including why it hard-reloads instead of routing. */
   signOut(): void {
-    const theme = localStorage.getItem('roivio-theme');
-    this.msalService.instance.setActiveAccount(null);
-    localStorage.clear();
-    sessionStorage.clear();
-    if (theme) localStorage.setItem('roivio-theme', theme);
-    window.location.href = '/login';
-  }
-}
+  const account = this.msalService.instance.getActiveAccount();
+
+  this.msalService.logoutRedirect({
+    account: account ?? undefined,
+    postLogoutRedirectUri: `${window.location.origin}/login`,
+  });
+}}
