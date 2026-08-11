@@ -156,14 +156,12 @@ export class Projects {
         this.dialogOpen.set(false);
         this.projects.update((list) => [project, ...list]);
         this.justCreated.set(true);
-        // As fast as this can actually be while still letting the banner
-        // paint at all - a real 0ms navigate means it never renders a
-        // single frame, so this is the shortest delay where it's genuinely
-        // visible before moving into the tunnel.
+        // Long enough to actually read the banner, short enough to still
+        // feel immediate.
         setTimeout(() => {
           this.justCreated.set(false);
           this.router.navigate(['/upload-data', project.id]);
-        }, 400);
+        }, 900);
       },
       error: (err: unknown) => {
         this.saveError.set(backendErrorMessage(err, 'Could not create the project. Try again.'));
