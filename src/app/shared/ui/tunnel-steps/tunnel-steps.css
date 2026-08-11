@@ -1,14 +1,15 @@
 :host {
   display: block;
+  height: 100%;
 }
 
 .tunnel-steps {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 18px 12px;
+  height: 100%;
+  padding: 24px 12px;
   background: var(--brand-600);
-  border-radius: var(--r-lg);
 }
 
 .step {
