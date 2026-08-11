@@ -15,25 +15,46 @@
 }
 
 @if (!loading() && projects().length > 0) {
+  <p class="muted project-count">{{ projects().length }} project{{ projects().length === 1 ? '' : 's' }}</p>
+
   <div class="toolbar">
-    <input
-      class="input search-input"
-      type="text"
-      [ngModel]="searchQuery()"
-      (ngModelChange)="setSearchQuery($event)"
-      placeholder="Search projects…"
-      aria-label="Search projects"
-    />
-    <select
-      class="select status-select"
-      [value]="statusFilter()"
-      (change)="setStatusFilter($any($event.target).value)"
-      aria-label="Filter by status"
-    >
-      <option value="all">All statuses</option>
-      <option value="active">Active</option>
-      <option value="archived">Archived</option>
-    </select>
+    <div class="search-wrap">
+      <span class="search-icon" aria-hidden="true">⌕</span>
+      <input
+        class="input search-input"
+        type="text"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="setSearchQuery($event)"
+        placeholder="Search projects…"
+        aria-label="Search projects"
+      />
+    </div>
+    <div class="sort-tabs" role="group" aria-label="Sort projects">
+      <button
+        type="button"
+        class="sort-tab"
+        [class.active]="sortBy() === 'recent'"
+        (click)="setSortBy('recent')"
+      >
+        Recent
+      </button>
+      <button
+        type="button"
+        class="sort-tab"
+        [class.active]="sortBy() === 'az'"
+        (click)="setSortBy('az')"
+      >
+        A — Z
+      </button>
+      <button
+        type="button"
+        class="sort-tab"
+        [class.active]="sortBy() === 'created'"
+        (click)="setSortBy('created')"
+      >
+        Creation date
+      </button>
+    </div>
   </div>
 }
 
@@ -60,7 +81,7 @@
     <app-empty-state
       icon="▤"
       title="No matching projects"
-      message="Try a different search term or status filter."
+      message="Try a different search term."
     />
   </div>
 } @else {

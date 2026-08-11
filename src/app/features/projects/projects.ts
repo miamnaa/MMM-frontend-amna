@@ -120,8 +120,8 @@ export class Projects {
     this.searchQuery.set(value);
   }
 
-  setStatusFilter(value: 'all' | 'active' | 'archived'): void {
-    this.statusFilter.set(value);
+  setSortBy(value: SortOption): void {
+    this.sortBy.set(value);
   }
 
   openDialog(): void {
