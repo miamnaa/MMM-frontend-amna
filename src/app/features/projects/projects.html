@@ -105,13 +105,8 @@
           <span class="muted owner">{{ p.ownerName }}</span>
           <div class="project-actions">
             <button class="btn btn-ghost btn-sm icon-btn" type="button" (click)="openView(p)" aria-label="View project details" title="View details">◎</button>
-            <button class="btn btn-ghost btn-sm" type="button" (click)="confirmDelete(p)">Delete</button>
             <button class="btn btn-ghost btn-sm" type="button" (click)="openEdit(p)">Edit</button>
-            @if (p.datasetCount === 0) {
-              <button class="btn btn-primary btn-sm" type="button" (click)="open(p)">Upload Data</button>
-            } @else {
-              <button class="btn btn-secondary btn-sm" type="button" (click)="open(p)">Open</button>
-            }
+            <button class="btn btn-ghost btn-sm" type="button" (click)="confirmDelete(p)">Delete</button>
           </div>
         </div>
       </article>
