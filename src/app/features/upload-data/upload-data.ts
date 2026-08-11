@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { DatasetService } from '../../core/services/dataset.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
+import { TunnelSteps } from '../../shared/ui/tunnel-steps/tunnel-steps';
 
 const ACCEPTED = ['.csv', '.xlsx', '.parquet'];
 
@@ -27,7 +28,7 @@ const MODEL_OPTIONS: ModelOption[] = [
 
 @Component({
   selector: 'app-upload-data',
-  imports: [PageHeader],
+  imports: [PageHeader, TunnelSteps],
   templateUrl: './upload-data.html',
   styleUrl: './upload-data.css',
 })
