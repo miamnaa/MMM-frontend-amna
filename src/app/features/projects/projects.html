@@ -104,9 +104,14 @@
         <div class="project-foot">
           <span class="muted owner">{{ p.ownerName }}</span>
           <div class="project-actions">
+            <button class="btn btn-ghost btn-sm icon-btn" type="button" (click)="openView(p)" aria-label="View project details" title="View details">◎</button>
             <button class="btn btn-ghost btn-sm" type="button" (click)="confirmDelete(p)">Delete</button>
             <button class="btn btn-ghost btn-sm" type="button" (click)="openEdit(p)">Edit</button>
-            <button class="btn btn-secondary btn-sm" type="button" (click)="open(p)">Open</button>
+            @if (p.datasetCount === 0) {
+              <button class="btn btn-primary btn-sm" type="button" (click)="open(p)">Upload Data</button>
+            } @else {
+              <button class="btn btn-secondary btn-sm" type="button" (click)="open(p)">Open</button>
+            }
           </div>
         </div>
       </article>
@@ -214,6 +219,52 @@
         (click)="submitEdit()"
       >
         {{ editSaving() ? 'Saving…' : 'Save changes' }}
+      </button>
+    </div>
+  </div>
+}
+
+@if (viewTarget(); as v) {
+  <div class="backdrop" (click)="closeView()"></div>
+  <div class="dialog card" role="dialog" aria-modal="true" aria-label="Project details">
+    <div class="card-header">
+      <h2>{{ v.name }}</h2>
+      <button class="btn btn-ghost btn-sm" type="button" (click)="closeView()">Close</button>
+    </div>
+    <div class="card-body dialog-body view-body">
+      <div class="view-row">
+        <span class="label">Status</span>
+        <app-status-badge [status]="v.status" />
+      </div>
+      <div class="view-row">
+        <span class="label">Description</span>
+        <span>{{ v.description || '—' }}</span>
+      </div>
+      <div class="view-row">
+        <span class="label">Owner</span>
+        <span>{{ v.ownerName }}</span>
+      </div>
+      <div class="view-row">
+        <span class="label">Created</span>
+        <span>{{ shortDate(v.createdAt) }}</span>
+      </div>
+      <div class="view-row">
+        <span class="label">Last updated</span>
+        <span>{{ shortDate(v.updatedAt) }} ({{ relativeTime(v.updatedAt) }})</span>
+      </div>
+      <div class="view-row">
+        <span class="label">Datasets</span>
+        <span>{{ v.datasetCount }}</span>
+      </div>
+      <div class="view-row">
+        <span class="label">Experiments</span>
+        <span>{{ v.experimentCount }}</span>
+      </div>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-secondary" type="button" (click)="closeView()">Close</button>
+      <button class="btn btn-primary" type="button" (click)="closeView(); open(v)">
+        {{ v.datasetCount === 0 ? 'Upload Data' : 'Open' }}
       </button>
     </div>
   </div>
