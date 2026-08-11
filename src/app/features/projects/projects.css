@@ -1,3 +1,17 @@
+/* Standalone page now (no MainLayout wrapper) - replicate the padding
+   main-layout.css used to give this page via .content. */
+.projects-page {
+  min-height: 100vh;
+  padding: 26px 28px 48px;
+  background: var(--surface);
+}
+
+@media (max-width: 720px) {
+  .projects-page {
+    padding: 18px 16px 36px;
+  }
+}
+
 .error-banner {
   display: flex;
   align-items: center;

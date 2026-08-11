@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { MsalService } from '@azure/msal-angular';
 
 import { OtpService } from '../../core/services/otp.service';
@@ -29,7 +29,7 @@ function backendErrorMessage(err: unknown, fallback: string): string {
 
 @Component({
   selector: 'app-projects',
-  imports: [FormsModule, RouterLink, PageHeader, EmptyState, StatusBadge],
+  imports: [FormsModule, PageHeader, EmptyState, StatusBadge],
   templateUrl: './projects.html',
   styleUrl: './projects.css',
 })

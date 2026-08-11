@@ -1,7 +1,9 @@
 import { Routes } from '@angular/router';
 import { MsalGuard } from '@azure/msal-angular';
 
+import { datasetContextGuard } from './core/auth/dataset-context.guard';
 import { otpGuard } from './core/auth/otp.guard';
+import { projectContextGuard } from './core/auth/project-context.guard';
 import { MainLayout } from './layouts/main-layout/main-layout';
 
 export const routes: Routes = [
@@ -29,9 +31,39 @@ export const routes: Routes = [
     canActivate: [MsalGuard],
     loadComponent: () => import('./features/auth/verify/verify').then((m) => m.Verify),
   },
+  // --- The tunnel: Project list → Upload Data → Configure. Bare pages, no
+  // MainLayout/sidebar - each declares its own guard chain directly rather
+  // than inheriting via canActivateChild, since they're not nested under a
+  // shared layout anymore.
+  {
+    path: 'projects',
+    title: 'Projects · ROIVIO',
+    canActivate: [MsalGuard, otpGuard],
+    loadComponent: () => import('./features/projects/projects').then((m) => m.Projects),
+  },
+  {
+    path: 'upload-data/:projectId',
+    title: 'Upload data · ROIVIO',
+    // projectContextGuard checks the :projectId in the URL against the real
+    // Projects API, so a direct hit / bookmark / refresh here still gets
+    // validated rather than trusting whatever's in the address bar.
+    canActivate: [MsalGuard, otpGuard, projectContextGuard],
+    loadComponent: () => import('./features/upload-data/upload-data').then((m) => m.UploadData),
+  },
+  {
+    path: 'configure/:projectId',
+    title: 'Configure · ROIVIO',
+    // datasetContextGuard checks in-memory TunnelService state - Configure
+    // has no real backend yet, so this is the best available "did Upload
+    // Data actually happen this session" check.
+    canActivate: [MsalGuard, otpGuard, datasetContextGuard],
+    loadComponent: () => import('./features/configure/configure').then((m) => m.Configure),
+  },
   {
     path: '',
     component: MainLayout,
+    // Kept as real, guarded routes for later - nothing links to them from
+    // the tunnel anymore, but they still work if reached directly.
     // MsalGuard on canActivateChild, not per-child canActivate: one place to
     // update, and it also covers routes added here later. otpGuard runs
     // after it, so "signed into Microsoft" and "completed the email code
@@ -42,11 +74,6 @@ export const routes: Routes = [
         path: 'overview',
         title: 'Overview · ROIVIO',
         loadComponent: () => import('./features/overview/overview').then((m) => m.Overview),
-      },
-      {
-        path: 'projects',
-        title: 'Projects · ROIVIO',
-        loadComponent: () => import('./features/projects/projects').then((m) => m.Projects),
       },
       {
         path: 'datasets',
