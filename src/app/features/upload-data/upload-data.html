@@ -7,22 +7,6 @@
     <div class="tunnel-main">
       <div class="tunnel-main-inner">
 
-  @if (justCreated()) {
-    <div class="toast-success" role="status">
-      <span class="toast-icon" aria-hidden="true">
-        <svg viewBox="0 0 20 20" fill="none">
-          <circle cx="10" cy="10" r="10" fill="currentColor" />
-          <path d="M6 10.2 8.6 13 14 7" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-      </span>
-      <div class="toast-text">
-        <strong>Project created successfully!</strong>
-        <span>Your project has been created — now add the data it'll use.</span>
-      </div>
-      <button type="button" class="toast-dismiss" (click)="dismissCreated()" aria-label="Dismiss">✕</button>
-    </div>
-  }
-
   <div class="top-row">
     <button class="back-link" type="button" (click)="back()">
       <span aria-hidden="true">←</span> Back

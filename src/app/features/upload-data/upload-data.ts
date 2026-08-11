@@ -51,7 +51,6 @@ export class UploadData implements OnInit {
   readonly uploading = signal(false);
   readonly error = signal<string | null>(null);
   readonly infoOpen = signal(false);
-  readonly justCreated = signal(false);
 
   toggleInfo(): void {
     this.infoOpen.update((open) => !open);
@@ -61,15 +60,6 @@ export class UploadData implements OnInit {
     const id = this.route.snapshot.paramMap.get('projectId') ?? '';
     this.projectId.set(id);
     this.tunnelService.selectProject(id);
-
-    // Navigation state, not a query param - shows once, doesn't linger in
-    // the URL/browser history the way ?created=true would.
-    const state = this.router.getCurrentNavigation()?.extras?.state ?? history.state;
-    if (state?.['justCreated']) this.justCreated.set(true);
-  }
-
-  dismissCreated(): void {
-    this.justCreated.set(false);
   }
 
   back(): void {

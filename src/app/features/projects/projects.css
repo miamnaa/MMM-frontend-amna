@@ -17,6 +17,55 @@
   font-size: 13px;
 }
 
+.toast-success {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--brand-200, var(--brand-100));
+  background: var(--brand-50);
+  color: var(--brand-700);
+}
+
+.toast-icon {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  color: var(--brand-500);
+}
+
+.toast-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toast-text strong {
+  font-size: 14px;
+}
+
+.toast-text span {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--brand-700);
+  opacity: 0.85;
+}
+
+.toast-dismiss {
+  flex: none;
+  color: var(--brand-700);
+  opacity: 0.6;
+  font-size: 13px;
+  padding: 2px;
+}
+
+.toast-dismiss:hover {
+  opacity: 1;
+}
+
 .toolbar {
   display: flex;
   gap: 12px;
