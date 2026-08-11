@@ -10,7 +10,7 @@ import type {
 } from '@azure/msal-browser';
 import type {
   MsalGuardConfiguration,
-  MsalInterceptorConfiguration,
+  MsalInterceptorConfiguration, 
 } from '@azure/msal-angular';
 
 import { environment } from '../../../environments/environment';
