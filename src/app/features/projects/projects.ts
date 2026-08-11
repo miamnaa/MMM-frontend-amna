@@ -52,6 +52,7 @@ export class Projects {
   readonly projects = signal<Project[]>([]);
   readonly loading = signal(true);
   readonly loadError = signal<string | null>(null);
+  readonly justCreated = signal(false);
 
   readonly searchQuery = signal('');
   readonly sortBy = signal<SortOption>('recent');
@@ -149,10 +150,14 @@ export class Projects {
       next: (project) => {
         this.saving.set(false);
         this.dialogOpen.set(false);
-        // Straight into the tunnel - a new project always needs data next.
-        // The "created successfully" banner travels via navigation state,
-        // not a query param, so it doesn't linger in the URL/history.
-        this.router.navigate(['/upload-data', project.id], { state: { justCreated: true } });
+        this.projects.update((list) => [project, ...list]);
+        this.justCreated.set(true);
+        // Brief confirmation on this page, then straight into the tunnel -
+        // a new project always needs data next.
+        setTimeout(() => {
+          this.justCreated.set(false);
+          this.router.navigate(['/upload-data', project.id]);
+        }, 1400);
       },
       error: (err: unknown) => {
         this.saveError.set(backendErrorMessage(err, 'Could not create the project. Try again.'));
