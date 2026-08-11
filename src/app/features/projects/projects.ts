@@ -154,11 +154,16 @@ export class Projects {
       next: (project) => {
         this.saving.set(false);
         this.dialogOpen.set(false);
-        // Straight into the tunnel, no delay - a new project always needs
-        // data next. The "created successfully" banner travels via
-        // navigation state and shows on arrival there instead of here, so
-        // there's nothing to wait on before navigating.
-        this.router.navigate(['/upload-data', project.id], { state: { justCreated: true } });
+        this.projects.update((list) => [project, ...list]);
+        this.justCreated.set(true);
+        // As fast as this can actually be while still letting the banner
+        // paint at all - a real 0ms navigate means it never renders a
+        // single frame, so this is the shortest delay where it's genuinely
+        // visible before moving into the tunnel.
+        setTimeout(() => {
+          this.justCreated.set(false);
+          this.router.navigate(['/upload-data', project.id]);
+        }, 400);
       },
       error: (err: unknown) => {
         this.saveError.set(backendErrorMessage(err, 'Could not create the project. Try again.'));
