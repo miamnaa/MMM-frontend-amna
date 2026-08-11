@@ -1,7 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, of, throwError } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, map, of, throwError } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { Dataset } from '../models/domain.models';
