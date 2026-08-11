@@ -27,8 +27,9 @@
 
 .search-wrap {
   position: relative;
-  flex: 1;
-  min-width: 220px;
+  flex: none;
+  width: 320px;
+  max-width: 100%;
 }
 
 .search-icon {
