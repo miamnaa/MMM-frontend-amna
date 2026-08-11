@@ -156,12 +156,10 @@ export class Projects {
         this.dialogOpen.set(false);
         this.projects.update((list) => [project, ...list]);
         this.justCreated.set(true);
-        // Long enough to actually read the banner, short enough to still
-        // feel immediate.
         setTimeout(() => {
           this.justCreated.set(false);
           this.router.navigate(['/upload-data', project.id]);
-        }, 900);
+        }, 1800);
       },
       error: (err: unknown) => {
         this.saveError.set(backendErrorMessage(err, 'Could not create the project. Try again.'));
