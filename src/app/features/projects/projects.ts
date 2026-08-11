@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MsalService } from '@azure/msal-angular';
 
-import { OtpService } from '../../core/services/otp.service';
+import { localSignOut } from '../../core/auth/local-sign-out';
 import { ProjectService } from '../../core/services/project.service';
 import { Project } from '../../core/models/domain.models';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
@@ -37,7 +37,6 @@ export class Projects {
   private readonly projectService = inject(ProjectService);
   private readonly router = inject(Router);
   private readonly msalService = inject(MsalService);
-  private readonly otpService = inject(OtpService);
 
   readonly projects = signal<Project[]>([]);
   readonly loading = signal(true);
@@ -114,12 +113,9 @@ export class Projects {
     });
   }
 
-  /** Same local-sign-out call as header.ts/sidebar.ts - Projects has no shared layout to put it in anymore. */
+  /** See local-sign-out.ts - same call header.ts/sidebar.ts use, Projects just has no shared layout to put it in anymore. */
   signOut(): void {
-    this.otpService.clear();
-    this.msalService.logoutRedirect({
-      postLogoutRedirectUri: `${window.location.origin}/login`,
-    });
+    void localSignOut(this.msalService);
   }
 
   open(project: Project): void {
