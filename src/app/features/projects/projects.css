@@ -12,6 +12,23 @@
   }
 }
 
+.toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.status-select {
+  width: auto;
+  min-width: 150px;
+}
+
 .error-banner {
   display: flex;
   align-items: center;

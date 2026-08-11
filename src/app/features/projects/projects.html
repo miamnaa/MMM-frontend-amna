@@ -14,6 +14,29 @@
   </div>
 }
 
+@if (!loading() && projects().length > 0) {
+  <div class="toolbar">
+    <input
+      class="input search-input"
+      type="text"
+      [ngModel]="searchQuery()"
+      (ngModelChange)="setSearchQuery($event)"
+      placeholder="Search projects…"
+      aria-label="Search projects"
+    />
+    <select
+      class="select status-select"
+      [value]="statusFilter()"
+      (change)="setStatusFilter($any($event.target).value)"
+      aria-label="Filter by status"
+    >
+      <option value="all">All statuses</option>
+      <option value="active">Active</option>
+      <option value="archived">Archived</option>
+    </select>
+  </div>
+}
+
 @if (loading()) {
   <div class="skeleton-grid">
     @for (i of [1, 2, 3]; track i) {
@@ -32,9 +55,17 @@
       </app-empty-state>
     </div>
   }
+} @else if (filteredProjects().length === 0) {
+  <div class="card">
+    <app-empty-state
+      icon="▤"
+      title="No matching projects"
+      message="Try a different search term or status filter."
+    />
+  </div>
 } @else {
   <div class="project-grid">
-    @for (p of projects(); track p.id) {
+    @for (p of filteredProjects(); track p.id) {
       <article class="card project">
         <div class="project-top">
           <app-status-badge [status]="p.status" />
