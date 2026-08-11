@@ -98,6 +98,14 @@ export class Projects {
     });
   }
 
+  setSearchQuery(value: string): void {
+    this.searchQuery.set(value);
+  }
+
+  setStatusFilter(value: 'all' | 'active' | 'archived'): void {
+    this.statusFilter.set(value);
+  }
+
   openDialog(): void {
     this.form.set({ name: '', description: '' });
     this.saveError.set(null);
