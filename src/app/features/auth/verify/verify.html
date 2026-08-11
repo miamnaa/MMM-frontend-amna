@@ -1,0 +1,61 @@
+<div class="login">
+  <!-- Decorative corner arcs -->
+  <span class="arc arc-tr" aria-hidden="true"></span>
+  <span class="arc arc-bl" aria-hidden="true"></span>
+
+  <header class="corner-logo">
+    <app-logo [size]="26" [flat]="true" />
+    <span class="corner-name">ROIVIO</span>
+  </header>
+
+  <main class="stack">
+    <h1 class="emblem">
+      <app-logo class="logo-lg" [size]="104" />
+      <span class="sr-only">ROIVIO</span>
+    </h1>
+
+    <p class="tagline">Check your email</p>
+    <p class="body-copy">
+      @if (requesting() && !codeSent()) {
+        Sending a 6-digit code to your email…
+      } @else if (codeSent()) {
+        We've sent a 6-digit code to your email. Enter it below to continue.
+      } @else {
+        Enter the 6-digit code sent to your email.
+      }
+    </p>
+
+    <input
+      class="code-input"
+      type="text"
+      inputmode="numeric"
+      autocomplete="one-time-code"
+      maxlength="6"
+      placeholder="000000"
+      [ngModel]="code()"
+      (ngModelChange)="onCodeInput($event)"
+      [disabled]="verifying()"
+    />
+
+    @if (requestError()) {
+      <p class="error" role="alert">{{ requestError() }}</p>
+    }
+    @if (verifyError()) {
+      <p class="error" role="alert">{{ verifyError() }}</p>
+    }
+
+    <button
+      class="signin"
+      type="button"
+      [disabled]="code().length !== 6 || verifying()"
+      (click)="submit()"
+    >
+      {{ verifying() ? 'Verifying…' : 'Verify' }}
+    </button>
+
+    <p class="switch">
+      Didn't get a code?
+      <a class="link" (click)="resend()" [class.disabled]="requesting()">Resend code</a>
+    </p>
+  </main>
+</div>
