@@ -154,14 +154,11 @@ export class Projects {
       next: (project) => {
         this.saving.set(false);
         this.dialogOpen.set(false);
-        this.projects.update((list) => [project, ...list]);
-        this.justCreated.set(true);
-        // Brief confirmation on this page, then straight into the tunnel -
-        // a new project always needs data next.
-        setTimeout(() => {
-          this.justCreated.set(false);
-          this.router.navigate(['/upload-data', project.id]);
-        }, 1400);
+        // Straight into the tunnel, no delay - a new project always needs
+        // data next. The "created successfully" banner travels via
+        // navigation state and shows on arrival there instead of here, so
+        // there's nothing to wait on before navigating.
+        this.router.navigate(['/upload-data', project.id], { state: { justCreated: true } });
       },
       error: (err: unknown) => {
         this.saveError.set(backendErrorMessage(err, 'Could not create the project. Try again.'));
