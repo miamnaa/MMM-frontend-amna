@@ -104,7 +104,17 @@
         <div class="project-foot">
           <span class="muted owner">{{ p.ownerName }}</span>
           <div class="project-actions">
-            <button class="btn btn-ghost btn-sm icon-btn" type="button" (click)="openView(p)" aria-label="View project details" title="View details">◎</button>
+            <button class="btn btn-ghost btn-sm icon-btn" type="button" (click)="openView(p)" aria-label="View project details" title="View details">
+              <svg class="eye-icon" viewBox="0 0 24 16" fill="none" aria-hidden="true">
+                <path
+                  d="M1 8C1 8 5 1 12 1C19 1 23 8 23 8C23 8 19 15 12 15C5 15 1 8 1 8Z"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linejoin="round"
+                />
+                <circle cx="12" cy="8" r="3.4" fill="currentColor" />
+              </svg>
+            </button>
             <button class="btn btn-ghost btn-sm" type="button" (click)="openEdit(p)">Edit</button>
             <button class="btn btn-ghost btn-sm" type="button" (click)="confirmDelete(p)">Delete</button>
           </div>

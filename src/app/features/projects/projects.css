@@ -237,9 +237,20 @@
 }
 
 .icon-btn {
-  padding: 6px 10px;
-  font-size: 15px;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 9px;
+}
+
+.eye-icon {
+  width: 18px;
+  height: 12px;
+  color: var(--text-muted);
+}
+
+.icon-btn:hover .eye-icon {
+  color: var(--ink, inherit);
 }
 
 .view-row {
