@@ -1,8 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { MsalService } from '@azure/msal-angular';
 
+import { OtpService } from '../../core/services/otp.service';
 import { ProjectService } from '../../core/services/project.service';
 import { Project } from '../../core/models/domain.models';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
@@ -33,6 +35,9 @@ function backendErrorMessage(err: unknown, fallback: string): string {
 })
 export class Projects {
   private readonly projectService = inject(ProjectService);
+  private readonly router = inject(Router);
+  private readonly msalService = inject(MsalService);
+  private readonly otpService = inject(OtpService);
 
   readonly projects = signal<Project[]>([]);
   readonly loading = signal(true);
@@ -97,15 +102,28 @@ export class Projects {
     this.saveError.set(null);
     this.projectService.create(this.form()).subscribe({
       next: (project) => {
-        this.projects.update((list) => [project, ...list]);
         this.saving.set(false);
         this.dialogOpen.set(false);
+        // Straight into the tunnel - a new project always needs data next.
+        this.router.navigate(['/upload-data', project.id]);
       },
       error: (err: unknown) => {
         this.saveError.set(backendErrorMessage(err, 'Could not create the project. Try again.'));
         this.saving.set(false);
       },
     });
+  }
+
+  /** Same local-sign-out call as header.ts/sidebar.ts - Projects has no shared layout to put it in anymore. */
+  signOut(): void {
+    this.otpService.clear();
+    this.msalService.logoutRedirect({
+      postLogoutRedirectUri: `${window.location.origin}/login`,
+    });
+  }
+
+  open(project: Project): void {
+    this.router.navigate(['/upload-data', project.id]);
   }
 
   openEdit(project: Project): void {
