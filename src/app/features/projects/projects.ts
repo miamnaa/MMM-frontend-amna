@@ -52,7 +52,6 @@ export class Projects {
   readonly projects = signal<Project[]>([]);
   readonly loading = signal(true);
   readonly loadError = signal<string | null>(null);
-  readonly justCreated = signal(false);
 
   readonly searchQuery = signal('');
   readonly sortBy = signal<SortOption>('recent');
