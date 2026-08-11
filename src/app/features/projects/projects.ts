@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MsalService } from '@azure/msal-angular';
@@ -41,6 +41,23 @@ export class Projects {
   readonly projects = signal<Project[]>([]);
   readonly loading = signal(true);
   readonly loadError = signal<string | null>(null);
+
+  readonly searchQuery = signal('');
+  readonly statusFilter = signal<'all' | 'active' | 'archived'>('all');
+
+  readonly filteredProjects = computed(() => {
+    const query = this.searchQuery().trim().toLowerCase();
+    const status = this.statusFilter();
+    return this.projects().filter((p) => {
+      const matchesStatus = status === 'all' || p.status === status;
+      const matchesQuery =
+        query.length === 0 ||
+        p.name.toLowerCase().includes(query) ||
+        p.description.toLowerCase().includes(query);
+      return matchesStatus && matchesQuery;
+    });
+  });
+
   readonly dialogOpen = signal(false);
   readonly saving = signal(false);
   readonly saveError = signal<string | null>(null);
