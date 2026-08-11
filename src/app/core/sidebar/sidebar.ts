@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MsalService } from '@azure/msal-angular';
 
 import { Logo } from '../../shared/ui/logo/logo';
+import { OtpService } from '../services/otp.service';
 
 interface NavItem {
   label: string;
@@ -18,6 +19,7 @@ interface NavItem {
 })
 export class Sidebar {
   private readonly msalService = inject(MsalService);
+  private readonly otpService = inject(OtpService);
 
   readonly primary: NavItem[] = [
     { label: 'Overview', path: '/overview', icon: '◱' },
@@ -36,6 +38,7 @@ export class Sidebar {
 
   /** Local sign-out - see header.ts's signOut() for why, in full, including why it hard-reloads instead of routing. */
   signOut(): void {
+  this.otpService.clear();
   this.msalService.logoutRedirect({
     postLogoutRedirectUri: `${window.location.origin}/login`,
   });

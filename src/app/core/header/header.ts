@@ -1,6 +1,7 @@
 import { Component, ElementRef, HostListener, inject, signal } from '@angular/core';
 import { MsalService } from '@azure/msal-angular';
 
+import { OtpService } from '../services/otp.service';
 import { SessionService } from '../services/notification.service';
 import { ThemeService } from '../services/theme.service';
 
@@ -14,6 +15,7 @@ export class Header {
   private readonly session = inject(SessionService);
   private readonly themeService = inject(ThemeService);
   private readonly msalService = inject(MsalService);
+  private readonly otpService = inject(OtpService);
   private readonly host = inject(ElementRef<HTMLElement>);
 
   readonly user = this.session.user;
@@ -72,6 +74,9 @@ export class Header {
    */
   signOut(): void {
   this.menuOpen.set(false);
+  // Otherwise a stale "verified" flag in sessionStorage could let a
+  // different person on this same browser skip the email-code step.
+  this.otpService.clear();
 
   const account = this.msalService.instance.getActiveAccount();
 

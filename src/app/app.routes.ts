@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { MsalGuard } from '@azure/msal-angular';
 
+import { otpGuard } from './core/auth/otp.guard';
 import { MainLayout } from './layouts/main-layout/main-layout';
 
 export const routes: Routes = [
@@ -21,11 +22,21 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/signup/signup').then((m) => m.Signup),
   },
   {
+    path: 'verify',
+    title: 'Verify your email · ROIVIO',
+    // MsalGuard only, not otpGuard — this is the screen that produces the
+    // "verified" state, so it can't also require it to be entered.
+    canActivate: [MsalGuard],
+    loadComponent: () => import('./features/auth/verify/verify').then((m) => m.Verify),
+  },
+  {
     path: '',
     component: MainLayout,
     // MsalGuard on canActivateChild, not per-child canActivate: one place to
-    // update, and it also covers routes added here later.
-    canActivateChild: [MsalGuard],
+    // update, and it also covers routes added here later. otpGuard runs
+    // after it, so "signed into Microsoft" and "completed the email code
+    // step" are both required for every page under this layout.
+    canActivateChild: [MsalGuard, otpGuard],
     children: [
       {
         path: 'overview',
