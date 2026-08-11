@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Concept Learned — Authentication with Microsoft Entra ID</title>
+<style>
+  body { font-family: -apple-system, Segoe UI, Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.7; color: #1a1a1a; }
+  h1 { border-bottom: 3px solid #1baf7a; padding-bottom: 8px; }
+  h2 { color: #1baf7a; margin-top: 32px; }
+  .date { color: #666; font-size: 0.9em; }
+  code { background: #f3f3f3; padding: 2px 6px; border-radius: 4px; font-size: 0.92em; }
+  .box { background: #f7f9f8; border-left: 4px solid #1baf7a; padding: 12px 18px; margin: 16px 0; border-radius: 4px; }
+  .analogy { background: #fff8ec; border-left: 4px solid #eda100; padding: 12px 18px; margin: 16px 0; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<h1>Today's Concept: How Sign-In Actually Works in This App</h1>
+<p class="date">Tuesday, August 11, 2026</p>
+
+<h2>The one-sentence version</h2>
+<div class="box">
+This app does not have its own login system. It sends you to Microsoft to prove who you are, and Microsoft hands back a signed "receipt" (a token) that this app trusts.
+</div>
+
+<h2>The hotel key-card analogy</h2>
+<div class="analogy">
+Think of Microsoft Entra ID as a hotel front desk, and this app as one of the hotel's rooms.
+<ul>
+  <li>You never get a room key directly from the room — you go to the front desk first.</li>
+  <li>The front desk checks your ID (and, if MFA is turned on, also texts you a code to confirm it's really you).</li>
+  <li>Once satisfied, the front desk hands you a key-card that's programmed to open exactly your room, for a limited time.</li>
+  <li>The room door doesn't know your name or password — it only checks "is this a valid key-card?" That's exactly what this app's <code>MsalInterceptor</code> does with every API request.</li>
+</ul>
+</div>
+
+<h2>The key terms, explained simply</h2>
+<ul>
+  <li><strong>Microsoft Entra ID</strong> — Microsoft's identity service (used to be called "Azure AD"). It's the front desk in the analogy above. It's a completely separate system from this app.</li>
+  <li><strong>MSAL</strong> (Microsoft Authentication Library) — the toolkit this app uses to talk to Entra ID. It's the "phone line" between the app and the front desk.</li>
+  <li><strong>Token</strong> — the key-card. A signed piece of data proving "this person signed in successfully, and is allowed to access this specific API, until this expiry time."</li>
+  <li><strong>Client ID</strong> — this app's own ID number, so Microsoft knows which app is asking.</li>
+  <li><strong>Tenant ID</strong> — which organization's Microsoft directory to check against (like which hotel chain, not just which hotel).</li>
+  <li><strong>Scope</strong> — the specific permission being requested (e.g. "access to ROIVIO's backend API"), like requesting a key-card that only opens your room, not the whole hotel.</li>
+  <li><strong>Redirect flow</strong> — instead of a pop-up window, the whole browser tab briefly navigates to Microsoft's sign-in page, then comes back. This app deliberately uses this instead of a pop-up because Vercel's security settings block pop-ups from reporting back successfully.</li>
+  <li><strong>Guard</strong> (<code>MsalGuard</code>) — a checkpoint on certain pages (like the dashboard) that says "don't let anyone in here without a valid key-card first."</li>
+  <li><strong>Interceptor</strong> (<code>MsalInterceptor</code>) — automatically staples the key-card (token) onto every outgoing request to this app's own backend, so no individual feature has to remember to do it.</li>
+</ul>
+
+<h2>Where MFA fits into this picture</h2>
+<div class="box">
+Multi-factor authentication (MFA) — being asked for a second proof, like a phone code, in addition to your password — happens entirely on Microsoft's side, during the "front desk" step. This app never sees or handles that second factor directly; it only finds out afterward whether sign-in succeeded.
+</div>
+<p>
+That's why turning MFA "on" for this app is mostly a decision made in the Microsoft Entra admin center, not a code change in this repository — unless we decide we need our own additional check on top of Microsoft's.
+</p>
+
+</body>
+</html>
