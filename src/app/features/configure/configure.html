@@ -1,0 +1,144 @@
+<div class="configure-page">
+  <app-page-header
+    title="Configure"
+    subtitle="Map your file's columns so the model knows what each one means."
+  />
+
+  @if (dataset(); as ds) {
+    @if (ds.local) {
+      <div class="notice">
+        Using local data for now — real upload isn't fully live yet (storage isn't configured on
+        the backend). This screen still works the same once it is.
+      </div>
+    }
+    <p class="dataset-name muted">Configuring <strong>{{ ds.name }}</strong></p>
+  }
+
+  <section class="card">
+    <h2 class="section-title">Date &amp; target</h2>
+
+    <div class="field">
+      <label class="label" for="c-date">Date column</label>
+      <input
+        id="c-date"
+        class="input"
+        [ngModel]="dateColumn()"
+        (ngModelChange)="dateColumn.set($event)"
+        placeholder="e.g. week_start"
+      />
+    </div>
+
+    <div class="field">
+      <label class="label" for="c-kpi">Target / KPI column</label>
+      <input
+        id="c-kpi"
+        class="input"
+        [ngModel]="kpiColumn()"
+        (ngModelChange)="kpiColumn.set($event)"
+        placeholder="e.g. total_revenue"
+      />
+    </div>
+
+    <div class="field">
+      <span class="label">What does this column measure?</span>
+      <div class="toggle-row">
+        <button
+          type="button"
+          class="pill-toggle"
+          [class.active]="isRevenue()"
+          (click)="setRevenue(true)"
+        >
+          Revenue
+        </button>
+        <button
+          type="button"
+          class="pill-toggle"
+          [class.active]="!isRevenue()"
+          (click)="setRevenue(false)"
+        >
+          Non-revenue KPI
+        </button>
+      </div>
+    </div>
+
+    @if (!isRevenue()) {
+      <div class="field">
+        <label class="label" for="c-rpu">Revenue per unit</label>
+        <input
+          id="c-rpu"
+          class="input"
+          type="number"
+          [ngModel]="revenuePerUnit()"
+          (ngModelChange)="revenuePerUnit.set($event)"
+          placeholder="e.g. 42.50"
+        />
+      </div>
+    }
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">Media columns</h2>
+    <p class="muted field-hint">Which columns are ad spend, by channel.</p>
+    @for (col of mediaColumns(); track $index) {
+      <div class="list-row">
+        <input
+          class="input"
+          [ngModel]="col"
+          (ngModelChange)="updateListItem('media', $index, $event)"
+          placeholder="e.g. paid_search_spend"
+        />
+        <button class="btn btn-ghost btn-sm" type="button" (click)="removeListItem('media', $index)">
+          Remove
+        </button>
+      </div>
+    }
+    <button class="btn btn-secondary btn-sm" type="button" (click)="addListItem('media')">+ Add media column</button>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">Control columns</h2>
+    <p class="muted field-hint">Other things that affect the outcome but aren't spend — holidays, promotions, competitor activity.</p>
+    @for (col of controlColumns(); track $index) {
+      <div class="list-row">
+        <input
+          class="input"
+          [ngModel]="col"
+          (ngModelChange)="updateListItem('control', $index, $event)"
+          placeholder="e.g. is_holiday_week"
+        />
+        <button class="btn btn-ghost btn-sm" type="button" (click)="removeListItem('control', $index)">
+          Remove
+        </button>
+      </div>
+    }
+    <button class="btn btn-secondary btn-sm" type="button" (click)="addListItem('control')">+ Add control column</button>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">Organic columns <span class="muted">(optional)</span></h2>
+    <p class="muted field-hint">Non-paid channels, if any.</p>
+    @for (col of organicColumns(); track $index) {
+      <div class="list-row">
+        <input
+          class="input"
+          [ngModel]="col"
+          (ngModelChange)="updateListItem('organic', $index, $event)"
+          placeholder="e.g. organic_social_posts"
+        />
+        <button class="btn btn-ghost btn-sm" type="button" (click)="removeListItem('organic', $index)">
+          Remove
+        </button>
+      </div>
+    }
+    <button class="btn btn-secondary btn-sm" type="button" (click)="addListItem('organic')">+ Add organic column</button>
+  </section>
+
+  <div class="tunnel-actions">
+    @if (saved()) {
+      <span class="saved-note">Configuration saved.</span>
+    }
+    <button class="btn btn-primary btn-lg" type="button" [disabled]="!canSave()" (click)="save()">
+      Save configuration
+    </button>
+  </div>
+</div>

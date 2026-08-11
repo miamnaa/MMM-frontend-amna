@@ -94,8 +94,11 @@ export class UploadData implements OnInit {
    * Tries the real endpoint first. It's expected to fail right now (the
    * migration hasn't run and file storage isn't configured on Anas's
    * backend, 2026-08-11) - on failure this still moves on with a local
-   * placeholder dataset so Configure stays reachable and testable before
-   * the backend is actually live, rather than dead-ending the whole tunnel.
+   * placeholder dataset (flagged `local: true`) so Configure stays reachable
+   * and testable before the backend is actually live, rather than
+   * dead-ending the whole tunnel. Configure shows the honest "using local
+   * data" notice itself, since we navigate away immediately either way and
+   * a notice here would just flash and vanish.
    */
   continue(): void {
     const file = this.file();
@@ -104,7 +107,6 @@ export class UploadData implements OnInit {
 
     this.uploading.set(true);
     this.error.set(null);
-    this.usingLocalFallback.set(false);
 
     this.datasetService.createForProject(projectId, file, file.name, this.modelType()).subscribe({
       next: (dataset) => {
@@ -119,7 +121,6 @@ export class UploadData implements OnInit {
       },
       error: () => {
         this.uploading.set(false);
-        this.usingLocalFallback.set(true);
         this.tunnelService.setDataset({
           id: `local-${crypto.randomUUID()}`,
           name: file.name,
