@@ -54,19 +54,6 @@
   margin-bottom: 14px;
 }
 
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 650;
-  color: var(--text-muted);
-}
-
-.back-link:hover {
-  color: var(--ink, inherit);
-}
-
 .card {
   padding: 20px;
   margin-bottom: 18px;
