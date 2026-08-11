@@ -2,7 +2,7 @@ import { Injectable, effect, signal } from '@angular/core';
 
 export type Theme = 'light' | 'dark';
 
-export const THEME_THEME_STORAGE_KEY = 'roivio-theme';
+export const THEME_STORAGE_KEY = 'roivio-theme';
 
 /**
  * Owns the colour scheme. The choice is stamped onto <html data-theme> so the
