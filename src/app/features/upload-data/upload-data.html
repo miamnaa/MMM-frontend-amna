@@ -6,6 +6,21 @@
 
     <div class="tunnel-main">
       <div class="tunnel-main-inner">
+
+  @if (justCreated()) {
+    <div class="toast-success" role="status">
+      <span>Project created successfully</span>
+      <button type="button" class="toast-dismiss" (click)="dismissCreated()" aria-label="Dismiss">✕</button>
+    </div>
+  }
+
+  <div class="top-row">
+    <button class="back-link" type="button" (click)="back()">
+      <span aria-hidden="true">←</span> Back
+    </button>
+    <button class="btn btn-ghost btn-sm" type="button" (click)="signOut()">Sign out</button>
+  </div>
+
   <app-page-header
     title="Upload Your Marketing Data"
     subtitle="Upload your marketing channel spend and performance data to get started with your model."
