@@ -159,7 +159,7 @@ export class Projects {
         setTimeout(() => {
           this.justCreated.set(false);
           this.router.navigate(['/upload-data', project.id]);
-        }, 1800);
+        }, 4000);
       },
       error: (err: unknown) => {
         this.saveError.set(backendErrorMessage(err, 'Could not create the project. Try again.'));
