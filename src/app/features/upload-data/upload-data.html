@@ -1,11 +1,28 @@
 <div class="upload-page">
   <app-page-header
-    title="Upload data"
-    subtitle="Pick your modeling engine and add the spend file this project will use."
+    title="Upload Your Marketing Data"
+    subtitle="Upload your marketing channel spend and performance data to get started with your model."
   />
 
+  <button class="info-toggle" type="button" (click)="toggleInfo()" [attr.aria-expanded]="infoOpen()">
+    <span class="info-icon" aria-hidden="true">ⓘ</span>
+    <span class="info-title">How to prepare your data?</span>
+    <span class="chevron" [class.open]="infoOpen()" aria-hidden="true">⌄</span>
+  </button>
+
+  @if (infoOpen()) {
+    <div class="info-body">
+      <ul>
+        <li>One row per period (e.g. per week) — not one row per transaction.</li>
+        <li>A single date column, in a consistent format (e.g. <code>YYYY-MM-DD</code>).</li>
+        <li>Spend and revenue columns as plain numbers — no currency symbols or commas.</li>
+        <li>Use the same column names throughout the file — they're what you'll map in the next step.</li>
+      </ul>
+    </div>
+  }
+
   <section class="card">
-    <h2 class="section-title">Model</h2>
+    <h2 class="section-title">Choose Model Type</h2>
     <div class="model-grid">
       @for (option of modelOptions; track option.value) {
         <button
@@ -14,6 +31,7 @@
           [class.selected]="modelType() === option.value"
           (click)="selectModel(option.value)"
         >
+          <span class="model-icon" aria-hidden="true">◭</span>
           <span class="model-label">{{ option.label }}</span>
           <span class="model-desc">{{ option.description }}</span>
         </button>
@@ -24,36 +42,40 @@
   <section class="card">
     <h2 class="section-title">Dataset file</h2>
 
-    <div
-      class="dropzone"
-      [class.active]="dragging()"
-      [class.busy]="uploading()"
-      (dragover)="onDragOver($event)"
-      (dragleave)="onDragLeave()"
-      (drop)="onDrop($event)"
-    >
-      <div class="drop-inner">
-        <span class="drop-icon" aria-hidden="true">↥</span>
-        <div class="drop-text">
-          @if (file(); as f) {
-            <strong>{{ f.name }}</strong>
-            <span class="muted">Ready to upload — pick a different file to replace it.</span>
-          } @else {
-            <strong>Drop a file here, or browse</strong>
-            <span class="muted">CSV, XLSX or Parquet</span>
-          }
-        </div>
-
-        <label class="btn btn-secondary">
-          Browse files
-          <input type="file" [accept]="accepted" (change)="onPick($event)" hidden />
-        </label>
+    <div class="upload-row">
+      <div
+        class="dropzone"
+        [class.active]="dragging()"
+        [class.busy]="uploading()"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave()"
+        (drop)="onDrop($event)"
+      >
+        <span class="drop-icon" aria-hidden="true">▤</span>
+        @if (file(); as f) {
+          <strong>{{ f.name }}</strong>
+          <span class="muted">Ready to upload — pick a different file to replace it.</span>
+        } @else {
+          <strong>Drag and Drop <em>OR</em></strong>
+          <label class="link-btn">
+            Click to Upload
+            <input type="file" [accept]="accepted" (change)="onPick($event)" hidden />
+          </label>
+          <span class="muted">CSV, XLSX or Parquet</span>
+        }
       </div>
 
-      @if (error(); as err) {
-        <p class="drop-error">{{ err }}</p>
-      }
+      <span class="or-divider">OR</span>
+
+      <div class="sample-block">
+        <span class="sample-title">Not sure where to start?</span>
+        <a class="link-btn" href="/sample-mmm-dataset.csv" download>Download a sample CSV file</a>
+      </div>
     </div>
+
+    @if (error(); as err) {
+      <p class="drop-error">{{ err }}</p>
+    }
   </section>
 
   <div class="tunnel-actions">

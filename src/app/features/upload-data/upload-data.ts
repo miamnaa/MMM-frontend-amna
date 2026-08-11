@@ -46,6 +46,11 @@ export class UploadData implements OnInit {
   readonly dragging = signal(false);
   readonly uploading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly infoOpen = signal(false);
+
+  toggleInfo(): void {
+    this.infoOpen.update((open) => !open);
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('projectId') ?? '';

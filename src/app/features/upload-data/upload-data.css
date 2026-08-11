@@ -23,6 +23,60 @@
   font-weight: 700;
 }
 
+/* ---- Info accordion ---- */
+
+.info-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  border-left: 3px solid var(--brand-500);
+  border-radius: var(--r-md);
+  background: var(--brand-50);
+  text-align: left;
+}
+
+.info-icon {
+  color: var(--brand-700);
+}
+
+.info-title {
+  flex: 1;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--brand-700);
+}
+
+.chevron {
+  transition: transform 0.15s;
+  color: var(--brand-700);
+}
+
+.chevron.open {
+  transform: rotate(180deg);
+}
+
+.info-body {
+  margin: -10px 0 18px;
+  padding: 14px 18px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 12.5px;
+}
+
+.info-body ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ---- Model cards ---- */
+
 .model-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -39,6 +93,11 @@
   border-radius: var(--r-md);
   background: var(--surface);
   transition: border-color 0.15s, background 0.15s;
+}
+
+.model-icon {
+  font-size: 18px;
+  color: var(--brand-700);
 }
 
 .model-card:hover {
@@ -60,10 +119,23 @@
   color: var(--text-muted);
 }
 
-/* ---- Dropzone — same visual language as the existing Datasets page ---- */
+/* ---- Dropzone + sample-CSV side by side ---- */
+
+.upload-row {
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+}
 
 .dropzone {
-  padding: 22px;
+  flex: 1.4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 28px 20px;
+  text-align: center;
   border: 1.5px dashed var(--border-strong);
   border-radius: var(--r-lg);
   transition: border-color 0.15s, background 0.15s;
@@ -79,33 +151,49 @@
   pointer-events: none;
 }
 
-.drop-inner {
+.drop-icon {
+  font-size: 28px;
+  color: var(--brand-700);
+  margin-bottom: 4px;
+}
+
+.dropzone span {
+  font-size: 12.5px;
+}
+
+.or-divider {
   display: flex;
   align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
 }
 
-.drop-icon {
-  width: 42px;
-  height: 42px;
-  flex: none;
-  display: grid;
-  place-items: center;
-  border-radius: var(--r-md);
-  background: var(--brand-50);
-  color: var(--brand-700);
-  font-size: 18px;
-}
-
-.drop-text {
+.sample-block {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  text-align: center;
 }
 
-.drop-text span {
-  font-size: 12.5px;
+.sample-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.link-btn {
+  color: var(--brand-700);
+  font-weight: 650;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
 }
 
 .drop-error {
@@ -126,5 +214,9 @@
 @media (max-width: 720px) {
   .upload-page {
     padding: 18px 16px 36px;
+  }
+
+  .upload-row {
+    flex-direction: column;
   }
 }
