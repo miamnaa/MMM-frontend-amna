@@ -45,10 +45,12 @@ export class Verify implements OnInit {
   }
 
   constructor() {
-    // Move on the moment the service confirms verification.
+    // Move on the moment the service confirms verification - into the
+    // tunnel's project list, not /overview (that page still exists but
+    // nothing links to it anymore).
     effect(() => {
       if (this.otpService.verified()) {
-        this.router.navigate(['/overview']);
+        this.router.navigate(['/projects']);
       }
     });
   }

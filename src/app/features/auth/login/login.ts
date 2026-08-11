@@ -22,9 +22,11 @@ export class Login implements OnInit {
 
   ngOnInit(): void {
     // A signed-in visitor landing on /login directly (back button, stale
-    // tab) shouldn't be asked to sign in again.
+    // tab) shouldn't be asked to sign in again. Sent to /projects, not
+    // /overview - otpGuard bounces them to /verify first if they haven't
+    // done the email-code step yet this session.
     if (this.msalService.instance.getActiveAccount()) {
-      this.router.navigate(['/overview']);
+      this.router.navigate(['/projects']);
     }
   }
 
@@ -37,15 +39,16 @@ export class Login implements OnInit {
     // depends on the main window reading window.opener off the popup once
     // Microsoft redirects it, and a Cross-Origin-Opener-Policy header blocks
     // exactly that read. Redirect has no second window, so nothing to sever.
-    // redirectStartPage sends the browser to /overview once sign-in
-    // succeeds, rather than back to this page.
+    // redirectStartPage sends the browser to /projects once sign-in
+    // succeeds, rather than back to this page - otpGuard still bounces to
+    // /verify first if the email-code step hasn't happened this session.
     // prompt: SELECT_ACCOUNT forces Microsoft's account-chooser screen every
     // time, even when there's already an active SSO session that would
     // otherwise sign someone in silently with no choice at all.
     this.msalService
       .loginRedirect({
         scopes: API_SCOPES,
-        redirectStartPage: `${window.location.origin}/overview`,
+        redirectStartPage: `${window.location.origin}/projects`,
         prompt: PromptValue.SELECT_ACCOUNT,
       })
       .subscribe({
