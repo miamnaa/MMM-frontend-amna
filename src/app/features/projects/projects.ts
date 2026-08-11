@@ -119,10 +119,6 @@ export class Projects {
     });
   }
 
-  dismissCreated(): void {
-    this.justCreated.set(false);
-  }
-
   setSearchQuery(value: string): void {
     this.searchQuery.set(value);
   }
