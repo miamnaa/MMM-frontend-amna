@@ -2,7 +2,7 @@ import { Injectable, effect, signal } from '@angular/core';
 
 export type Theme = 'light' | 'dark';
 
-const STORAGE_KEY = 'roivio-theme';
+export const THEME_THEME_STORAGE_KEY = 'roivio-theme';
 
 /**
  * Owns the colour scheme. The choice is stamped onto <html data-theme> so the
@@ -17,7 +17,7 @@ export class ThemeService {
       const theme = this.theme();
       document.documentElement.dataset['theme'] = theme;
       try {
-        localStorage.setItem(STORAGE_KEY, theme);
+        localStorage.setItem(THEME_STORAGE_KEY, theme);
       } catch {
         // Private browsing can refuse storage; the theme still applies for this session.
       }
@@ -35,7 +35,7 @@ export class ThemeService {
   /** Stored choice wins; otherwise follow the operating system. */
   private initial(): Theme {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = localStorage.getItem(THEME_STORAGE_KEY);
       if (stored === 'light' || stored === 'dark') return stored;
     } catch {
       // Fall through to the system preference.
