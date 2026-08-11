@@ -1,4 +1,10 @@
 <div class="upload-page">
+  <div class="tunnel-layout">
+    <aside class="tunnel-side">
+      <app-tunnel-steps [projectId]="projectId()" current="upload-data" />
+    </aside>
+
+    <div class="tunnel-main">
   <app-page-header
     title="Upload Your Marketing Data"
     subtitle="Upload your marketing channel spend and performance data to get started with your model."
