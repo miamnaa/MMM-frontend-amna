@@ -1,6 +1,8 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { MsalService } from '@azure/msal-angular';
 
+import { localSignOut } from '../../core/auth/local-sign-out';
 import { DatasetService } from '../../core/services/dataset.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { PageHeader } from '../../shared/ui/page-header/page-header';

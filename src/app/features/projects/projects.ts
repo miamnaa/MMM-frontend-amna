@@ -150,7 +150,9 @@ export class Projects {
         this.saving.set(false);
         this.dialogOpen.set(false);
         // Straight into the tunnel - a new project always needs data next.
-        this.router.navigate(['/upload-data', project.id]);
+        // The "created successfully" banner travels via navigation state,
+        // not a query param, so it doesn't linger in the URL/history.
+        this.router.navigate(['/upload-data', project.id], { state: { justCreated: true } });
       },
       error: (err: unknown) => {
         this.saveError.set(backendErrorMessage(err, 'Could not create the project. Try again.'));
