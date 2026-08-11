@@ -5,8 +5,38 @@
   min-height: 100vh;
   padding: 26px 28px 48px;
   background: var(--surface);
-  max-width: 760px;
+}
+
+.tunnel-layout {
+  display: flex;
+  gap: 32px;
+  max-width: 980px;
   margin: 0 auto;
+  align-items: flex-start;
+}
+
+.tunnel-side {
+  flex: none;
+  width: 220px;
+  position: sticky;
+  top: 26px;
+}
+
+.tunnel-main {
+  flex: 1;
+  min-width: 0;
+  max-width: 760px;
+}
+
+@media (max-width: 840px) {
+  .tunnel-layout {
+    flex-direction: column;
+  }
+
+  .tunnel-side {
+    width: 100%;
+    position: static;
+  }
 }
 
 .card {
