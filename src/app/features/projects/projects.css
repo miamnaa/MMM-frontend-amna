@@ -236,6 +236,26 @@
   gap: 16px;
 }
 
+.icon-btn {
+  padding: 6px 10px;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.view-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 13.5px;
+}
+
+.view-row .label {
+  flex: none;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
 .dialog-foot {
   display: flex;
   justify-content: flex-end;
