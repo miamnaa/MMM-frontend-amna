@@ -1,0 +1,79 @@
+:host {
+  display: block;
+}
+
+.tunnel-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+
+.step.reachable {
+  cursor: pointer;
+  color: var(--ink, inherit);
+}
+
+.step.reachable .dot {
+  background: var(--brand-500);
+}
+
+.step.reachable:hover {
+  background: var(--brand-50);
+}
+
+.step.current {
+  color: var(--brand-700);
+  background: var(--brand-50);
+}
+
+.step.current .dot {
+  background: var(--brand-500);
+  box-shadow: 0 0 0 3px var(--brand-100);
+}
+
+.step.upcoming {
+  opacity: 0.55;
+}
+
+.step:disabled {
+  cursor: default;
+}
+
+@media (max-width: 840px) {
+  .tunnel-steps {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .step-label {
+    display: none;
+  }
+
+  .step.current .step-label,
+  .step.reachable .step-label {
+    display: inline;
+  }
+}

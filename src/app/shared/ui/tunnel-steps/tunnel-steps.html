@@ -1,0 +1,16 @@
+<nav class="tunnel-steps" aria-label="Progress">
+  @for (step of steps; track step.key) {
+    <button
+      type="button"
+      class="step"
+      [class.current]="step.key === current()"
+      [class.reachable]="isReachable(step) && step.key !== current()"
+      [class.upcoming]="!step.built"
+      [disabled]="!isReachable(step) || step.key === current()"
+      (click)="go(step)"
+    >
+      <span class="dot" aria-hidden="true"></span>
+      <span class="step-label">{{ step.label }}</span>
+    </button>
+  }
+</nav>
