@@ -117,15 +117,6 @@ export class Configure implements OnInit {
     if (this.organicColumns().length === 0) this.organicColumns.set(['']);
   }
 
-  back(): void {
-    this.router.navigate(['/models', this.projectId()]);
-  }
-
-  /** See local-sign-out.ts - same call used everywhere else in the tunnel. */
-  signOut(): void {
-    void localSignOut(this.msalService);
-  }
-
   setRevenue(isRevenue: boolean): void {
     this.isRevenue.set(isRevenue);
   }
