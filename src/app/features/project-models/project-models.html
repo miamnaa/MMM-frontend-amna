@@ -1,13 +1,4 @@
 <div class="project-models-page">
-  <div class="top-row">
-    <button class="btn btn-secondary btn-sm" type="button" (click)="back()">
-      <span aria-hidden="true">←</span> Back to projects
-    </button>
-    <button class="btn btn-secondary btn-sm" type="button" (click)="signOut()">
-      <span aria-hidden="true">⇥</span> Sign out
-    </button>
-  </div>
-
   <app-page-header
     [title]="project()?.name || 'Models'"
     subtitle="Every model you've started for this project, and how far along each one is."
@@ -54,17 +45,52 @@
           </div>
           <span class="percent-label">{{ row.percent }}%</span>
 
-          @if (row.status === 'ready') {
-            <button class="btn btn-primary btn-sm train-btn" type="button" disabled title="Coming soon">
-              Train Model <span class="coming-soon">Coming soon</span>
+          <div class="row-actions">
+            @if (row.status === 'ready') {
+              <button class="btn btn-primary btn-sm train-btn" type="button" disabled title="Coming soon">
+                Train Model <span class="coming-soon">Coming soon</span>
+              </button>
+            } @else {
+              <button class="btn btn-secondary btn-sm" type="button" (click)="continueSetup(row)">
+                Continue Setup
+              </button>
+            }
+            <button
+              class="btn btn-ghost btn-sm icon-btn delete-btn"
+              type="button"
+              (click)="confirmDelete(row)"
+              aria-label="Delete this model"
+              title="Delete this model"
+            >
+              🗑
             </button>
-          } @else {
-            <button class="btn btn-secondary btn-sm" type="button" (click)="continueSetup(row)">
-              Continue Setup
-            </button>
-          }
+          </div>
         </article>
       }
+    </div>
+  }
+
+  @if (deleteTarget(); as target) {
+    <div class="backdrop" (click)="cancelDelete()"></div>
+    <div class="dialog card" role="dialog" aria-modal="true" aria-label="Delete model">
+      <div class="card-header">
+        <h2>Delete model</h2>
+        <button class="btn btn-ghost btn-sm" type="button" (click)="cancelDelete()">Cancel</button>
+      </div>
+      <div class="card-body dialog-body">
+        @if (deleteError(); as err) {
+          <p class="field-error">{{ err }}</p>
+        }
+        <p>
+          Delete <strong>{{ target.dataset.name }}</strong>? This can't be undone from this screen.
+        </p>
+      </div>
+      <div class="dialog-foot">
+        <button class="btn btn-secondary" type="button" (click)="cancelDelete()">Cancel</button>
+        <button class="btn btn-danger" type="button" [disabled]="deleting()" (click)="deleteModel()">
+          {{ deleting() ? 'Deleting…' : 'Delete model' }}
+        </button>
+      </div>
     </div>
   }
 </div>
