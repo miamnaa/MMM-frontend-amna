@@ -39,10 +39,8 @@ function validRow(row: ChannelRow): boolean {
 })
 export class Hyperparameters implements OnInit {
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly datasetService = inject(DatasetService);
   private readonly tunnelService = inject(TunnelService);
-  private readonly msalService = inject(MsalService);
 
   readonly projectId = signal('');
   readonly datasetId = signal('');
@@ -62,15 +60,6 @@ export class Hyperparameters implements OnInit {
     // Configuration to have been saved first.
     const mediaColumns = this.tunnelService.configuration()?.mediaColumns ?? [];
     this.rows.set(mediaColumns.map((channel) => ({ channel, carryover: null, saturation: null })));
-  }
-
-  back(): void {
-    this.router.navigate(['/models', this.projectId()]);
-  }
-
-  /** See local-sign-out.ts - same call used everywhere else in the tunnel. */
-  signOut(): void {
-    void localSignOut(this.msalService);
   }
 
   updateCarryover(index: number, value: number | null): void {

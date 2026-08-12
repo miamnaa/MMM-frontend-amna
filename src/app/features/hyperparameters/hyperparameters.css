@@ -8,13 +8,14 @@
   align-items: stretch;
 }
 
+/* Fixed calc, not a percentage chained through flex ancestors - 56px matches app-shell.css's .shell-bar. */
 .tunnel-side {
   flex: none;
   width: 240px;
   position: sticky;
   top: 0;
   align-self: flex-start;
-  height: 100vh;
+  height: calc(100vh - 56px);
 }
 
 .tunnel-main {
@@ -44,13 +45,6 @@
   .tunnel-main {
     padding: 18px 16px 36px;
   }
-}
-
-.top-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
 }
 
 .card {

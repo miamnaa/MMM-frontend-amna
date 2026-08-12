@@ -151,8 +151,9 @@ export class DatasetService {
     return this.http.patch(`${environment.apiBaseUrl}/datasets/${datasetId}/hyperparameters`, { channels });
   }
 
-  remove(_id: string): Observable<void> {
-    return notAvailable();
+  /** Real endpoint - soft delete, backend keeps the row for audit and excludes it from listForProject() after. */
+  remove(id: string): Observable<void> {
+    return this.http.delete<void>(`${environment.apiBaseUrl}/datasets/${id}`);
   }
 
   /** Fills in what an unverified response shape doesn't - see ApiDatasetCreateResponse. */
