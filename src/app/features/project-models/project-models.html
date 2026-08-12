@@ -1,0 +1,70 @@
+<div class="project-models-page">
+  <div class="top-row">
+    <button class="btn btn-secondary btn-sm" type="button" (click)="back()">
+      <span aria-hidden="true">←</span> Back to projects
+    </button>
+    <button class="btn btn-secondary btn-sm" type="button" (click)="signOut()">
+      <span aria-hidden="true">⇥</span> Sign out
+    </button>
+  </div>
+
+  <app-page-header
+    [title]="project()?.name || 'Models'"
+    subtitle="Every model you've started for this project, and how far along each one is."
+  >
+    <button class="btn btn-primary" type="button" (click)="newModel()">+ New model</button>
+  </app-page-header>
+
+  @if (loadError(); as err) {
+    <div class="card error-banner">
+      <span>{{ err }}</span>
+      <button class="btn btn-secondary btn-sm" type="button" (click)="load()">Retry</button>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="skeleton-list">
+      @for (i of [1, 2, 3]; track i) {
+        <div class="card skeleton"></div>
+      }
+    </div>
+  } @else if (rows().length === 0) {
+    @if (!loadError()) {
+      <div class="card">
+        <app-empty-state
+          icon="◈"
+          title="No models yet"
+          message="Upload a dataset to start your first model for this project."
+        >
+          <button class="btn btn-primary" type="button" (click)="newModel()">+ New model</button>
+        </app-empty-state>
+      </div>
+    }
+  } @else {
+    <div class="model-list">
+      @for (row of rows(); track row.dataset.id) {
+        <article class="card model-row">
+          <div class="model-info">
+            <h2>{{ row.dataset.name }}</h2>
+            <span class="status-label">{{ row.label }}</span>
+          </div>
+
+          <div class="progress-track" [attr.aria-label]="row.label + ', ' + row.percent + '% complete'">
+            <div class="progress-fill" [style.width.%]="row.percent"></div>
+          </div>
+          <span class="percent-label">{{ row.percent }}%</span>
+
+          @if (row.status === 'ready') {
+            <button class="btn btn-primary btn-sm train-btn" type="button" disabled title="Coming soon">
+              Train Model <span class="coming-soon">Coming soon</span>
+            </button>
+          } @else {
+            <button class="btn btn-secondary btn-sm" type="button" (click)="continueSetup(row)">
+              Continue Setup
+            </button>
+          }
+        </article>
+      }
+    </div>
+  }
+</div>
