@@ -81,6 +81,17 @@ export class DatasetService {
     return this.http.patch(`${environment.apiBaseUrl}/datasets/${datasetId}/configuration`, body);
   }
 
+  /**
+   * Real endpoint, CSV only for now - XLSX/Parquet return a 400 with a
+   * clear message, which callers should treat as "fall back to manual
+   * entry for this dataset," not as a hard failure.
+   */
+  getColumns(datasetId: string): Observable<string[]> {
+    return this.http
+      .get<{ columns: string[] }>(`${environment.apiBaseUrl}/datasets/${datasetId}/columns`)
+      .pipe(map((r) => r.columns));
+  }
+
   saveOptimize(datasetId: string, body: SavedOptimize): Observable<unknown> {
     return this.http.patch(`${environment.apiBaseUrl}/datasets/${datasetId}/optimize`, body);
   }
