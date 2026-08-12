@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DatasetService } from '../../core/services/dataset.service';
-import { TunnelDataset, TunnelService } from '../../core/services/tunnel.service';
+import { SavedConfiguration, TunnelDataset, TunnelService } from '../../core/services/tunnel.service';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
 import { TunnelSteps } from '../../shared/ui/tunnel-steps/tunnel-steps';

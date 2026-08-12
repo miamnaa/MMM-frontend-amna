@@ -97,6 +97,26 @@
         </button>
       </div>
     </div>
+
+    @if (!isRevenue()) {
+      <div class="field">
+        <label class="label" for="c-revenue-per-kpi">Revenue per {{ kpiColumn() || 'KPI unit' }}</label>
+        <input
+          id="c-revenue-per-kpi"
+          class="input"
+          type="number"
+          min="0"
+          step="0.01"
+          [ngModel]="revenuePerKpiValue()"
+          (ngModelChange)="setRevenuePerKpiValue($event)"
+          placeholder="e.g. 50"
+        />
+        <p class="muted field-hint">
+          How much is one {{ kpiColumn() || 'unit of this KPI' }} worth in real revenue? e.g. if
+          each subscription is worth about $50, enter 50.
+        </p>
+      </div>
+    }
   </section>
 
   <section class="card">
@@ -199,6 +219,42 @@
             [class.selected]="organicColumns().includes(col)"
             [disabled]="isUsedElsewhere(col, 'organic')"
             (click)="toggleColumn('organic', col)"
+          >
+            {{ col }}
+          </button>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">Geo columns <span class="muted">(optional)</span></h2>
+    <p class="muted field-hint">Geographic breakdown columns, if your file has any — region, country, state, whichever exist.</p>
+
+    @if (columnsUnavailable()) {
+      @for (col of geoColumns(); track $index) {
+        <div class="list-row">
+          <input
+            class="input"
+            [ngModel]="col"
+            (ngModelChange)="updateListItem('geo', $index, $event)"
+            placeholder="e.g. region"
+          />
+          <button class="btn btn-ghost btn-sm" type="button" (click)="removeListItem('geo', $index)">
+            Remove
+          </button>
+        </div>
+      }
+      <button class="btn btn-secondary btn-sm" type="button" (click)="addListItem('geo')">+ Add geo column</button>
+    } @else {
+      <div class="chip-grid">
+        @for (col of availableColumns(); track col) {
+          <button
+            type="button"
+            class="column-chip"
+            [class.selected]="geoColumns().includes(col)"
+            [disabled]="isUsedElsewhere(col, 'geo')"
+            (click)="toggleColumn('geo', col)"
           >
             {{ col }}
           </button>
