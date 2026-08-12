@@ -2,9 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { MsalService } from '@azure/msal-angular';
 
-import { localSignOut } from '../../core/auth/local-sign-out';
 import { ProjectService } from '../../core/services/project.service';
 import { Project } from '../../core/models/domain.models';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
@@ -47,7 +45,6 @@ function backendErrorMessage(err: unknown, fallback: string): string {
 export class Projects {
   private readonly projectService = inject(ProjectService);
   private readonly router = inject(Router);
-  private readonly msalService = inject(MsalService);
 
   readonly projects = signal<Project[]>([]);
   readonly loading = signal(true);
@@ -166,11 +163,6 @@ export class Projects {
         this.saving.set(false);
       },
     });
-  }
-
-  /** See local-sign-out.ts - same call header.ts/sidebar.ts use, Projects just has no shared layout to put it in anymore. */
-  signOut(): void {
-    void localSignOut(this.msalService);
   }
 
   /** Opens the project hub (its models list), not straight into Upload Data - that's what "+ New model" there is for. */
