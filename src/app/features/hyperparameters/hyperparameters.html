@@ -7,6 +7,15 @@
     <div class="tunnel-main">
       <div class="tunnel-main-inner">
 
+  <div class="top-row">
+    <button class="btn btn-secondary btn-sm" type="button" (click)="back()">
+      <span aria-hidden="true">←</span> Back
+    </button>
+    <button class="btn btn-secondary btn-sm" type="button" (click)="signOut()">
+      <span aria-hidden="true">⇥</span> Sign out
+    </button>
+  </div>
+
   <app-page-header
     title="Hyperparameterization"
     subtitle="For each media channel, set how long its effect carries over and how quickly it saturates."
@@ -55,6 +64,20 @@
 
   @if (saveError(); as err) {
     <p class="drop-error">{{ err }}</p>
+  }
+
+  @if (saved()) {
+    <section class="card complete-panel">
+      <h2 class="section-title">Setup complete</h2>
+      <p class="muted field-hint">
+        Everything's configured. Training isn't wired up yet — that's a real, live question to the
+        modeling team, not something skipped by accident — so there's nowhere to send a training
+        run just yet. Once that's answered, this becomes a real button.
+      </p>
+      <button class="btn btn-primary btn-lg" type="button" disabled title="Coming soon">
+        Train Model <span class="coming-soon">Coming soon</span>
+      </button>
+    </section>
   }
 
   <div class="tunnel-actions">

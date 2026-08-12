@@ -46,6 +46,13 @@
   }
 }
 
+.top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
 .card {
   padding: 20px;
   margin-bottom: 18px;

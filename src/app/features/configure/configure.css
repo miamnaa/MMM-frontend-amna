@@ -42,6 +42,13 @@
   }
 }
 
+.top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
 .drop-error {
   margin-top: 4px;
   margin-bottom: 8px;
