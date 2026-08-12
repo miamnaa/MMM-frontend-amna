@@ -1,9 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { MsalService } from '@azure/msal-angular';
+import { ActivatedRoute } from '@angular/router';
 
-import { localSignOut } from '../../core/auth/local-sign-out';
 import { DatasetService, HyperparameterChannel } from '../../core/services/dataset.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
