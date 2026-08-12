@@ -1,8 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MsalService } from '@azure/msal-angular';
 
-import { localSignOut } from '../../core/auth/local-sign-out';
 import { DatasetService } from '../../core/services/dataset.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
@@ -39,12 +38,12 @@ export class UploadData implements OnInit {
   private readonly router = inject(Router);
   private readonly datasetService = inject(DatasetService);
   private readonly tunnelService = inject(TunnelService);
-  private readonly msalService = inject(MsalService);
 
   readonly modelOptions = MODEL_OPTIONS;
   readonly accepted = ACCEPTED.join(',');
 
   readonly projectId = signal('');
+  readonly modelName = signal('');
   readonly modelType = signal(MODEL_OPTIONS[0].value);
   readonly file = signal<File | null>(null);
   readonly dragging = signal(false);
@@ -60,15 +59,6 @@ export class UploadData implements OnInit {
     const id = this.route.snapshot.paramMap.get('projectId') ?? '';
     this.projectId.set(id);
     this.tunnelService.selectProject(id);
-  }
-
-  back(): void {
-    this.router.navigate(['/models', this.projectId()]);
-  }
-
-  /** See local-sign-out.ts - same call used on Projects/header/sidebar. */
-  signOut(): void {
-    void localSignOut(this.msalService);
   }
 
   selectModel(value: string): void {
@@ -121,12 +111,13 @@ export class UploadData implements OnInit {
   continue(): void {
     const file = this.file();
     const projectId = this.projectId();
-    if (!file || this.uploading()) return;
+    const name = this.modelName().trim();
+    if (!file || !name || this.uploading()) return;
 
     this.uploading.set(true);
     this.error.set(null);
 
-    this.datasetService.createForProject(projectId, file, file.name, this.modelType()).subscribe({
+    this.datasetService.createForProject(projectId, file, name, this.modelType()).subscribe({
       next: (dataset) => {
         this.uploading.set(false);
         this.tunnelService.setDataset({
@@ -142,7 +133,7 @@ export class UploadData implements OnInit {
         const localId = `local-${crypto.randomUUID()}`;
         this.tunnelService.setDataset({
           id: localId,
-          name: file.name,
+          name,
           modelType: this.modelType(),
           local: true,
         });
