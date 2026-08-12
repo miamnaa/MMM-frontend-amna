@@ -4,12 +4,12 @@ import { CanActivateFn, Router } from '@angular/router';
 import { TunnelService } from '../services/tunnel.service';
 
 /**
- * Configure has no real "am I done" read endpoint to check against, so this
- * can only check the in-memory TunnelService, not a real dataset record -
- * meaning it resets on a fresh tab. That's an accepted tradeoff for a step
- * whose backend has no read-back, not a security gate like otpGuard.
+ * Same dataset-id check as datasetContextGuard, plus Calibration must have
+ * actually been saved first. This is also what guarantees the channel list
+ * on Hyperparameters always has real, saved mediaColumns to pre-fill from -
+ * you cannot reach this screen without Configure having been saved.
  */
-export const datasetContextGuard: CanActivateFn = (route) => {
+export const hyperparametersContextGuard: CanActivateFn = (route) => {
   const tunnelService = inject(TunnelService);
   const router = inject(Router);
   const projectId = route.paramMap.get('projectId');
@@ -19,7 +19,8 @@ export const datasetContextGuard: CanActivateFn = (route) => {
     projectId !== null &&
     datasetId !== null &&
     tunnelService.projectId() === projectId &&
-    tunnelService.dataset()?.id === datasetId;
+    tunnelService.dataset()?.id === datasetId &&
+    tunnelService.calibration() !== null;
 
   return contextMatches ? true : router.createUrlTree(['/projects']);
 };

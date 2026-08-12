@@ -4,6 +4,7 @@ import { Observable, map, of, throwError } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { Dataset } from '../models/domain.models';
+import { SavedCalibration, SavedConfiguration, SavedOptimize } from './tunnel.service';
 
 const notAvailable = () =>
   throwError(() => new Error('Datasets are not connected to a backend yet.'));
@@ -20,12 +21,19 @@ interface ApiDatasetCreateResponse {
   uploadedAt?: string;
 }
 
+/** Mirrors the real PATCH /datasets/:id/hyperparameters body exactly. */
+export interface HyperparameterChannel {
+  channel: string;
+  carryover: number;
+  saturation: number;
+}
+
 /**
- * No /datasets route exists on the real API yet (API-REFERENCE.md, "What is
- * not built yet"). Reads return empty rather than fabricated rows; writes
- * fail loudly instead of faking a success that never happened. Once the
- * route ships, replace these bodies with real HttpClient calls - see
- * ProjectService for the exact shape to copy.
+ * `list`/`get`/`upload`/`remove` still have no real backend (API-REFERENCE.md,
+ * "What is not built yet") and stay honest about that. The four
+ * `save*` methods below ARE real, shipped 2026-08-12 - each is a thin PATCH
+ * to `/datasets/:id/...`, all requiring the dataset's own id (not the
+ * project's), matching what the backend actually scopes them by.
  */
 @Injectable({ providedIn: 'root' })
 export class DatasetService {
@@ -60,6 +68,35 @@ export class DatasetService {
     return this.http
       .post<ApiDatasetCreateResponse>(`${environment.apiBaseUrl}/projects/${projectId}/datasets`, form)
       .pipe(map((r) => this.toDataset(r, projectId)));
+  }
+
+  /**
+   * Real endpoint. Response is documented as "the full, updated dataset
+   * object (same shape GET /datasets/:id returns)" - that shape isn't
+   * defined anywhere in this codebase yet (no real GET /datasets/:id call
+   * exists), so the response is left loosely typed. Callers only need to
+   * know the save succeeded, not consume fields back from it.
+   */
+  saveConfiguration(datasetId: string, body: SavedConfiguration): Observable<unknown> {
+    return this.http.patch(`${environment.apiBaseUrl}/datasets/${datasetId}/configuration`, body);
+  }
+
+  saveOptimize(datasetId: string, body: SavedOptimize): Observable<unknown> {
+    return this.http.patch(`${environment.apiBaseUrl}/datasets/${datasetId}/optimize`, body);
+  }
+
+  saveCalibration(datasetId: string, body: SavedCalibration): Observable<unknown> {
+    return this.http.patch(`${environment.apiBaseUrl}/datasets/${datasetId}/calibration`, body);
+  }
+
+  /**
+   * Requires Configuration to already be saved - the backend checks that
+   * `channels` contains exactly the same channel names as Configure's
+   * mediaColumns, no more/fewer, any order. hyperparametersContextGuard is
+   * what guarantees that's true before this screen is even reachable.
+   */
+  saveHyperparameters(datasetId: string, channels: HyperparameterChannel[]): Observable<unknown> {
+    return this.http.patch(`${environment.apiBaseUrl}/datasets/${datasetId}/hyperparameters`, { channels });
   }
 
   remove(_id: string): Observable<void> {

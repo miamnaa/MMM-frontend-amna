@@ -1,54 +1,64 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
+import { DatasetService } from '../../core/services/dataset.service';
 import { TunnelDataset, TunnelService } from '../../core/services/tunnel.service';
+import { backendErrorMessage } from '../../shared/utils/backend-error';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
+import { TunnelSteps } from '../../shared/ui/tunnel-steps/tunnel-steps';
+
+function nonEmpty(values: string[]): string[] {
+  return values.map((v) => v.trim()).filter((v) => v.length > 0);
+}
 
 /**
- * No real backend for Configure yet (CMP-79) - every field here is
- * genuinely local/mock state, saved only on TunnelService, not sent
- * anywhere. There's also no real parsed-file column list yet since Upload
- * Data's own backend isn't live, so these are honest free-text inputs for
- * column names rather than a picker pretending to know real columns.
+ * Real backend now (PATCH /datasets/:id/configuration, shipped 2026-08-12).
+ * There's still no real parsed-file column list, since Upload Data's own
+ * upload endpoint isn't fully live yet, so these stay honest free-text
+ * inputs for column names rather than a picker pretending to know real
+ * columns.
  */
 @Component({
   selector: 'app-configure',
-  imports: [FormsModule, PageHeader],
+  imports: [FormsModule, PageHeader, TunnelSteps],
   templateUrl: './configure.html',
   styleUrl: './configure.css',
 })
 export class Configure implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly datasetService = inject(DatasetService);
   private readonly tunnelService = inject(TunnelService);
 
   readonly projectId = signal('');
+  readonly datasetId = signal('');
   readonly dataset = computed<TunnelDataset | null>(() => this.tunnelService.dataset());
 
   readonly dateColumn = signal('');
   readonly kpiColumn = signal('');
   readonly isRevenue = signal(true);
-  readonly revenuePerUnit = signal<number | null>(null);
   readonly mediaColumns = signal<string[]>(['']);
   readonly controlColumns = signal<string[]>(['']);
   readonly organicColumns = signal<string[]>(['']);
 
-  readonly saved = signal(false);
+  readonly saving = signal(false);
+  readonly saveError = signal<string | null>(null);
 
   readonly canSave = computed(
     () =>
       this.dateColumn().trim().length > 0 &&
       this.kpiColumn().trim().length > 0 &&
-      (this.isRevenue() || this.revenuePerUnit() !== null),
+      nonEmpty(this.mediaColumns()).length > 0, // backend requires at least one media column
   );
 
   ngOnInit(): void {
     this.projectId.set(this.route.snapshot.paramMap.get('projectId') ?? '');
+    this.datasetId.set(this.route.snapshot.paramMap.get('datasetId') ?? '');
   }
 
   setRevenue(isRevenue: boolean): void {
     this.isRevenue.set(isRevenue);
-    if (isRevenue) this.revenuePerUnit.set(null);
   }
 
   updateListItem(list: 'media' | 'control' | 'organic', index: number, value: string): void {
@@ -72,9 +82,31 @@ export class Configure implements OnInit {
     return this.organicColumns;
   }
 
-  /** Nowhere further to go yet - the sequence stops here per the spec, so this just confirms locally. */
   save(): void {
-    if (!this.canSave()) return;
-    this.saved.set(true);
+    if (!this.canSave() || this.saving()) return;
+
+    const body = {
+      dateColumn: this.dateColumn().trim(),
+      targetColumn: this.kpiColumn().trim(),
+      kpiType: this.isRevenue() ? ('revenue' as const) : ('non_revenue' as const),
+      mediaColumns: nonEmpty(this.mediaColumns()),
+      controlColumns: nonEmpty(this.controlColumns()),
+      organicColumns: nonEmpty(this.organicColumns()),
+    };
+
+    this.saving.set(true);
+    this.saveError.set(null);
+
+    this.datasetService.saveConfiguration(this.datasetId(), body).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.tunnelService.setConfiguration(body);
+        this.router.navigate(['/optimize', this.projectId(), this.datasetId()]);
+      },
+      error: (err: unknown) => {
+        this.saving.set(false);
+        this.saveError.set(backendErrorMessage(err, 'Could not save this configuration. Try again.'));
+      },
+    });
   }
 }

@@ -1,4 +1,12 @@
 <div class="configure-page">
+  <div class="tunnel-layout">
+    <aside class="tunnel-side">
+      <app-tunnel-steps [projectId]="projectId()" current="configure" />
+    </aside>
+
+    <div class="tunnel-main">
+      <div class="tunnel-main-inner">
+
   <app-page-header
     title="Configure"
     subtitle="Map your file's columns so the model knows what each one means."
@@ -60,25 +68,11 @@
         </button>
       </div>
     </div>
-
-    @if (!isRevenue()) {
-      <div class="field">
-        <label class="label" for="c-rpu">Revenue per unit</label>
-        <input
-          id="c-rpu"
-          class="input"
-          type="number"
-          [ngModel]="revenuePerUnit()"
-          (ngModelChange)="revenuePerUnit.set($event)"
-          placeholder="e.g. 42.50"
-        />
-      </div>
-    }
   </section>
 
   <section class="card">
     <h2 class="section-title">Media columns</h2>
-    <p class="muted field-hint">Which columns are ad spend, by channel.</p>
+    <p class="muted field-hint">Which columns are ad spend, by channel. At least one is required.</p>
     @for (col of mediaColumns(); track $index) {
       <div class="list-row">
         <input
@@ -133,12 +127,17 @@
     <button class="btn btn-secondary btn-sm" type="button" (click)="addListItem('organic')">+ Add organic column</button>
   </section>
 
+  @if (saveError(); as err) {
+    <p class="drop-error">{{ err }}</p>
+  }
+
   <div class="tunnel-actions">
-    @if (saved()) {
-      <span class="saved-note">Configuration saved.</span>
-    }
-    <button class="btn btn-primary btn-lg" type="button" [disabled]="!canSave()" (click)="save()">
-      Save configuration
+    <button class="btn btn-primary btn-lg" type="button" [disabled]="!canSave() || saving()" (click)="save()">
+      {{ saving() ? 'Saving…' : 'Save configuration' }}
     </button>
+  </div>
+
+      </div>
+    </div>
   </div>
 </div>

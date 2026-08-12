@@ -1,0 +1,58 @@
+<div class="optimize-page">
+  <div class="tunnel-layout">
+    <aside class="tunnel-side">
+      <app-tunnel-steps [projectId]="projectId()" current="optimize" />
+    </aside>
+
+    <div class="tunnel-main">
+      <div class="tunnel-main-inner">
+
+  <app-page-header
+    title="Optimize"
+    subtitle="Which weeks of your data should the model learn from?"
+  />
+
+  <section class="card">
+    <h2 class="section-title">Training date range</h2>
+
+    <div class="field">
+      <label class="label" for="o-start">Start date</label>
+      <input
+        id="o-start"
+        class="input"
+        type="date"
+        [ngModel]="startDate()"
+        (ngModelChange)="startDate.set($event)"
+      />
+    </div>
+
+    <div class="field">
+      <label class="label" for="o-end">End date</label>
+      <input
+        id="o-end"
+        class="input"
+        type="date"
+        [ngModel]="endDate()"
+        (ngModelChange)="endDate.set($event)"
+      />
+    </div>
+
+    @if (rangeInvalid()) {
+      <p class="drop-error">Start date must be before end date.</p>
+    }
+  </section>
+
+  @if (saveError(); as err) {
+    <p class="drop-error">{{ err }}</p>
+  }
+
+  <div class="tunnel-actions">
+    <button class="btn btn-primary btn-lg" type="button" [disabled]="!canSave() || saving()" (click)="save()">
+      {{ saving() ? 'Saving…' : 'Save and continue' }}
+    </button>
+  </div>
+
+      </div>
+    </div>
+  </div>
+</div>

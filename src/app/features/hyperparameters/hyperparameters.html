@@ -1,0 +1,72 @@
+<div class="hyperparameters-page">
+  <div class="tunnel-layout">
+    <aside class="tunnel-side">
+      <app-tunnel-steps [projectId]="projectId()" current="hyperparameters" />
+    </aside>
+
+    <div class="tunnel-main">
+      <div class="tunnel-main-inner">
+
+  <app-page-header
+    title="Hyperparameterization"
+    subtitle="For each media channel, set how long its effect carries over and how quickly it saturates."
+  />
+
+  <section class="card">
+    <h2 class="section-title">Channels</h2>
+    <p class="muted field-hint">
+      Channels are taken from what you saved in Configure — carryover is 0–1 (how much of this
+      week's spend still influences next week), saturation is 0 or above (how fast the channel's
+      effect flattens out as spend increases).
+    </p>
+
+    <div class="channel-table">
+      <div class="channel-row channel-head">
+        <span>Channel</span>
+        <span>Carryover</span>
+        <span>Saturation</span>
+      </div>
+      @for (row of rows(); track row.channel; let i = $index) {
+        <div class="channel-row">
+          <span class="channel-name">{{ row.channel }}</span>
+          <input
+            class="input"
+            type="number"
+            min="0"
+            max="1"
+            step="0.05"
+            [ngModel]="row.carryover"
+            (ngModelChange)="updateCarryover(i, $event)"
+            placeholder="e.g. 0.4"
+          />
+          <input
+            class="input"
+            type="number"
+            min="0"
+            step="0.1"
+            [ngModel]="row.saturation"
+            (ngModelChange)="updateSaturation(i, $event)"
+            placeholder="e.g. 1.1"
+          />
+        </div>
+      }
+    </div>
+  </section>
+
+  @if (saveError(); as err) {
+    <p class="drop-error">{{ err }}</p>
+  }
+
+  <div class="tunnel-actions">
+    @if (saved()) {
+      <span class="saved-note">Hyperparameters saved.</span>
+    }
+    <button class="btn btn-primary btn-lg" type="button" [disabled]="!canSave() || saving()" (click)="save()">
+      {{ saving() ? 'Saving…' : 'Save' }}
+    </button>
+  </div>
+
+      </div>
+    </div>
+  </div>
+</div>

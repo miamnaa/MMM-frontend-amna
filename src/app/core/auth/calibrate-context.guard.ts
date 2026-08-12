@@ -3,13 +3,8 @@ import { CanActivateFn, Router } from '@angular/router';
 
 import { TunnelService } from '../services/tunnel.service';
 
-/**
- * Configure has no real "am I done" read endpoint to check against, so this
- * can only check the in-memory TunnelService, not a real dataset record -
- * meaning it resets on a fresh tab. That's an accepted tradeoff for a step
- * whose backend has no read-back, not a security gate like otpGuard.
- */
-export const datasetContextGuard: CanActivateFn = (route) => {
+/** Same dataset-id check as datasetContextGuard, plus Optimize must have actually been saved first. */
+export const calibrateContextGuard: CanActivateFn = (route) => {
   const tunnelService = inject(TunnelService);
   const router = inject(Router);
   const projectId = route.paramMap.get('projectId');
@@ -19,7 +14,8 @@ export const datasetContextGuard: CanActivateFn = (route) => {
     projectId !== null &&
     datasetId !== null &&
     tunnelService.projectId() === projectId &&
-    tunnelService.dataset()?.id === datasetId;
+    tunnelService.dataset()?.id === datasetId &&
+    tunnelService.optimize() !== null;
 
   return contextMatches ? true : router.createUrlTree(['/projects']);
 };

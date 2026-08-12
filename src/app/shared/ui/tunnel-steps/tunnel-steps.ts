@@ -3,29 +3,28 @@ import { Router } from '@angular/router';
 
 import { TunnelService } from '../../../core/services/tunnel.service';
 
-export type TunnelStepKey = 'upload-data' | 'configure';
+export type TunnelStepKey = 'upload-data' | 'configure' | 'optimize' | 'calibrate' | 'hyperparameters';
 
 interface StepDef {
-  key: TunnelStepKey | 'optimize' | 'calibrate' | 'hyperparameterization';
+  key: TunnelStepKey;
   label: string;
-  /** Steps with no real screen yet - shown for orientation, never clickable. */
-  built: boolean;
 }
 
 const STEPS: StepDef[] = [
-  { key: 'upload-data', label: 'Upload Data', built: true },
-  { key: 'configure', label: 'Configure', built: true },
-  { key: 'optimize', label: 'Optimize', built: false },
-  { key: 'calibrate', label: 'Calibrate', built: false },
-  { key: 'hyperparameterization', label: 'Hyperparameterization', built: false },
+  { key: 'upload-data', label: 'Upload Data' },
+  { key: 'configure', label: 'Configure' },
+  { key: 'optimize', label: 'Optimize' },
+  { key: 'calibrate', label: 'Calibrate' },
+  { key: 'hyperparameters', label: 'Hyperparameterization' },
 ];
 
 /**
- * A progress indicator for the Upload Data → Configure tunnel, not a
- * general navigation sidebar - it only ever links within this same
- * project's flow, and Configure only becomes clickable once a dataset
- * actually exists for this project (same check dataset-context.guard.ts
- * enforces server-side; this is just making that visible).
+ * A progress indicator for the Upload Data → Configure → Optimize →
+ * Calibrate → Hyperparameterization tunnel, not a general navigation
+ * sidebar - it only ever links within this same project/dataset's flow.
+ * Each step only becomes clickable once the one before it was actually
+ * saved (same checks optimize/calibrate/hyperparameters-context.guard.ts
+ * enforce server-side; this just makes that visible).
  */
 @Component({
   selector: 'app-tunnel-steps',
@@ -47,14 +46,22 @@ export class TunnelSteps {
   );
 
   isReachable(step: StepDef): boolean {
-    if (!step.built) return false;
     if (step.key === 'upload-data') return true;
     if (step.key === 'configure') return this.hasDataset();
+    if (step.key === 'optimize') return this.hasDataset() && this.tunnelService.configuration() !== null;
+    if (step.key === 'calibrate') return this.hasDataset() && this.tunnelService.optimize() !== null;
+    if (step.key === 'hyperparameters') return this.hasDataset() && this.tunnelService.calibration() !== null;
     return false;
   }
 
   go(step: StepDef): void {
     if (!this.isReachable(step) || step.key === this.current()) return;
-    this.router.navigate([`/${step.key}`, this.projectId()]);
+    if (step.key === 'upload-data') {
+      this.router.navigate(['/upload-data', this.projectId()]);
+      return;
+    }
+    const datasetId = this.tunnelService.dataset()?.id;
+    if (!datasetId) return;
+    this.router.navigate([`/${step.key}`, this.projectId(), datasetId]);
   }
 }

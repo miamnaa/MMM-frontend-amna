@@ -1,0 +1,75 @@
+<div class="calibrate-page">
+  <div class="tunnel-layout">
+    <aside class="tunnel-side">
+      <app-tunnel-steps [projectId]="projectId()" current="calibrate" />
+    </aside>
+
+    <div class="tunnel-main">
+      <div class="tunnel-main-inner">
+
+  <app-page-header
+    title="Calibrate"
+    subtitle="Tell the model what you already believe about your marketing, and how sure you are."
+  />
+
+  <button class="info-toggle" type="button" (click)="toggleInfo()" [attr.aria-expanded]="infoOpen()">
+    <span class="info-icon" aria-hidden="true">ⓘ</span>
+    <span class="info-title">What do these numbers mean?</span>
+    <span class="chevron" [class.open]="infoOpen()" aria-hidden="true">⌄</span>
+  </button>
+
+  @if (infoOpen()) {
+    <div class="info-body">
+      <ul>
+        <li><strong>Contribution belief</strong> — roughly how much of your outcome (revenue, signups, etc.) you already believe marketing actually drove, versus everything else (seasonality, word of mouth, pricing). If you think marketing explains about a third of it, that's 30%.</li>
+        <li><strong>Confidence</strong> — how sure you are about that belief. A guess based on a gut feeling might be 40–50% confident; a belief backed by a real prior study or experiment might be 80%+.</li>
+      </ul>
+    </div>
+  }
+
+  <section class="card">
+    <h2 class="section-title">Calibration inputs</h2>
+
+    <div class="field">
+      <label class="label" for="cal-belief">Contribution belief (%)</label>
+      <input
+        id="cal-belief"
+        class="input"
+        type="number"
+        min="0"
+        max="100"
+        [ngModel]="contributionBeliefPercent()"
+        (ngModelChange)="contributionBeliefPercent.set($event)"
+        placeholder="e.g. 30"
+      />
+    </div>
+
+    <div class="field">
+      <label class="label" for="cal-confidence">Confidence (%)</label>
+      <input
+        id="cal-confidence"
+        class="input"
+        type="number"
+        min="0"
+        max="100"
+        [ngModel]="confidencePercent()"
+        (ngModelChange)="confidencePercent.set($event)"
+        placeholder="e.g. 80"
+      />
+    </div>
+  </section>
+
+  @if (saveError(); as err) {
+    <p class="drop-error">{{ err }}</p>
+  }
+
+  <div class="tunnel-actions">
+    <button class="btn btn-primary btn-lg" type="button" [disabled]="!canSave() || saving()" (click)="save()">
+      {{ saving() ? 'Saving…' : 'Save and continue' }}
+    </button>
+  </div>
+
+      </div>
+    </div>
+  </div>
+</div>

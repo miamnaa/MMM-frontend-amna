@@ -1,7 +1,10 @@
 import { Routes } from '@angular/router';
 import { MsalGuard } from '@azure/msal-angular';
 
+import { calibrateContextGuard } from './core/auth/calibrate-context.guard';
 import { datasetContextGuard } from './core/auth/dataset-context.guard';
+import { hyperparametersContextGuard } from './core/auth/hyperparameters-context.guard';
+import { optimizeContextGuard } from './core/auth/optimize-context.guard';
 import { otpGuard } from './core/auth/otp.guard';
 import { projectContextGuard } from './core/auth/project-context.guard';
 import { MainLayout } from './layouts/main-layout/main-layout';
@@ -51,13 +54,32 @@ export const routes: Routes = [
     loadComponent: () => import('./features/upload-data/upload-data').then((m) => m.UploadData),
   },
   {
-    path: 'configure/:projectId',
+    path: 'configure/:projectId/:datasetId',
     title: 'Configure · ROIVIO',
-    // datasetContextGuard checks in-memory TunnelService state - Configure
-    // has no real backend yet, so this is the best available "did Upload
-    // Data actually happen this session" check.
+    // datasetContextGuard checks in-memory TunnelService state - there's no
+    // real "am I done" read endpoint for this stage, so this is the best
+    // available "did Upload Data actually happen this session, for this
+    // exact dataset" check.
     canActivate: [MsalGuard, otpGuard, datasetContextGuard],
     loadComponent: () => import('./features/configure/configure').then((m) => m.Configure),
+  },
+  {
+    path: 'optimize/:projectId/:datasetId',
+    title: 'Optimize · ROIVIO',
+    canActivate: [MsalGuard, otpGuard, optimizeContextGuard],
+    loadComponent: () => import('./features/optimize/optimize').then((m) => m.Optimize),
+  },
+  {
+    path: 'calibrate/:projectId/:datasetId',
+    title: 'Calibrate · ROIVIO',
+    canActivate: [MsalGuard, otpGuard, calibrateContextGuard],
+    loadComponent: () => import('./features/calibrate/calibrate').then((m) => m.Calibrate),
+  },
+  {
+    path: 'hyperparameters/:projectId/:datasetId',
+    title: 'Hyperparameterization · ROIVIO',
+    canActivate: [MsalGuard, otpGuard, hyperparametersContextGuard],
+    loadComponent: () => import('./features/hyperparameters/hyperparameters').then((m) => m.Hyperparameters),
   },
   {
     path: '',

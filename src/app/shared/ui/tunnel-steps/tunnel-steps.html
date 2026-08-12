@@ -5,7 +5,7 @@
       class="step"
       [class.current]="step.key === current()"
       [class.reachable]="isReachable(step) && step.key !== current()"
-      [class.upcoming]="!step.built"
+      [class.upcoming]="!isReachable(step) && step.key !== current()"
       [disabled]="!isReachable(step) || step.key === current()"
       (click)="go(step)"
     >

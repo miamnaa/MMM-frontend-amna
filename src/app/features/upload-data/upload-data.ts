@@ -135,17 +135,18 @@ export class UploadData implements OnInit {
           modelType: this.modelType(),
           local: false,
         });
-        this.router.navigate(['/configure', projectId]);
+        this.router.navigate(['/configure', projectId, dataset.id]);
       },
       error: () => {
         this.uploading.set(false);
+        const localId = `local-${crypto.randomUUID()}`;
         this.tunnelService.setDataset({
-          id: `local-${crypto.randomUUID()}`,
+          id: localId,
           name: file.name,
           modelType: this.modelType(),
           local: true,
         });
-        this.router.navigate(['/configure', projectId]);
+        this.router.navigate(['/configure', projectId, localId]);
       },
     });
   }
