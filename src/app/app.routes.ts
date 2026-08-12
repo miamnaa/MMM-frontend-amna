@@ -45,6 +45,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/projects/projects').then((m) => m.Projects),
   },
   {
+    path: 'models/:projectId',
+    title: 'Models · ROIVIO',
+    // Project hub between the Project list and the per-model tunnel -
+    // real dataset list, real computed status per model.
+    canActivate: [MsalGuard, otpGuard, projectContextGuard],
+    loadComponent: () => import('./features/project-models/project-models').then((m) => m.ProjectModels),
+  },
+  {
     path: 'upload-data/:projectId',
     title: 'Upload data · ROIVIO',
     // projectContextGuard checks the :projectId in the URL against the real
