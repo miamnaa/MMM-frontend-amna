@@ -8,7 +8,7 @@ import { backendErrorMessage } from '../../shared/utils/backend-error';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
 import { TunnelSteps } from '../../shared/ui/tunnel-steps/tunnel-steps';
 
-type ColumnField = 'date' | 'target' | 'media' | 'control' | 'organic';
+type ColumnField = 'date' | 'target' | 'media' | 'control' | 'organic' | 'geo';
 
 function nonEmpty(values: string[]): string[] {
   return values.map((v) => v.trim()).filter((v) => v.length > 0);
@@ -55,9 +55,11 @@ export class Configure implements OnInit {
   readonly dateColumn = signal('');
   readonly kpiColumn = signal('');
   readonly isRevenue = signal(true);
+  readonly revenuePerKpiValue = signal<number | null>(null);
   readonly mediaColumns = signal<string[]>([]);
   readonly controlColumns = signal<string[]>([]);
   readonly organicColumns = signal<string[]>([]);
+  readonly geoColumns = signal<string[]>([]);
 
   readonly saving = signal(false);
   readonly saveError = signal<string | null>(null);
@@ -67,7 +69,8 @@ export class Configure implements OnInit {
       !this.isLocalDataset() &&
       this.dateColumn().trim().length > 0 &&
       this.kpiColumn().trim().length > 0 &&
-      nonEmpty(this.mediaColumns()).length > 0, // backend requires at least one media column
+      nonEmpty(this.mediaColumns()).length > 0 && // backend requires at least one media column
+      (this.isRevenue() || (this.revenuePerKpiValue() ?? 0) > 0), // required whenever the KPI isn't already in dollars
   );
 
   ngOnInit(): void {
@@ -115,10 +118,18 @@ export class Configure implements OnInit {
     if (this.mediaColumns().length === 0) this.mediaColumns.set(['']);
     if (this.controlColumns().length === 0) this.controlColumns.set(['']);
     if (this.organicColumns().length === 0) this.organicColumns.set(['']);
+    if (this.geoColumns().length === 0) this.geoColumns.set(['']);
   }
 
   setRevenue(isRevenue: boolean): void {
     this.isRevenue.set(isRevenue);
+    // The backend 400s if revenuePerKpiValue is sent alongside kpiType "revenue" - the KPI's
+    // already in dollars, so there's nothing to hold once the toggle switches back.
+    if (isRevenue) this.revenuePerKpiValue.set(null);
+  }
+
+  setRevenuePerKpiValue(value: number | null): void {
+    this.revenuePerKpiValue.set(value);
   }
 
   /** True if `column` is already assigned to a field other than `field` - used to grey out picker options. */
@@ -128,6 +139,7 @@ export class Configure implements OnInit {
     if (field !== 'media' && this.mediaColumns().includes(column)) return true;
     if (field !== 'control' && this.controlColumns().includes(column)) return true;
     if (field !== 'organic' && this.organicColumns().includes(column)) return true;
+    if (field !== 'geo' && this.geoColumns().includes(column)) return true;
     return false;
   }
 

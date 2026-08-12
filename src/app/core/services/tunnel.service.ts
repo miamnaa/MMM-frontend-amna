@@ -13,9 +13,11 @@ export interface SavedConfiguration {
   dateColumn: string;
   targetColumn: string;
   kpiType: 'revenue' | 'non_revenue';
+  revenuePerKpiValue?: number;
   mediaColumns: string[];
   controlColumns: string[];
   organicColumns: string[];
+  geoColumns: string[];
 }
 
 /** Mirrors the real PATCH /datasets/:id/optimize body. */
