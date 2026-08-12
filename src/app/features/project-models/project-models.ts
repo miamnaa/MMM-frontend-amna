@@ -1,14 +1,13 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MsalService } from '@azure/msal-angular';
 
-import { localSignOut } from '../../core/auth/local-sign-out';
 import { ApiProjectDataset, DatasetService } from '../../core/services/dataset.service';
 import { Project } from '../../core/models/domain.models';
 import { ProjectService } from '../../core/services/project.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
+import { backendErrorMessage } from '../../shared/utils/backend-error';
 
 type ModelStatus = 'uploaded' | 'configured' | 'optimized' | 'calibrated' | 'ready';
 
@@ -55,13 +54,16 @@ export class ProjectModels implements OnInit {
   private readonly projectService = inject(ProjectService);
   private readonly datasetService = inject(DatasetService);
   private readonly tunnelService = inject(TunnelService);
-  private readonly msalService = inject(MsalService);
 
   readonly projectId = signal('');
   readonly project = signal<Project | null>(null);
   readonly rows = signal<ModelRow[]>([]);
   readonly loading = signal(true);
   readonly loadError = signal<string | null>(null);
+
+  readonly deleteTarget = signal<ModelRow | null>(null);
+  readonly deleting = signal(false);
+  readonly deleteError = signal<string | null>(null);
 
   ngOnInit(): void {
     this.projectId.set(this.route.snapshot.paramMap.get('projectId') ?? '');
@@ -94,13 +96,31 @@ export class ProjectModels implements OnInit {
     });
   }
 
-  back(): void {
-    this.router.navigate(['/projects']);
+  confirmDelete(row: ModelRow): void {
+    this.deleteError.set(null);
+    this.deleteTarget.set(row);
   }
 
-  /** See local-sign-out.ts - same call used everywhere else in the tunnel. */
-  signOut(): void {
-    void localSignOut(this.msalService);
+  cancelDelete(): void {
+    this.deleteTarget.set(null);
+  }
+
+  deleteModel(): void {
+    const target = this.deleteTarget();
+    if (!target || this.deleting()) return;
+    this.deleting.set(true);
+    this.deleteError.set(null);
+    this.datasetService.remove(target.dataset.id).subscribe({
+      next: () => {
+        this.rows.update((list) => list.filter((r) => r.dataset.id !== target.dataset.id));
+        this.deleting.set(false);
+        this.deleteTarget.set(null);
+      },
+      error: (err: unknown) => {
+        this.deleteError.set(backendErrorMessage(err, 'Could not delete this model.'));
+        this.deleting.set(false);
+      },
+    });
   }
 
   newModel(): void {
