@@ -14,38 +14,67 @@
 
   @if (dataset(); as ds) {
     @if (ds.local) {
-      <div class="notice">
+      <div class="notice notice-blocking">
         Using local data for now — real upload isn't fully live yet (storage isn't configured on
-        the backend). This screen still works the same once it is.
+        the backend), so this dataset has no real id and configuration can't be saved for real
+        yet. This screen will work the same once upload is fully live.
       </div>
+    } @else if (columnsUnavailable() && columnsNotice()) {
+      <div class="notice">{{ columnsNotice() }}</div>
     }
     <p class="dataset-name muted">Configuring <strong>{{ ds.name }}</strong></p>
+  }
+
+  @if (columnsLoading()) {
+    <p class="muted loading-note">Reading your file's columns…</p>
   }
 
   <section class="card">
     <h2 class="section-title">Date &amp; target</h2>
 
-    <div class="field">
-      <label class="label" for="c-date">Date column</label>
-      <input
-        id="c-date"
-        class="input"
-        [ngModel]="dateColumn()"
-        (ngModelChange)="dateColumn.set($event)"
-        placeholder="e.g. week_start"
-      />
-    </div>
+    @if (columnsUnavailable()) {
+      <div class="field">
+        <label class="label" for="c-date">Date column</label>
+        <input
+          id="c-date"
+          class="input"
+          [ngModel]="dateColumn()"
+          (ngModelChange)="setDateColumn($event)"
+          placeholder="e.g. week_start"
+        />
+      </div>
 
-    <div class="field">
-      <label class="label" for="c-kpi">Target / KPI column</label>
-      <input
-        id="c-kpi"
-        class="input"
-        [ngModel]="kpiColumn()"
-        (ngModelChange)="kpiColumn.set($event)"
-        placeholder="e.g. total_revenue"
-      />
-    </div>
+      <div class="field">
+        <label class="label" for="c-kpi">Target / KPI column</label>
+        <input
+          id="c-kpi"
+          class="input"
+          [ngModel]="kpiColumn()"
+          (ngModelChange)="setKpiColumn($event)"
+          placeholder="e.g. total_revenue"
+        />
+      </div>
+    } @else {
+      <div class="field">
+        <label class="label" for="c-date">Date column</label>
+        <select id="c-date" class="select" [ngModel]="dateColumn()" (ngModelChange)="setDateColumn($event)">
+          <option value="" disabled>Select a column…</option>
+          @for (col of availableColumns(); track col) {
+            <option [value]="col" [disabled]="isUsedElsewhere(col, 'date')">{{ col }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="label" for="c-kpi">Target / KPI column</label>
+        <select id="c-kpi" class="select" [ngModel]="kpiColumn()" (ngModelChange)="setKpiColumn($event)">
+          <option value="" disabled>Select a column…</option>
+          @for (col of availableColumns(); track col) {
+            <option [value]="col" [disabled]="isUsedElsewhere(col, 'target')">{{ col }}</option>
+          }
+        </select>
+      </div>
+    }
 
     <div class="field">
       <span class="label">What does this column measure?</span>
@@ -73,58 +102,109 @@
   <section class="card">
     <h2 class="section-title">Media columns</h2>
     <p class="muted field-hint">Which columns are ad spend, by channel. At least one is required.</p>
-    @for (col of mediaColumns(); track $index) {
-      <div class="list-row">
-        <input
-          class="input"
-          [ngModel]="col"
-          (ngModelChange)="updateListItem('media', $index, $event)"
-          placeholder="e.g. paid_search_spend"
-        />
-        <button class="btn btn-ghost btn-sm" type="button" (click)="removeListItem('media', $index)">
-          Remove
-        </button>
+
+    @if (columnsUnavailable()) {
+      @for (col of mediaColumns(); track $index) {
+        <div class="list-row">
+          <input
+            class="input"
+            [ngModel]="col"
+            (ngModelChange)="updateListItem('media', $index, $event)"
+            placeholder="e.g. paid_search_spend"
+          />
+          <button class="btn btn-ghost btn-sm" type="button" (click)="removeListItem('media', $index)">
+            Remove
+          </button>
+        </div>
+      }
+      <button class="btn btn-secondary btn-sm" type="button" (click)="addListItem('media')">+ Add media column</button>
+    } @else {
+      <div class="chip-grid">
+        @for (col of availableColumns(); track col) {
+          <button
+            type="button"
+            class="column-chip"
+            [class.selected]="mediaColumns().includes(col)"
+            [disabled]="isUsedElsewhere(col, 'media')"
+            (click)="toggleColumn('media', col)"
+          >
+            {{ col }}
+          </button>
+        }
       </div>
     }
-    <button class="btn btn-secondary btn-sm" type="button" (click)="addListItem('media')">+ Add media column</button>
   </section>
 
   <section class="card">
     <h2 class="section-title">Control columns</h2>
     <p class="muted field-hint">Other things that affect the outcome but aren't spend — holidays, promotions, competitor activity.</p>
-    @for (col of controlColumns(); track $index) {
-      <div class="list-row">
-        <input
-          class="input"
-          [ngModel]="col"
-          (ngModelChange)="updateListItem('control', $index, $event)"
-          placeholder="e.g. is_holiday_week"
-        />
-        <button class="btn btn-ghost btn-sm" type="button" (click)="removeListItem('control', $index)">
-          Remove
-        </button>
+
+    @if (columnsUnavailable()) {
+      @for (col of controlColumns(); track $index) {
+        <div class="list-row">
+          <input
+            class="input"
+            [ngModel]="col"
+            (ngModelChange)="updateListItem('control', $index, $event)"
+            placeholder="e.g. is_holiday_week"
+          />
+          <button class="btn btn-ghost btn-sm" type="button" (click)="removeListItem('control', $index)">
+            Remove
+          </button>
+        </div>
+      }
+      <button class="btn btn-secondary btn-sm" type="button" (click)="addListItem('control')">+ Add control column</button>
+    } @else {
+      <div class="chip-grid">
+        @for (col of availableColumns(); track col) {
+          <button
+            type="button"
+            class="column-chip"
+            [class.selected]="controlColumns().includes(col)"
+            [disabled]="isUsedElsewhere(col, 'control')"
+            (click)="toggleColumn('control', col)"
+          >
+            {{ col }}
+          </button>
+        }
       </div>
     }
-    <button class="btn btn-secondary btn-sm" type="button" (click)="addListItem('control')">+ Add control column</button>
   </section>
 
   <section class="card">
     <h2 class="section-title">Organic columns <span class="muted">(optional)</span></h2>
     <p class="muted field-hint">Non-paid channels, if any.</p>
-    @for (col of organicColumns(); track $index) {
-      <div class="list-row">
-        <input
-          class="input"
-          [ngModel]="col"
-          (ngModelChange)="updateListItem('organic', $index, $event)"
-          placeholder="e.g. organic_social_posts"
-        />
-        <button class="btn btn-ghost btn-sm" type="button" (click)="removeListItem('organic', $index)">
-          Remove
-        </button>
+
+    @if (columnsUnavailable()) {
+      @for (col of organicColumns(); track $index) {
+        <div class="list-row">
+          <input
+            class="input"
+            [ngModel]="col"
+            (ngModelChange)="updateListItem('organic', $index, $event)"
+            placeholder="e.g. organic_social_posts"
+          />
+          <button class="btn btn-ghost btn-sm" type="button" (click)="removeListItem('organic', $index)">
+            Remove
+          </button>
+        </div>
+      }
+      <button class="btn btn-secondary btn-sm" type="button" (click)="addListItem('organic')">+ Add organic column</button>
+    } @else {
+      <div class="chip-grid">
+        @for (col of availableColumns(); track col) {
+          <button
+            type="button"
+            class="column-chip"
+            [class.selected]="organicColumns().includes(col)"
+            [disabled]="isUsedElsewhere(col, 'organic')"
+            (click)="toggleColumn('organic', col)"
+          >
+            {{ col }}
+          </button>
+        }
       </div>
     }
-    <button class="btn btn-secondary btn-sm" type="button" (click)="addListItem('organic')">+ Add organic column</button>
   </section>
 
   @if (saveError(); as err) {
