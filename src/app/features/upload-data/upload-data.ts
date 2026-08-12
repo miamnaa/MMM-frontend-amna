@@ -63,7 +63,7 @@ export class UploadData implements OnInit {
   }
 
   back(): void {
-    this.router.navigate(['/projects']);
+    this.router.navigate(['/models', this.projectId()]);
   }
 
   /** See local-sign-out.ts - same call used on Projects/header/sidebar. */
