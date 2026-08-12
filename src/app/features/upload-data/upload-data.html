@@ -7,15 +7,6 @@
     <div class="tunnel-main">
       <div class="tunnel-main-inner">
 
-  <div class="top-row">
-    <button class="btn btn-secondary btn-sm" type="button" (click)="back()">
-      <span aria-hidden="true">←</span> Back
-    </button>
-    <button class="btn btn-secondary btn-sm" type="button" (click)="signOut()">
-      <span aria-hidden="true">⇥</span> Sign out
-    </button>
-  </div>
-
   <app-page-header
     title="Upload Your Marketing Data"
     subtitle="Upload your marketing channel spend and performance data to get started with your model."
@@ -37,6 +28,18 @@
       </ul>
     </div>
   }
+
+  <section class="card">
+    <h2 class="section-title">Model name</h2>
+    <p class="muted field-hint">A name you'll recognize later — not the file name.</p>
+    <input
+      class="input"
+      type="text"
+      [ngModel]="modelName()"
+      (ngModelChange)="modelName.set($event)"
+      placeholder="e.g. Q4 Brand Campaign Model"
+    />
+  </section>
 
   <section class="card">
     <h2 class="section-title">Choose Model Type</h2>
