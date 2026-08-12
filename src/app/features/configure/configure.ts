@@ -151,44 +151,49 @@ export class Configure implements OnInit {
     this.kpiColumn.set(value);
   }
 
-  toggleColumn(field: 'media' | 'control' | 'organic', column: string): void {
+  toggleColumn(field: 'media' | 'control' | 'organic' | 'geo', column: string): void {
     if (this.isUsedElsewhere(column, field)) return;
     const target = this.listSignal(field);
     target.update((items) => (items.includes(column) ? items.filter((c) => c !== column) : [...items, column]));
   }
 
-  updateListItem(list: 'media' | 'control' | 'organic', index: number, value: string): void {
+  updateListItem(list: 'media' | 'control' | 'organic' | 'geo', index: number, value: string): void {
     const target = this.listSignal(list);
     target.update((items) => items.map((item, i) => (i === index ? value : item)));
   }
 
-  addListItem(list: 'media' | 'control' | 'organic'): void {
+  addListItem(list: 'media' | 'control' | 'organic' | 'geo'): void {
     this.listSignal(list).update((items) => [...items, '']);
   }
 
-  removeListItem(list: 'media' | 'control' | 'organic', index: number): void {
+  removeListItem(list: 'media' | 'control' | 'organic' | 'geo', index: number): void {
     const target = this.listSignal(list);
     // Always leave at least one row so the "+ Add" affordance stays visible.
     target.update((items) => (items.length > 1 ? items.filter((_, i) => i !== index) : ['']));
   }
 
-  private listSignal(list: 'media' | 'control' | 'organic') {
+  private listSignal(list: 'media' | 'control' | 'organic' | 'geo') {
     if (list === 'media') return this.mediaColumns;
     if (list === 'control') return this.controlColumns;
-    return this.organicColumns;
+    if (list === 'organic') return this.organicColumns;
+    return this.geoColumns;
   }
 
   save(): void {
     if (!this.canSave() || this.saving()) return;
 
-    const body = {
+    const body: SavedConfiguration = {
       dateColumn: this.dateColumn().trim(),
       targetColumn: this.kpiColumn().trim(),
       kpiType: this.isRevenue() ? ('revenue' as const) : ('non_revenue' as const),
       mediaColumns: nonEmpty(this.mediaColumns()),
       controlColumns: nonEmpty(this.controlColumns()),
       organicColumns: nonEmpty(this.organicColumns()),
+      geoColumns: nonEmpty(this.geoColumns()),
     };
+    // Backend 400s if this is sent at all under kpiType "revenue" - the KPI's already in
+    // dollars, so the field must be entirely absent, not just null/undefined.
+    if (!this.isRevenue()) body.revenuePerKpiValue = this.revenuePerKpiValue() ?? undefined;
 
     this.saving.set(true);
     this.saveError.set(null);
