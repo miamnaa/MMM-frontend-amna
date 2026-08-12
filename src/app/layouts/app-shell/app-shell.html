@@ -1,0 +1,23 @@
+<div class="app-shell">
+  <header class="shell-bar">
+    <a class="shell-brand" routerLink="/projects">
+      <app-logo [size]="24" [flat]="true" />
+      <span>ROIVIO</span>
+    </a>
+
+    <nav class="shell-nav" aria-label="Main">
+      <a routerLink="/projects" routerLinkActive="active">Projects</a>
+      @if (currentProjectId(); as pid) {
+        <a [routerLink]="['/models', pid]" routerLinkActive="active">Models</a>
+      }
+    </nav>
+
+    <button class="btn btn-secondary btn-sm" type="button" (click)="signOut()">
+      <span aria-hidden="true">⇥</span> Sign out
+    </button>
+  </header>
+
+  <main class="shell-body">
+    <router-outlet />
+  </main>
+</div>
