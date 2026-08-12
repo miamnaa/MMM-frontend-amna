@@ -84,9 +84,17 @@ export class Configure implements OnInit {
 
     this.columnsLoading.set(true);
     this.datasetService.getColumns(this.datasetId()).subscribe({
-      next: (columns) => {
+      next: ({ columns, suggestions }) => {
         this.columnsLoading.set(false);
         this.availableColumns.set(columns);
+        // Deliberately conservative on the backend - null means "no
+        // confident match," not "no date/target column exists." Still
+        // fully editable before Save, nothing here is persisted yet.
+        this.dateColumn.set(suggestions.dateColumn ?? '');
+        this.kpiColumn.set(suggestions.targetColumn ?? '');
+        this.mediaColumns.set(suggestions.mediaColumns);
+        this.controlColumns.set(suggestions.controlColumns);
+        this.organicColumns.set(suggestions.organicColumns);
       },
       error: (err: unknown) => {
         this.columnsLoading.set(false);
