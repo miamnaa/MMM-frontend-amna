@@ -7,6 +7,7 @@ import { hyperparametersContextGuard } from './core/auth/hyperparameters-context
 import { optimizeContextGuard } from './core/auth/optimize-context.guard';
 import { otpGuard } from './core/auth/otp.guard';
 import { projectContextGuard } from './core/auth/project-context.guard';
+import { AppShell } from './layouts/app-shell/app-shell';
 import { MainLayout } from './layouts/main-layout/main-layout';
 
 export const routes: Routes = [
@@ -34,60 +35,67 @@ export const routes: Routes = [
     canActivate: [MsalGuard],
     loadComponent: () => import('./features/auth/verify/verify').then((m) => m.Verify),
   },
-  // --- The tunnel: Project list → Upload Data → Configure. Bare pages, no
-  // MainLayout/sidebar - each declares its own guard chain directly rather
-  // than inheriting via canActivateChild, since they're not nested under a
-  // shared layout anymore.
   {
-    path: 'projects',
-    title: 'Projects · ROIVIO',
-    canActivate: [MsalGuard, otpGuard],
-    loadComponent: () => import('./features/projects/projects').then((m) => m.Projects),
-  },
-  {
-    path: 'models/:projectId',
-    title: 'Models · ROIVIO',
-    // Project hub between the Project list and the per-model tunnel -
-    // real dataset list, real computed status per model.
-    canActivate: [MsalGuard, otpGuard, projectContextGuard],
-    loadComponent: () => import('./features/project-models/project-models').then((m) => m.ProjectModels),
-  },
-  {
-    path: 'upload-data/:projectId',
-    title: 'Upload data · ROIVIO',
-    // projectContextGuard checks the :projectId in the URL against the real
-    // Projects API, so a direct hit / bookmark / refresh here still gets
-    // validated rather than trusting whatever's in the address bar.
-    canActivate: [MsalGuard, otpGuard, projectContextGuard],
-    loadComponent: () => import('./features/upload-data/upload-data').then((m) => m.UploadData),
-  },
-  {
-    path: 'configure/:projectId/:datasetId',
-    title: 'Configure · ROIVIO',
-    // datasetContextGuard checks in-memory TunnelService state - there's no
-    // real "am I done" read endpoint for this stage, so this is the best
-    // available "did Upload Data actually happen this session, for this
-    // exact dataset" check.
-    canActivate: [MsalGuard, otpGuard, datasetContextGuard],
-    loadComponent: () => import('./features/configure/configure').then((m) => m.Configure),
-  },
-  {
-    path: 'optimize/:projectId/:datasetId',
-    title: 'Optimize · ROIVIO',
-    canActivate: [MsalGuard, otpGuard, optimizeContextGuard],
-    loadComponent: () => import('./features/optimize/optimize').then((m) => m.Optimize),
-  },
-  {
-    path: 'calibrate/:projectId/:datasetId',
-    title: 'Calibrate · ROIVIO',
-    canActivate: [MsalGuard, otpGuard, calibrateContextGuard],
-    loadComponent: () => import('./features/calibrate/calibrate').then((m) => m.Calibrate),
-  },
-  {
-    path: 'hyperparameters/:projectId/:datasetId',
-    title: 'Hyperparameterization · ROIVIO',
-    canActivate: [MsalGuard, otpGuard, hyperparametersContextGuard],
-    loadComponent: () => import('./features/hyperparameters/hyperparameters').then((m) => m.Hyperparameters),
+    path: '',
+    component: AppShell,
+    // The one persistent nav (Projects / Models / Sign out), built once
+    // here rather than per screen. MsalGuard+otpGuard on canActivateChild -
+    // one place to update, covers every child below. Each child keeps its
+    // own specific context guard on its own canActivate, unchanged.
+    canActivateChild: [MsalGuard, otpGuard],
+    children: [
+      {
+        path: 'projects',
+        title: 'Projects · ROIVIO',
+        loadComponent: () => import('./features/projects/projects').then((m) => m.Projects),
+      },
+      {
+        path: 'models/:projectId',
+        title: 'Models · ROIVIO',
+        // Project hub between the Project list and the per-model tunnel -
+        // real dataset list, real computed status per model.
+        canActivate: [projectContextGuard],
+        loadComponent: () => import('./features/project-models/project-models').then((m) => m.ProjectModels),
+      },
+      {
+        path: 'upload-data/:projectId',
+        title: 'Upload data · ROIVIO',
+        // projectContextGuard checks the :projectId in the URL against the
+        // real Projects API, so a direct hit / bookmark / refresh here
+        // still gets validated rather than trusting the address bar.
+        canActivate: [projectContextGuard],
+        loadComponent: () => import('./features/upload-data/upload-data').then((m) => m.UploadData),
+      },
+      {
+        path: 'configure/:projectId/:datasetId',
+        title: 'Configure · ROIVIO',
+        // datasetContextGuard checks in-memory TunnelService state - no
+        // real "am I done" read endpoint for this stage, so this is the
+        // best available "did Upload Data actually happen this session,
+        // for this exact dataset" check.
+        canActivate: [datasetContextGuard],
+        loadComponent: () => import('./features/configure/configure').then((m) => m.Configure),
+      },
+      {
+        path: 'optimize/:projectId/:datasetId',
+        title: 'Optimize · ROIVIO',
+        canActivate: [optimizeContextGuard],
+        loadComponent: () => import('./features/optimize/optimize').then((m) => m.Optimize),
+      },
+      {
+        path: 'calibrate/:projectId/:datasetId',
+        title: 'Calibrate · ROIVIO',
+        canActivate: [calibrateContextGuard],
+        loadComponent: () => import('./features/calibrate/calibrate').then((m) => m.Calibrate),
+      },
+      {
+        path: 'hyperparameters/:projectId/:datasetId',
+        title: 'Hyperparameterization · ROIVIO',
+        canActivate: [hyperparametersContextGuard],
+        loadComponent: () =>
+          import('./features/hyperparameters/hyperparameters').then((m) => m.Hyperparameters),
+      },
+    ],
   },
   {
     path: '',
