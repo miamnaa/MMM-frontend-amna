@@ -29,7 +29,7 @@ const MODEL_OPTIONS: ModelOption[] = [
 
 @Component({
   selector: 'app-upload-data',
-  imports: [PageHeader, TunnelSteps],
+  imports: [FormsModule, PageHeader, TunnelSteps],
   templateUrl: './upload-data.html',
   styleUrl: './upload-data.css',
 })
