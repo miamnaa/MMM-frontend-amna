@@ -47,6 +47,15 @@ export class Optimize implements OnInit {
     this.datasetId.set(this.route.snapshot.paramMap.get('datasetId') ?? '');
   }
 
+  back(): void {
+    this.router.navigate(['/models', this.projectId()]);
+  }
+
+  /** See local-sign-out.ts - same call used everywhere else in the tunnel. */
+  signOut(): void {
+    void localSignOut(this.msalService);
+  }
+
   save(): void {
     if (!this.canSave() || this.saving()) return;
 
