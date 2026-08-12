@@ -29,6 +29,44 @@ export interface HyperparameterChannel {
 }
 
 /**
+ * Deliberately conservative name-pattern matching on the backend, not ML -
+ * dateColumn/targetColumn come back null rather than guessing wrong, so
+ * every field here has to be treated as optional.
+ */
+export interface ColumnSuggestions {
+  dateColumn: string | null;
+  targetColumn: string | null;
+  mediaColumns: string[];
+  controlColumns: string[];
+  organicColumns: string[];
+}
+
+export interface ColumnsResponse {
+  columns: string[];
+  suggestions: ColumnSuggestions;
+}
+
+/**
+ * The real shape of a row from GET /projects/:projectId/datasets isn't
+ * documented beyond "carries everything needed to compute status" - only
+ * presence (null vs. not) of these four is relied on for that. columnMapping's
+ * *contents* are additionally assumed (not verified) to mirror exactly what
+ * saveConfiguration() PATCHes, since that's the natural shape for the
+ * backend to store and echo back - this is the one place that assumption
+ * matters, when reconstructing session state to resume a partially
+ * configured dataset (see project-models.ts).
+ */
+export interface ApiProjectDataset {
+  id: string;
+  name: string;
+  modelType?: string;
+  columnMapping: SavedConfiguration | null;
+  dateRange: SavedOptimize | null;
+  calibration: SavedCalibration | null;
+  channelHyperparameters: HyperparameterChannel[] | null;
+}
+
+/**
  * `list`/`get`/`upload`/`remove` still have no real backend (API-REFERENCE.md,
  * "What is not built yet") and stay honest about that. The four
  * `save*` methods below ARE real, shipped 2026-08-12 - each is a thin PATCH
@@ -86,10 +124,13 @@ export class DatasetService {
    * clear message, which callers should treat as "fall back to manual
    * entry for this dataset," not as a hard failure.
    */
-  getColumns(datasetId: string): Observable<string[]> {
-    return this.http
-      .get<{ columns: string[] }>(`${environment.apiBaseUrl}/datasets/${datasetId}/columns`)
-      .pipe(map((r) => r.columns));
+  getColumns(datasetId: string): Observable<ColumnsResponse> {
+    return this.http.get<ColumnsResponse>(`${environment.apiBaseUrl}/datasets/${datasetId}/columns`);
+  }
+
+  /** Real endpoint - what the project-models hub lists, with real per-dataset progress. */
+  listForProject(projectId: string): Observable<ApiProjectDataset[]> {
+    return this.http.get<ApiProjectDataset[]>(`${environment.apiBaseUrl}/projects/${projectId}/datasets`);
   }
 
   saveOptimize(datasetId: string, body: SavedOptimize): Observable<unknown> {
