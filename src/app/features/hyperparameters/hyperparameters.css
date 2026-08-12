@@ -121,3 +121,31 @@
   font-weight: 600;
   color: var(--brand-700, var(--green-600));
 }
+
+.complete-panel {
+  border-color: var(--brand-200, var(--brand-100));
+  background: var(--brand-50);
+}
+
+.complete-panel .field-hint {
+  color: var(--brand-700);
+  opacity: 0.85;
+}
+
+.complete-panel .btn:disabled {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.coming-soon {
+  padding: 2px 8px;
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.6);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
