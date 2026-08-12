@@ -4,12 +4,12 @@
    independently in the remaining space, same structural idea as the old
    MainLayout's .shell/.content split. */
 .upload-page {
-  min-height: 100vh;
+  min-height: 100%;
 }
 
 .tunnel-layout {
   display: flex;
-  min-height: 100vh;
+  min-height: 100%;
   align-items: stretch;
 }
 
@@ -19,7 +19,7 @@
   position: sticky;
   top: 0;
   align-self: flex-start;
-  height: 100vh;
+  height: 100%;
 }
 
 .tunnel-main {

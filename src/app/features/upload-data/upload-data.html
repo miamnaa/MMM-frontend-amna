@@ -102,7 +102,7 @@
     <button
       class="btn btn-primary btn-lg"
       type="button"
-      [disabled]="!file() || uploading()"
+      [disabled]="!file() || !modelName().trim() || uploading()"
       (click)="continue()"
     >
       {{ uploading() ? 'Uploading…' : 'Continue' }}
