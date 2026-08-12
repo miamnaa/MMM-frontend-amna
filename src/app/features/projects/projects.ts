@@ -173,8 +173,9 @@ export class Projects {
     void localSignOut(this.msalService);
   }
 
+  /** Opens the project hub (its models list), not straight into Upload Data - that's what "+ New model" there is for. */
   open(project: Project): void {
-    this.router.navigate(['/upload-data', project.id]);
+    this.router.navigate(['/models', project.id]);
   }
 
   openView(project: Project): void {
