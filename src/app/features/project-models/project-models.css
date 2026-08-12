@@ -1,0 +1,130 @@
+.project-models-page {
+  min-height: 100vh;
+  padding: 26px 28px 48px;
+  background: var(--surface);
+}
+
+@media (max-width: 720px) {
+  .project-models-page {
+    padding: 18px 16px 36px;
+  }
+}
+
+.top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.card {
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+}
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+  margin-bottom: 16px;
+  background: var(--red-50);
+  border-color: color-mix(in srgb, var(--red-500) 38%, transparent);
+  font-size: 13px;
+  color: var(--red-600);
+}
+
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeleton {
+  height: 68px;
+  background: linear-gradient(90deg, var(--gray-100), var(--gray-50), var(--gray-100));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.model-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.model-row {
+  display: grid;
+  grid-template-columns: 1fr 180px 44px auto;
+  align-items: center;
+  gap: 16px;
+}
+
+.model-info h2 {
+  margin: 0 0 2px;
+  font-size: 14.5px;
+}
+
+.status-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.progress-track {
+  height: 6px;
+  border-radius: var(--r-full);
+  background: var(--gray-100);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: var(--r-full);
+  background: var(--brand-500);
+  transition: width 0.2s;
+}
+
+.percent-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.train-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.coming-soon {
+  padding: 2px 8px;
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.5);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+@media (max-width: 640px) {
+  .model-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .percent-label {
+    text-align: left;
+  }
+}
