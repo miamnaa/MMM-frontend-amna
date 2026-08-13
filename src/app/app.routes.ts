@@ -60,10 +60,9 @@ export const routes: Routes = [
       {
         path: 'configure/:projectId/:datasetId',
         title: 'Configure · ROIVIO',
-        // datasetContextGuard checks in-memory TunnelService state - no
-        // real "am I done" read endpoint for this stage, so this is the
-        // best available "did Upload Data actually happen this session,
-        // for this exact dataset" check.
+        // datasetContextGuard checks TunnelService, falling back to a real
+        // listForProject() re-fetch on a fresh tab/reload - see
+        // stage-context-guard.ts.
         canActivate: [datasetContextGuard],
         loadComponent: () => import('./features/configure/configure').then((m) => m.Configure),
       },
