@@ -71,8 +71,9 @@ export class ProjectService {
   /**
    * Fills in what the API doesn't return: ownerName (only ownerId comes
    * back, and there's no /users endpoint to resolve someone else's), and
-   * the dataset/experiment counts (those backends don't exist yet, so the
-   * honest count is 0, not a guess).
+   * experimentCount (Experiments has no backend yet, so 0 is the honest
+   * count, not a guess). datasetCount IS real now (shipped 2026-08-13) -
+   * `?? 0` is just a defensive fallback, not an assumption it's missing.
    */
   private toProject(row: ApiProject): Project {
     const isMine = row.ownerId === this.session.userId();
@@ -85,7 +86,7 @@ export class ProjectService {
       updatedAt: row.updatedAt,
       ownerName: isMine ? this.session.user().name : 'Team member',
       experimentCount: 0,
-      datasetCount: 0,
+      datasetCount: row.datasetCount ?? 0,
     };
   }
 }
