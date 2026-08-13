@@ -38,25 +38,11 @@ export const routes: Routes = [
   {
     path: '',
     component: AppShell,
-    // The one persistent nav (Projects / Models / Sign out), built once
-    // here rather than per screen. MsalGuard+otpGuard on canActivateChild -
-    // one place to update, covers every child below. Each child keeps its
-    // own specific context guard on its own canActivate, unchanged.
+    // The persistent nav (Projects / Models / Sign out) for the model-build
+    // tunnel screens only - Projects and Models moved to the left Sidebar
+    // under MainLayout below, matching Cassandra's own nav.
     canActivateChild: [MsalGuard, otpGuard],
     children: [
-      {
-        path: 'projects',
-        title: 'Projects · ROIVIO',
-        loadComponent: () => import('./features/projects/projects').then((m) => m.Projects),
-      },
-      {
-        path: 'models/:projectId',
-        title: 'Models · ROIVIO',
-        // Project hub between the Project list and the per-model tunnel -
-        // real dataset list, real computed status per model.
-        canActivate: [projectContextGuard],
-        loadComponent: () => import('./features/project-models/project-models').then((m) => m.ProjectModels),
-      },
       {
         path: 'upload-data/:projectId',
         title: 'Upload data · ROIVIO',
@@ -100,14 +86,30 @@ export const routes: Routes = [
   {
     path: '',
     component: MainLayout,
-    // Kept as real, guarded routes for later - nothing links to them from
-    // the tunnel anymore, but they still work if reached directly.
-    // MsalGuard on canActivateChild, not per-child canActivate: one place to
-    // update, and it also covers routes added here later. otpGuard runs
-    // after it, so "signed into Microsoft" and "completed the email code
-    // step" are both required for every page under this layout.
+    // Projects and Models live here now (2026-08-13) for the real Cassandra-
+    // style left Sidebar nav. The rest (Overview, Datasets, Experiments,
+    // Model Studio, Results, Scenarios, Settings) stay as real, guarded
+    // routes for later - nothing links to them from the tunnel, but they
+    // still work if reached directly. MsalGuard on canActivateChild, not
+    // per-child canActivate: one place to update, and it also covers routes
+    // added here later. otpGuard runs after it, so "signed into Microsoft"
+    // and "completed the email code step" are both required for every page
+    // under this layout.
     canActivateChild: [MsalGuard, otpGuard],
     children: [
+      {
+        path: 'projects',
+        title: 'Projects · ROIVIO',
+        loadComponent: () => import('./features/projects/projects').then((m) => m.Projects),
+      },
+      {
+        path: 'models/:projectId',
+        title: 'Models · ROIVIO',
+        // Project hub between the Project list and the per-model tunnel -
+        // real dataset list, real computed status per model.
+        canActivate: [projectContextGuard],
+        loadComponent: () => import('./features/project-models/project-models').then((m) => m.ProjectModels),
+      },
       {
         path: 'overview',
         title: 'Overview · ROIVIO',
