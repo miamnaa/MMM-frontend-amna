@@ -3,36 +3,18 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ApiProjectDataset, DatasetService } from '../../core/services/dataset.service';
 import { Project } from '../../core/models/domain.models';
+import { MODEL_STATUS_META, ModelStatus, computeModelStatus, resumeDatasetRoute } from '../../core/services/model-status';
 import { ProjectService } from '../../core/services/project.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
 
-type ModelStatus = 'uploaded' | 'configured' | 'optimized' | 'calibrated' | 'ready';
-
 interface ModelRow {
   dataset: ApiProjectDataset;
   status: ModelStatus;
   label: string;
   percent: number;
-}
-
-const STATUS_META: Record<ModelStatus, { label: string; percent: number }> = {
-  uploaded: { label: 'Uploaded', percent: 20 },
-  configured: { label: 'Configured', percent: 40 },
-  optimized: { label: 'Optimized', percent: 60 },
-  calibrated: { label: 'Calibrated', percent: 80 },
-  ready: { label: 'Ready', percent: 100 },
-};
-
-/** Status is computed purely from presence (null vs. not) - see ApiProjectDataset for what's assumed about the shape. */
-function computeStatus(d: ApiProjectDataset): ModelStatus {
-  if (d.columnMapping === null) return 'uploaded';
-  if (d.dateRange === null) return 'configured';
-  if (d.calibration === null) return 'optimized';
-  if (d.channelHyperparameters === null) return 'calibrated';
-  return 'ready';
 }
 
 /**
@@ -83,8 +65,8 @@ export class ProjectModels implements OnInit {
       next: (datasets) => {
         this.rows.set(
           datasets.map((dataset) => {
-            const status = computeStatus(dataset);
-            return { dataset, status, ...STATUS_META[status] };
+            const status = computeModelStatus(dataset);
+            return { dataset, status, ...MODEL_STATUS_META[status] };
           }),
         );
         this.loading.set(false);
