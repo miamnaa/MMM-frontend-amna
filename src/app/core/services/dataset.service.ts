@@ -237,6 +237,21 @@ export class DatasetService {
     return this.http.delete<void>(`${environment.apiBaseUrl}/datasets/${id}`);
   }
 
+  /** Real endpoint, confirmed working 2026-08-13 - starts training for a Ready (fully configured) dataset. */
+  trainModel(datasetId: string): Observable<TrainModelResponse> {
+    return this.http.post<TrainModelResponse>(`${environment.apiBaseUrl}/datasets/${datasetId}/train`, {});
+  }
+
+  /** Real endpoint, confirmed working 2026-08-13 - poll this after trainModel() until isTerminalTrainingStatus() is true. */
+  getTrainingStatus(datasetId: string): Observable<TrainingStatusResponse> {
+    return this.http.get<TrainingStatusResponse>(`${environment.apiBaseUrl}/datasets/${datasetId}/status`);
+  }
+
+  /** Real endpoint, confirmed working 2026-08-13 - results are currently simulated on the backend, not a real trained model's output. */
+  getResults(datasetId: string): Observable<TrainingResults> {
+    return this.http.get<TrainingResults>(`${environment.apiBaseUrl}/datasets/${datasetId}/results`);
+  }
+
   /** Fills in what an unverified response shape doesn't - see ApiDatasetCreateResponse. */
   private toDataset(row: ApiDatasetCreateResponse, projectId: string): Dataset {
     return {
