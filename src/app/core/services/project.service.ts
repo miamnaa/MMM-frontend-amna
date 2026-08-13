@@ -17,6 +17,8 @@ interface ApiProject {
   description: string | null;
   status: 'active' | 'archived';
   deletedAt: string | null;
+  /** Real field on both list() and get(), shipped 2026-08-13 - datasetCount was 0 hardcoded before this. */
+  datasetCount?: number;
 }
 
 /** Real backend behind every method here - the only domain with one right now. */
