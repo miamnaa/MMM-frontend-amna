@@ -241,6 +241,64 @@
   font-size: 12.5px;
 }
 
+/* ---- Data preview - same pattern as the info accordion above ---- */
+
+.preview-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  text-align: left;
+}
+
+.preview-toggle:hover {
+  border-color: var(--border-strong);
+}
+
+.preview-body {
+  margin-top: 10px;
+}
+
+.preview-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+
+.preview-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.preview-table th,
+.preview-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.preview-table thead th {
+  background: var(--gray-50);
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.preview-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.preview-note {
+  margin-top: 8px;
+  font-size: 11.5px;
+}
+
 .tunnel-actions {
   display: flex;
   justify-content: flex-end;

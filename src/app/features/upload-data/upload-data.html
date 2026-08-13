@@ -96,6 +96,48 @@
     @if (error(); as err) {
       <p class="drop-error">{{ err }}</p>
     }
+
+    @if (file()) {
+      <button class="preview-toggle" type="button" (click)="togglePreview()" [attr.aria-expanded]="previewOpen()">
+        <span class="info-icon" aria-hidden="true">▤</span>
+        <span class="info-title">Preview data</span>
+        <span class="chevron" [class.open]="previewOpen()" aria-hidden="true">⌄</span>
+      </button>
+
+      @if (previewOpen()) {
+        <div class="preview-body">
+          @if (!isCsv()) {
+            <p class="muted">Preview isn't available for this file type yet — CSV only, for now.</p>
+          } @else if (previewLoading()) {
+            <p class="muted">Reading your file…</p>
+          } @else if (previewError(); as pErr) {
+            <p class="drop-error">{{ pErr }}</p>
+          } @else {
+            <div class="preview-table-wrap">
+              <table class="preview-table">
+                <thead>
+                  <tr>
+                    @for (h of previewHeaders(); track $index) {
+                      <th>{{ h }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of previewRows(); track $index) {
+                    <tr>
+                      @for (cell of row; track $index) {
+                        <td>{{ cell }}</td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <p class="muted preview-note">First {{ previewRows().length }} rows shown, read directly from your file — not what's actually used for column detection later.</p>
+          }
+        </div>
+      }
+    }
   </section>
 
   <div class="tunnel-actions">

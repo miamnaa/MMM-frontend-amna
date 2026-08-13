@@ -147,6 +147,11 @@ export class UploadData implements OnInit {
     }
     this.error.set(null);
     this.file.set(picked);
+    // A new file invalidates any preview parsed from the old one.
+    this.previewOpen.set(false);
+    this.previewError.set(null);
+    this.previewHeaders.set([]);
+    this.previewRows.set([]);
   }
 
   /**
