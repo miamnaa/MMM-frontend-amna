@@ -21,7 +21,6 @@
   subtitle="A project groups the datasets, model configurations and runs for one business question."
 >
   <button class="btn btn-primary" type="button" (click)="openDialog()">New project</button>
-  <button class="btn btn-ghost" type="button" (click)="signOut()">Sign out</button>
 </app-page-header>
 
 @if (loadError(); as err) {
@@ -275,7 +274,7 @@
         <span>{{ shortDate(v.updatedAt) }} ({{ relativeTime(v.updatedAt) }})</span>
       </div>
       <div class="view-row">
-        <span class="label">Models</span>
+        <span class="label">Datasets</span>
         <span>{{ v.datasetCount }}</span>
       </div>
       <div class="view-row">
@@ -285,8 +284,8 @@
     </div>
     <div class="dialog-foot">
       <button class="btn btn-secondary" type="button" (click)="closeView()">Close</button>
-      <button class="btn btn-primary" type="button" [disabled]="opening()" (click)="openModel(v)">
-        {{ opening() ? 'Opening…' : 'Open Model' }}
+      <button class="btn btn-primary" type="button" (click)="closeView(); openModel(v)">
+        View Models
       </button>
     </div>
   </div>
