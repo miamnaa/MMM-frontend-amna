@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -8,6 +8,7 @@ import { PageHeader } from '../../shared/ui/page-header/page-header';
 import { TunnelSteps } from '../../shared/ui/tunnel-steps/tunnel-steps';
 
 const ACCEPTED = ['.csv', '.xlsx', '.parquet'];
+const PREVIEW_ROW_COUNT = 8;
 
 interface ModelOption {
   value: string;
@@ -51,8 +52,58 @@ export class UploadData implements OnInit {
   readonly error = signal<string | null>(null);
   readonly infoOpen = signal(false);
 
+  readonly previewOpen = signal(false);
+  readonly previewLoading = signal(false);
+  readonly previewError = signal<string | null>(null);
+  readonly previewHeaders = signal<string[]>([]);
+  readonly previewRows = signal<string[][]>([]);
+
+  /** Client-side preview only parses CSV - XLSX/Parquet need a real library, not worth pulling in for a quick look. */
+  readonly isCsv = computed(() => (this.file()?.name ?? '').toLowerCase().endsWith('.csv'));
+
   toggleInfo(): void {
     this.infoOpen.update((open) => !open);
+  }
+
+  togglePreview(): void {
+    const opening = !this.previewOpen();
+    this.previewOpen.set(opening);
+    if (opening && this.previewHeaders().length === 0 && !this.previewError()) {
+      this.loadPreview();
+    }
+  }
+
+  /**
+   * Reads the picked file directly in the browser - no upload/backend call
+   * needed just to look at it. Deliberately simple (splits on comma, no
+   * quoted-field handling) since this is a quick sanity check before
+   * Configure, not a real parse - the backend's own GET /datasets/:id/columns
+   * does the real column detection once the file is actually uploaded.
+   */
+  private loadPreview(): void {
+    const file = this.file();
+    if (!file || !this.isCsv()) return;
+
+    this.previewLoading.set(true);
+    this.previewError.set(null);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.previewLoading.set(false);
+      const text = String(reader.result ?? '');
+      const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0);
+      if (lines.length === 0) {
+        this.previewError.set('This file looks empty.');
+        return;
+      }
+      this.previewHeaders.set(lines[0].split(',').map((h) => h.trim()));
+      this.previewRows.set(lines.slice(1, 1 + PREVIEW_ROW_COUNT).map((line) => line.split(',').map((c) => c.trim())));
+    };
+    reader.onerror = () => {
+      this.previewLoading.set(false);
+      this.previewError.set('Could not read this file for preview.');
+    };
+    reader.readAsText(file);
   }
 
   ngOnInit(): void {
