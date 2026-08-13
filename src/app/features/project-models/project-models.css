@@ -11,6 +11,14 @@
   }
 }
 
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding-left: 4px;
+}
+
 .card {
   padding: 20px;
   background: var(--surface);

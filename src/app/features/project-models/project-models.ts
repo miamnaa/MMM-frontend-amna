@@ -109,6 +109,11 @@ export class ProjectModels implements OnInit {
     this.router.navigate(['/upload-data', this.projectId()]);
   }
 
+  /** The only way back to the Project list now that neither page shows the left Sidebar. */
+  backToProjects(): void {
+    this.router.navigate(['/projects']);
+  }
+
   /**
    * Resumes a row - the next incomplete step for a partial model, or
    * Configure (fully editable, every stage reloaded) for a finished one.
