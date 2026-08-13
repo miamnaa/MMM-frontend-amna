@@ -144,13 +144,9 @@
   <div class="backdrop" (click)="closeDialog()"></div>
   <div class="dialog card" role="dialog" aria-modal="true" aria-label="Create project">
     <div class="card-header">
-      <h2>New project</h2>
+      <h2>New </h2>
       <button class="btn btn-ghost btn-sm" type="button" (click)="closeDialog()">Cancel</button>
-    </div>
-    <div class="card-header">
-      <h2>New project</h2>
-      <button class="btn btn-ghost btn-sm" type="button" (click)="closeDialog()">Cancel</button>
-    </div>
+    
     <div class="card-body dialog-body">
       @if (saveError(); as err) {
         <p class="field-error">{{ err }}</p>
