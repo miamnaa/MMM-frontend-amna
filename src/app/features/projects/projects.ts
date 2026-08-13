@@ -2,7 +2,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { MsalService } from '@azure/msal-angular';
 
+import { localSignOut } from '../../core/auth/local-sign-out';
 import { ProjectService } from '../../core/services/project.service';
 import { Project } from '../../core/models/domain.models';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
@@ -45,6 +47,7 @@ function backendErrorMessage(err: unknown, fallback: string): string {
 export class Projects {
   private readonly projectService = inject(ProjectService);
   private readonly router = inject(Router);
+  private readonly msalService = inject(MsalService);
 
   readonly projects = signal<Project[]>([]);
   readonly loading = signal(true);
@@ -165,17 +168,36 @@ export class Projects {
     });
   }
 
-  /** Opens the project hub (its models list), not straight into Upload Data - that's what "+ New model" there is for. */
-  open(project: Project): void {
-    this.router.navigate(['/models', project.id]);
+  /** See local-sign-out.ts - the only place this is reachable now that neither the tunnel nor Projects/Models show the left Sidebar. */
+  signOut(): void {
+    void localSignOut(this.msalService);
   }
 
-  openView(project: Project): void {
-    this.viewTarget.set(project);
-  }
-
-  closeView(): void {
-    this.viewTarget.set(null);
+  /**
+   * The eye icon used to open a read-only details dialog with a separate
+   * "View Models" button - now it jumps straight into whichever model this
+   * project has (or Upload Data if it has none), skipping both the dialog
+   * and the Models list. No timestamp field exists to pick a "most recent"
+   * dataset by, so with more than one this just takes the first the backend
+   * returns.
+   */
+  viewModel(project: Project): void {
+    this.viewLoading.set(project.id);
+    this.datasetService.listForProject(project.id).subscribe({
+      next: (datasets) => {
+        this.viewLoading.set(null);
+        if (datasets.length === 0) {
+          this.router.navigate(['/upload-data', project.id]);
+          return;
+        }
+        this.router.navigate(resumeDatasetRoute(this.tunnelService, project.id, datasets[0]));
+      },
+      error: () => {
+        this.viewLoading.set(null);
+        // Don't dead-end on a failed lookup - the Models list still works standalone.
+        this.router.navigate(['/models', project.id]);
+      },
+    });
   }
 
   openEdit(project: Project): void {
