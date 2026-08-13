@@ -46,6 +46,33 @@ export interface ColumnsResponse {
   suggestions: ColumnSuggestions;
 }
 
+/** The columnMapping shape GET /datasets/:id actually returns - same fields as SavedConfiguration, minus kpiType/revenuePerKpiValue, which come back as siblings instead. */
+export interface SavedColumnMapping {
+  dateColumn: string;
+  targetColumn: string;
+  mediaColumns: string[];
+  controlColumns: string[];
+  organicColumns: string[];
+  geoColumns: string[];
+}
+
+/**
+ * Real endpoint, confirmed working 2026-08-13 by Anas - the single source of
+ * truth for "what did this dataset actually save at each stage," used to
+ * hydrate every step screen on mount instead of leaving them blank or
+ * re-guessing. Every field is null until its own step was actually saved.
+ */
+export interface ApiDatasetDetail {
+  id: string;
+  name: string;
+  columnMapping: SavedColumnMapping | null;
+  kpiType: 'revenue' | 'non_revenue' | null;
+  revenuePerKpiValue?: number;
+  dateRange: SavedOptimize | null;
+  calibration: SavedCalibration | null;
+  channelHyperparameters: HyperparameterChannel[] | null;
+}
+
 /**
  * The real shape of a row from GET /projects/:projectId/datasets isn't
  * documented beyond "carries everything needed to compute status" - only
