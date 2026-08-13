@@ -35,37 +35,65 @@
     <div class="model-list">
       @for (row of rows(); track row.dataset.id) {
         <article class="card model-row">
-          <div class="model-info">
-            <h2>{{ row.dataset.name }}</h2>
-            <span class="status-label">{{ row.label }}</span>
+          <div class="model-row-main">
+            <div class="model-info">
+              <h2>{{ row.dataset.name }}</h2>
+              <span class="status-label">{{ row.label }}</span>
+            </div>
+
+            <div class="progress-track" [attr.aria-label]="row.label + ', ' + row.percent + '% complete'">
+              <div class="progress-fill" [style.width.%]="row.percent"></div>
+            </div>
+            <span class="percent-label">{{ row.percent }}%</span>
+
+            <div class="row-actions">
+              @if (row.status === 'ready') {
+                <button class="btn btn-secondary btn-sm" type="button" (click)="resume(row)">Edit</button>
+                @if (row.training.phase === 'idle' || row.training.phase === 'failed') {
+                  <button class="btn btn-primary btn-sm" type="button" (click)="startTraining(row)">
+                    Train Model
+                  </button>
+                } @else if (row.training.phase === 'starting') {
+                  <button class="btn btn-primary btn-sm" type="button" disabled>Starting…</button>
+                } @else if (row.training.phase === 'training') {
+                  <button class="btn btn-primary btn-sm" type="button" disabled>
+                    Training…{{ row.training.progress != null ? ' ' + row.training.progress + '%' : '' }}
+                  </button>
+                } @else if (row.training.phase === 'completed') {
+                  <span class="trained-note">Trained</span>
+                }
+              } @else {
+                <button class="btn btn-secondary btn-sm" type="button" (click)="resume(row)">
+                  Continue Setup
+                </button>
+              }
+              <button
+                class="btn btn-ghost btn-sm icon-btn delete-btn"
+                type="button"
+                (click)="confirmDelete(row)"
+                aria-label="Delete this model"
+                title="Delete this model"
+              >
+                🗑
+              </button>
+            </div>
           </div>
 
-          <div class="progress-track" [attr.aria-label]="row.label + ', ' + row.percent + '% complete'">
-            <div class="progress-fill" [style.width.%]="row.percent"></div>
-          </div>
-          <span class="percent-label">{{ row.percent }}%</span>
+          @if (row.training.phase === 'failed') {
+            <p class="field-error">{{ row.training.error }}</p>
+          }
 
-          <div class="row-actions">
-            @if (row.status === 'ready') {
-              <button class="btn btn-secondary btn-sm" type="button" (click)="resume(row)">Edit</button>
-              <button class="btn btn-primary btn-sm train-btn" type="button" disabled title="Coming soon">
-                Train Model <span class="coming-soon">Coming soon</span>
-              </button>
-            } @else {
-              <button class="btn btn-secondary btn-sm" type="button" (click)="resume(row)">
-                Continue Setup
-              </button>
-            }
-            <button
-              class="btn btn-ghost btn-sm icon-btn delete-btn"
-              type="button"
-              (click)="confirmDelete(row)"
-              aria-label="Delete this model"
-              title="Delete this model"
-            >
-              🗑
-            </button>
-          </div>
+          @if (row.training.phase === 'completed') {
+            <div class="results-panel">
+              <div class="results-banner">Simulated results — not from a real trained model run yet.</div>
+              <dl class="results-grid">
+                @for (entry of resultEntries(row.training.results); track entry[0]) {
+                  <dt>{{ entry[0] }}</dt>
+                  <dd>{{ entry[1] }}</dd>
+                }
+              </dl>
+            </div>
+          }
         </article>
       }
     </div>

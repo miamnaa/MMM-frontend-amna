@@ -186,6 +186,8 @@ export class ProjectModels implements OnInit, OnDestroy {
     this.deleteError.set(null);
     this.datasetService.remove(target.dataset.id).subscribe({
       next: () => {
+        this.pollSubs.get(target.dataset.id)?.unsubscribe();
+        this.pollSubs.delete(target.dataset.id);
         this.rows.update((list) => list.filter((r) => r.dataset.id !== target.dataset.id));
         this.deleting.set(false);
         this.deleteTarget.set(null);
