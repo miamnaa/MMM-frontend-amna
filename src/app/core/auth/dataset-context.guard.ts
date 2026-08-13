@@ -1,25 +1,8 @@
-import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
-
-import { TunnelService } from '../services/tunnel.service';
+import { createStageGuard } from './stage-context-guard';
 
 /**
- * Configure has no real "am I done" read endpoint to check against, so this
- * can only check the in-memory TunnelService, not a real dataset record -
- * meaning it resets on a fresh tab. That's an accepted tradeoff for a step
- * whose backend has no read-back, not a security gate like otpGuard.
+ * Configure only needs a dataset actually selected for this project - see
+ * stage-context-guard.ts for how this survives a page reload, not just an
+ * in-memory same-tab check.
  */
-export const datasetContextGuard: CanActivateFn = (route) => {
-  const tunnelService = inject(TunnelService);
-  const router = inject(Router);
-  const projectId = route.paramMap.get('projectId');
-  const datasetId = route.paramMap.get('datasetId');
-
-  const contextMatches =
-    projectId !== null &&
-    datasetId !== null &&
-    tunnelService.projectId() === projectId &&
-    tunnelService.dataset()?.id === datasetId;
-
-  return contextMatches ? true : router.createUrlTree(['/projects']);
-};
+export const datasetContextGuard = createStageGuard('dataset');

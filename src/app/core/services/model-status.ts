@@ -21,20 +21,16 @@ export function computeModelStatus(d: ApiProjectDataset): ModelStatus {
 }
 
 /**
- * Loads every saved stage of `dataset` into TunnelService (so route guards
- * and the TunnelSteps sidebar both see it as already in progress), and
- * returns the router.navigate() commands for wherever it should open - the
- * next incomplete step, or Configure (fully editable from there, since every
- * stage is now loaded) if it's already Ready. Shared by the Projects page's
- * eye icon and the Models list's Continue Setup/Edit buttons - same "jump
- * back into this model's build screens" behavior either way.
+ * Loads every saved stage of `dataset` into TunnelService, so route guards
+ * and the TunnelSteps sidebar both see it as already in progress - used both
+ * when resuming from a list (Projects/Models) and when a context guard
+ * rebuilds this state after a page reload wiped it (see stage-context-guard.ts).
  */
-export function resumeDatasetRoute(
+export function loadDatasetIntoTunnel(
   tunnelService: TunnelService,
   projectId: string,
   dataset: ApiProjectDataset,
-): string[] {
-  const status = computeModelStatus(dataset);
+): void {
   tunnelService.selectProject(projectId);
   tunnelService.setDataset({
     id: dataset.id,
@@ -42,16 +38,29 @@ export function resumeDatasetRoute(
     modelType: dataset.modelType ?? '',
     local: false,
   });
+  if (dataset.columnMapping) tunnelService.setConfiguration(dataset.columnMapping);
+  if (dataset.dateRange) tunnelService.setOptimize(dataset.dateRange);
+  if (dataset.calibration) tunnelService.setCalibration(dataset.calibration);
+}
+
+/**
+ * Returns the router.navigate() commands for wherever `dataset` should open -
+ * the next incomplete step, or Configure (fully editable from there, since
+ * every stage is now loaded) if it's already Ready. Shared by the Projects
+ * page's eye icon and the Models list's Continue Setup/Edit buttons - same
+ * "jump back into this model's build screens" behavior either way.
+ */
+export function resumeDatasetRoute(
+  tunnelService: TunnelService,
+  projectId: string,
+  dataset: ApiProjectDataset,
+): string[] {
+  const status = computeModelStatus(dataset);
+  loadDatasetIntoTunnel(tunnelService, projectId, dataset);
 
   if (status === 'uploaded') return ['/configure', projectId, dataset.id];
-  if (dataset.columnMapping) tunnelService.setConfiguration(dataset.columnMapping);
-
   if (status === 'configured') return ['/optimize', projectId, dataset.id];
-  if (dataset.dateRange) tunnelService.setOptimize(dataset.dateRange);
-
   if (status === 'optimized') return ['/calibrate', projectId, dataset.id];
-  if (dataset.calibration) tunnelService.setCalibration(dataset.calibration);
-
   if (status === 'calibrated') return ['/hyperparameters', projectId, dataset.id];
 
   // 'ready' - stays fully editable; start at Configure now that every stage is loaded.

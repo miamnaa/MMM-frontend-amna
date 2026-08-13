@@ -1,26 +1,9 @@
-import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
-
-import { TunnelService } from '../services/tunnel.service';
+import { createStageGuard } from './stage-context-guard';
 
 /**
- * Same dataset-id check as datasetContextGuard, plus Calibration must have
- * actually been saved first. This is also what guarantees the channel list
- * on Hyperparameters always has real, saved mediaColumns to pre-fill from -
- * you cannot reach this screen without Configure having been saved.
+ * Hyperparameters requires Calibration to have actually been saved first -
+ * see stage-context-guard.ts. This is also what guarantees the channel list
+ * on this screen always has real, saved mediaColumns to pre-fill from - you
+ * cannot reach it without Configure having been saved somewhere upstream.
  */
-export const hyperparametersContextGuard: CanActivateFn = (route) => {
-  const tunnelService = inject(TunnelService);
-  const router = inject(Router);
-  const projectId = route.paramMap.get('projectId');
-  const datasetId = route.paramMap.get('datasetId');
-
-  const contextMatches =
-    projectId !== null &&
-    datasetId !== null &&
-    tunnelService.projectId() === projectId &&
-    tunnelService.dataset()?.id === datasetId &&
-    tunnelService.calibration() !== null;
-
-  return contextMatches ? true : router.createUrlTree(['/projects']);
-};
+export const hyperparametersContextGuard = createStageGuard('calibration');
