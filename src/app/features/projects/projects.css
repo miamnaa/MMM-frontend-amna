@@ -291,6 +291,11 @@
   padding: 6px 9px;
 }
 
+.icon-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .eye-icon {
   width: 18px;
   height: 12px;
@@ -299,20 +304,6 @@
 
 .icon-btn:hover .eye-icon {
   color: var(--ink, inherit);
-}
-
-.view-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  font-size: 13.5px;
-}
-
-.view-row .label {
-  flex: none;
-  font-weight: 600;
-  color: var(--text-muted);
 }
 
 .dialog-foot {

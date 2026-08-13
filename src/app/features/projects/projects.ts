@@ -13,7 +13,7 @@ import { Project } from '../../core/models/domain.models';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
 import { StatusBadge } from '../../shared/ui/status-badge/status-badge';
-import { initials, relativeTime, shortDate } from '../../shared/utils/format';
+import { initials, relativeTime } from '../../shared/utils/format';
 
 type SortOption = 'recent' | 'az' | 'created';
 
@@ -106,7 +106,6 @@ export class Projects {
   readonly deleteError = signal<string | null>(null);
 
   readonly relativeTime = relativeTime;
-  readonly shortDate = shortDate;
 
   /** Which project's eye icon is currently waiting on listForProject() - id, not boolean, so each card's own icon can show its own loading state. */
   readonly viewLoading = signal<string | null>(null);
