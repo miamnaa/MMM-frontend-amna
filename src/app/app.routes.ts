@@ -7,7 +7,6 @@ import { hyperparametersContextGuard } from './core/auth/hyperparameters-context
 import { optimizeContextGuard } from './core/auth/optimize-context.guard';
 import { otpGuard } from './core/auth/otp.guard';
 import { projectContextGuard } from './core/auth/project-context.guard';
-import { AppShell } from './layouts/app-shell/app-shell';
 import { MainLayout } from './layouts/main-layout/main-layout';
 
 export const routes: Routes = [
@@ -37,10 +36,10 @@ export const routes: Routes = [
   },
   {
     path: '',
-    component: AppShell,
-    // The persistent nav (Projects / Models / Sign out) for the model-build
-    // tunnel screens only - Projects and Models moved to the left Sidebar
-    // under MainLayout below, matching Cassandra's own nav.
+    // No layout component here on purpose (2026-08-13) - the model-build
+    // tunnel screens no longer show a shared top bar. Each one's own
+    // TunnelSteps sidebar has a "← Back" link (to /models/:projectId)
+    // instead, so this is just a guard-only grouping node.
     canActivateChild: [MsalGuard, otpGuard],
     children: [
       {

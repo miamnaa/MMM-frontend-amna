@@ -164,7 +164,30 @@ export class ProjectModels implements OnInit {
     }
     if (dataset.calibration) this.tunnelService.setCalibration(dataset.calibration);
 
-    // Only 'calibrated' remains here - 'ready' never calls continueSetup (see the template's Train Model branch).
+    // Only 'calibrated' remains here.
     this.router.navigate(['/hyperparameters', this.projectId(), dataset.id]);
+  }
+
+  /**
+   * A finished ('ready') model stays fully editable - this reconstructs
+   * every saved stage into TunnelService (not just the ones continueSetup()
+   * would stop at), then opens Configure. With all four stages already
+   * loaded, TunnelSteps' own isReachable() check lets the sidebar jump
+   * straight to any of the five steps from there, not just the next one.
+   */
+  editModel(row: ModelRow): void {
+    const { dataset } = row;
+    this.tunnelService.selectProject(this.projectId());
+    this.tunnelService.setDataset({
+      id: dataset.id,
+      name: dataset.name,
+      modelType: dataset.modelType ?? '',
+      local: false,
+    });
+    if (dataset.columnMapping) this.tunnelService.setConfiguration(dataset.columnMapping);
+    if (dataset.dateRange) this.tunnelService.setOptimize(dataset.dateRange);
+    if (dataset.calibration) this.tunnelService.setCalibration(dataset.calibration);
+
+    this.router.navigate(['/configure', this.projectId(), dataset.id]);
   }
 }

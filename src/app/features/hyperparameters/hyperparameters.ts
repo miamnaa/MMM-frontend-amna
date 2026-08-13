@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { DatasetService, HyperparameterChannel } from '../../core/services/dataset.service';
 import { TunnelService } from '../../core/services/tunnel.service';
@@ -39,6 +39,7 @@ function validRow(row: ChannelRow): boolean {
 })
 export class Hyperparameters implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly datasetService = inject(DatasetService);
   private readonly tunnelService = inject(TunnelService);
 
@@ -83,12 +84,16 @@ export class Hyperparameters implements OnInit {
     this.saveError.set(null);
     this.saved.set(false);
 
-    // Nothing past this is built yet (no "start training" step exists on
-    // the backend) - success just confirms, there's nowhere further to go.
+    // No "start training" step exists on the backend yet, so there's
+    // nowhere further to go in the tunnel itself - success moves back to
+    // the Models list, which already shows this model as Ready 100% with
+    // the same "Train Model - Coming soon" state. Brief delay so the
+    // "Hyperparameters saved" confirmation is actually visible first.
     this.datasetService.saveHyperparameters(this.datasetId(), channels).subscribe({
       next: () => {
         this.saving.set(false);
         this.saved.set(true);
+        setTimeout(() => this.router.navigate(['/models', this.projectId()]), 1200);
       },
       error: (err: unknown) => {
         this.saving.set(false);

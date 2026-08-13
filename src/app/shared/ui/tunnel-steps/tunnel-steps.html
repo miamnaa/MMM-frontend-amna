@@ -1,4 +1,8 @@
 <nav class="tunnel-steps" aria-label="Progress">
+  <button type="button" class="back-link" (click)="back()">
+    <span aria-hidden="true">←</span> Back
+  </button>
+
   @for (step of steps; track step.key) {
     <button
       type="button"

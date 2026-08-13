@@ -1,28 +1,23 @@
-/* Standalone page (no MainLayout wrapper anymore). The step panel is a true
-   full-height left sidebar - flush against the page edge, not just tall
-   enough for its own content - with the actual page content scrolling
-   independently in the remaining space, same structural idea as the old
-   MainLayout's .shell/.content split. */
+/* Standalone page, no layout wrapper - the step panel is a true full-height
+   left sidebar, flush against the page edge, with the actual page content
+   scrolling independently in the remaining space. */
 .upload-page {
-  min-height: 100%;
+  min-height: 100vh;
 }
 
 .tunnel-layout {
   display: flex;
-  min-height: 100%;
+  min-height: 100vh;
   align-items: stretch;
 }
 
-/* Fixed calc, not a percentage chained through the flex ancestors (fragile -
-   every ancestor up to a definite-height one would need explicit height,
-   not just min-height) - 56px matches app-shell.css's .shell-bar exactly. */
 .tunnel-side {
   flex: none;
   width: 240px;
   position: sticky;
   top: 0;
   align-self: flex-start;
-  height: calc(100vh - 56px);
+  height: 100vh;
 }
 
 .tunnel-main {

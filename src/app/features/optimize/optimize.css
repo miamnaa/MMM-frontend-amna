@@ -8,14 +8,13 @@
   align-items: stretch;
 }
 
-/* Fixed calc, not a percentage chained through flex ancestors - 56px matches app-shell.css's .shell-bar. */
 .tunnel-side {
   flex: none;
   width: 240px;
   position: sticky;
   top: 0;
   align-self: flex-start;
-  height: calc(100vh - 56px);
+  height: 100vh;
 }
 
 .tunnel-main {

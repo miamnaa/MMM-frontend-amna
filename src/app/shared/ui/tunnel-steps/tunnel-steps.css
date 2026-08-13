@@ -12,6 +12,27 @@
   background: var(--brand-600);
 }
 
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  margin-bottom: 10px;
+  border: none;
+  border-radius: var(--r-md);
+  background: transparent;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.back-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 .step {
   display: flex;
   align-items: center;
