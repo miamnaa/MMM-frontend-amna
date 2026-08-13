@@ -115,10 +115,6 @@
   color: var(--brand-700, var(--green-600));
 }
 
-.train-error {
-  margin: 0;
-}
-
 .results-panel {
   padding-top: 12px;
   border-top: 1px solid var(--border);
