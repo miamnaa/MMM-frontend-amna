@@ -1,22 +1,5 @@
-/* Standalone page again (2026-08-13, no left Sidebar) - own padding/background, no layout wrapper to supply it. */
+/* Back under MainLayout (2026-08-13) - its own .content already supplies padding/background/scroll. */
 .project-models-page {
-  min-height: 100vh;
-  padding: 26px 28px 48px;
-  background: var(--surface);
-}
-
-@media (max-width: 720px) {
-  .project-models-page {
-    padding: 18px 16px 36px;
-  }
-}
-
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 10px;
-  padding-left: 4px;
 }
 
 .card {
