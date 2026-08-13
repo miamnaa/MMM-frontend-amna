@@ -65,8 +65,8 @@ export class TunnelSteps {
     this.router.navigate([`/${step.key}`, this.projectId(), datasetId]);
   }
 
-  /** Replaces the old shared top bar (removed 2026-08-13) - the way out of the tunnel now lives here. */
+  /** Replaces the old shared top bar (removed 2026-08-13) - the way out of the tunnel now lives here, straight to the Project list. */
   back(): void {
-    this.router.navigate(['/models', this.projectId()]);
+    this.router.navigate(['/projects']);
   }
 }
