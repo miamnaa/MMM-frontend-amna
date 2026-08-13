@@ -5,7 +5,10 @@ import { Router } from '@angular/router';
 import { MsalService } from '@azure/msal-angular';
 
 import { localSignOut } from '../../core/auth/local-sign-out';
+import { DatasetService } from '../../core/services/dataset.service';
+import { resumeDatasetRoute } from '../../core/services/model-status';
 import { ProjectService } from '../../core/services/project.service';
+import { TunnelService } from '../../core/services/tunnel.service';
 import { Project } from '../../core/models/domain.models';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
@@ -46,6 +49,8 @@ function backendErrorMessage(err: unknown, fallback: string): string {
 })
 export class Projects {
   private readonly projectService = inject(ProjectService);
+  private readonly datasetService = inject(DatasetService);
+  private readonly tunnelService = inject(TunnelService);
   private readonly router = inject(Router);
   private readonly msalService = inject(MsalService);
 
@@ -103,7 +108,8 @@ export class Projects {
   readonly relativeTime = relativeTime;
   readonly shortDate = shortDate;
 
-  readonly viewTarget = signal<Project | null>(null);
+  /** Which project's eye icon is currently waiting on listForProject() - id, not boolean, so each card's own icon can show its own loading state. */
+  readonly viewLoading = signal<string | null>(null);
 
   constructor() {
     this.reload();
