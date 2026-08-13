@@ -61,6 +61,24 @@ export class Hyperparameters implements OnInit {
     // Configuration to have been saved first.
     const mediaColumns = this.tunnelService.configuration()?.mediaColumns ?? [];
     this.rows.set(mediaColumns.map((channel) => ({ channel, carryover: null, saturation: null })));
+
+    // Real endpoint (GET /datasets/:id, confirmed working 2026-08-13) - the
+    // channel names above were already correct, but carryover/saturation
+    // used to always start blank even when already saved. Best-effort: a
+    // failure here just leaves them blank, same as before this existed.
+    this.datasetService.getDataset(this.datasetId()).subscribe({
+      next: (detail) => {
+        const saved = detail.channelHyperparameters;
+        if (!saved || saved.length === 0) return;
+        this.rows.update((rows) =>
+          rows.map((row) => {
+            const match = saved.find((s) => s.channel === row.channel);
+            return match ? { ...row, carryover: match.carryover, saturation: match.saturation } : row;
+          }),
+        );
+      },
+      error: () => {},
+    });
   }
 
   updateCarryover(index: number, value: number | null): void {

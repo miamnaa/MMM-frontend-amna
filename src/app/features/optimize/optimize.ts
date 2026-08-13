@@ -42,6 +42,20 @@ export class Optimize implements OnInit {
   ngOnInit(): void {
     this.projectId.set(this.route.snapshot.paramMap.get('projectId') ?? '');
     this.datasetId.set(this.route.snapshot.paramMap.get('datasetId') ?? '');
+
+    // Real endpoint (GET /datasets/:id, confirmed working 2026-08-13) - the
+    // fix for leaving this screen and coming back to a blank form even
+    // though the date range was already saved. Best-effort: a failure here
+    // just leaves the fields blank, same as before this existed.
+    this.datasetService.getDataset(this.datasetId()).subscribe({
+      next: (detail) => {
+        if (detail.dateRange) {
+          this.startDate.set(detail.dateRange.startDate);
+          this.endDate.set(detail.dateRange.endDate);
+        }
+      },
+      error: () => {},
+    });
   }
 
   save(): void {

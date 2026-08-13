@@ -93,11 +93,14 @@ export class Configure implements OnInit {
         // Deliberately conservative on the backend - null means "no
         // confident match," not "no date/target column exists." Still
         // fully editable before Save, nothing here is persisted yet.
+        // hydrateFromSaved() below overrides these with the real saved
+        // values if Configure was already saved once for this dataset.
         this.dateColumn.set(suggestions.dateColumn ?? '');
         this.kpiColumn.set(suggestions.targetColumn ?? '');
         this.mediaColumns.set(suggestions.mediaColumns);
         this.controlColumns.set(suggestions.controlColumns);
         this.organicColumns.set(suggestions.organicColumns);
+        this.hydrateFromSaved();
       },
       error: (err: unknown) => {
         this.columnsLoading.set(false);
@@ -109,6 +112,37 @@ export class Configure implements OnInit {
           ),
         );
         this.seedFallbackRows();
+        this.hydrateFromSaved();
+      },
+    });
+  }
+
+  /**
+   * Real endpoint (GET /datasets/:id, confirmed working 2026-08-13) - the
+   * fix for leaving Configure and coming back showing a blank/re-guessed
+   * form even though it was already saved. Best-effort: if this fails, the
+   * suggestion-based prefill above is left standing rather than breaking
+   * the screen over a secondary call.
+   */
+  private hydrateFromSaved(): void {
+    this.datasetService.getDataset(this.datasetId()).subscribe({
+      next: (detail) => {
+        const saved = detail.columnMapping;
+        if (saved) {
+          this.dateColumn.set(saved.dateColumn);
+          this.kpiColumn.set(saved.targetColumn);
+          this.mediaColumns.set(saved.mediaColumns);
+          this.controlColumns.set(saved.controlColumns);
+          this.organicColumns.set(saved.organicColumns);
+          this.geoColumns.set(saved.geoColumns);
+          if (this.columnsUnavailable()) this.seedFallbackRows();
+        }
+        if (detail.kpiType) this.isRevenue.set(detail.kpiType === 'revenue');
+        if (typeof detail.revenuePerKpiValue === 'number') this.revenuePerKpiValue.set(detail.revenuePerKpiValue);
+      },
+      error: () => {
+        // Best-effort - nothing saved yet, or the call failed; the
+        // suggestion-based prefill from getColumns() already stands.
       },
     });
   }

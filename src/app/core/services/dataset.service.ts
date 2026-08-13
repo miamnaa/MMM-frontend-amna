@@ -94,10 +94,10 @@ export interface ApiProjectDataset {
 }
 
 /**
- * `list`/`get`/`upload`/`remove` still have no real backend (API-REFERENCE.md,
- * "What is not built yet") and stay honest about that. The four
- * `save*` methods below ARE real, shipped 2026-08-12 - each is a thin PATCH
- * to `/datasets/:id/...`, all requiring the dataset's own id (not the
+ * `list`/`upload` still have no real backend (API-REFERENCE.md, "What is
+ * not built yet") and stay honest about that. The four `save*` methods and
+ * `getDataset()` below ARE real - each a thin PATCH/GET against
+ * `/datasets/:id/...`, all requiring the dataset's own id (not the
  * project's), matching what the backend actually scopes them by.
  */
 @Injectable({ providedIn: 'root' })
@@ -108,8 +108,15 @@ export class DatasetService {
     return of([]);
   }
 
-  get(_id: string): Observable<Dataset | undefined> {
-    return of(undefined);
+  /**
+   * Real endpoint, confirmed working 2026-08-13 - the one place every step
+   * screen (Configure/Optimize/Calibrate/Hyperparameters) reads back what
+   * was actually saved on mount, instead of leaving its form blank or
+   * re-guessing from the raw file every time the screen is left and
+   * reopened.
+   */
+  getDataset(id: string): Observable<ApiDatasetDetail> {
+    return this.http.get<ApiDatasetDetail>(`${environment.apiBaseUrl}/datasets/${id}`);
   }
 
   upload(_file: File, _projectId: string): Observable<Dataset> {
