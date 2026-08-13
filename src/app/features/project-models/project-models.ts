@@ -1,7 +1,15 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription, interval } from 'rxjs';
+import { switchMap, takeWhile } from 'rxjs/operators';
 
-import { ApiProjectDataset, DatasetService } from '../../core/services/dataset.service';
+import {
+  ApiProjectDataset,
+  DatasetService,
+  TrainingResults,
+  isFailedTrainingStatus,
+  isTerminalTrainingStatus,
+} from '../../core/services/dataset.service';
 import { Project } from '../../core/models/domain.models';
 import { MODEL_STATUS_META, ModelStatus, computeModelStatus, resumeDatasetRoute } from '../../core/services/model-status';
 import { ProjectService } from '../../core/services/project.service';
@@ -10,11 +18,29 @@ import { EmptyState } from '../../shared/ui/empty-state/empty-state';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
 
+const POLL_INTERVAL_MS = 3000;
+
+/**
+ * 'idle' shows the real "Train Model" button; the rest track one real
+ * training run against the three real endpoints Anas confirmed 2026-08-13
+ * (POST .../train, GET .../status polled every 3s, GET .../results once
+ * status reaches a terminal state). Results are real data from a real call,
+ * but the backend itself is simulating the numbers right now, not running
+ * an actual model - the UI says so, doesn't quietly present them as real.
+ */
+type TrainState =
+  | { phase: 'idle' }
+  | { phase: 'starting' }
+  | { phase: 'training'; progress?: number; message?: string }
+  | { phase: 'completed'; results: TrainingResults }
+  | { phase: 'failed'; error: string };
+
 interface ModelRow {
   dataset: ApiProjectDataset;
   status: ModelStatus;
   label: string;
   percent: number;
+  training: TrainState;
 }
 
 /**
