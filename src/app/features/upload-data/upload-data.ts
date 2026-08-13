@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { DatasetService } from '../../core/services/dataset.service';
 import { TunnelService } from '../../core/services/tunnel.service';
+import { UploadDraftService } from '../../core/services/upload-draft.service';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
 import { TunnelSteps } from '../../shared/ui/tunnel-steps/tunnel-steps';
 
@@ -39,24 +40,29 @@ export class UploadData implements OnInit {
   private readonly router = inject(Router);
   private readonly datasetService = inject(DatasetService);
   private readonly tunnelService = inject(TunnelService);
+  private readonly draft = inject(UploadDraftService);
 
   readonly modelOptions = MODEL_OPTIONS;
   readonly accepted = ACCEPTED.join(',');
 
   readonly projectId = signal('');
-  readonly modelName = signal('');
-  readonly modelType = signal(MODEL_OPTIONS[0].value);
-  readonly file = signal<File | null>(null);
-  readonly dragging = signal(false);
   readonly uploading = signal(false);
   readonly error = signal<string | null>(null);
   readonly infoOpen = signal(false);
+  readonly dragging = signal(false);
 
-  readonly previewOpen = signal(false);
+  // Everything below is the draft itself - kept in UploadDraftService (not
+  // local component state) so it survives navigating away and back. See
+  // upload-draft.service.ts for what that does and doesn't cover on a
+  // real page reload.
+  readonly modelName = this.draft.modelName;
+  readonly modelType = this.draft.modelType;
+  readonly file = this.draft.file;
+  readonly previewOpen = this.draft.previewOpen;
+  readonly previewHeaders = this.draft.previewHeaders;
+  readonly previewRows = this.draft.previewRows;
+  readonly previewError = this.draft.previewError;
   readonly previewLoading = signal(false);
-  readonly previewError = signal<string | null>(null);
-  readonly previewHeaders = signal<string[]>([]);
-  readonly previewRows = signal<string[][]>([]);
 
   /** Client-side preview only parses CSV - XLSX/Parquet need a real library, not worth pulling in for a quick look. */
   readonly isCsv = computed(() => (this.file()?.name ?? '').toLowerCase().endsWith('.csv'));
@@ -65,9 +71,13 @@ export class UploadData implements OnInit {
     this.infoOpen.update((open) => !open);
   }
 
+  setModelName(value: string): void {
+    this.draft.setModelName(value);
+  }
+
   togglePreview(): void {
     const opening = !this.previewOpen();
-    this.previewOpen.set(opening);
+    this.draft.setPreviewOpen(opening);
     if (opening && this.previewHeaders().length === 0 && !this.previewError()) {
       this.loadPreview();
     }
@@ -85,7 +95,7 @@ export class UploadData implements OnInit {
     if (!file || !this.isCsv()) return;
 
     this.previewLoading.set(true);
-    this.previewError.set(null);
+    this.draft.setPreviewError(null);
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -93,15 +103,16 @@ export class UploadData implements OnInit {
       const text = String(reader.result ?? '');
       const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0);
       if (lines.length === 0) {
-        this.previewError.set('This file looks empty.');
+        this.draft.setPreviewError('This file looks empty.');
         return;
       }
-      this.previewHeaders.set(lines[0].split(',').map((h) => h.trim()));
-      this.previewRows.set(lines.slice(1, 1 + PREVIEW_ROW_COUNT).map((line) => line.split(',').map((c) => c.trim())));
+      const headers = lines[0].split(',').map((h) => h.trim());
+      const rows = lines.slice(1, 1 + PREVIEW_ROW_COUNT).map((line) => line.split(',').map((c) => c.trim()));
+      this.draft.setPreviewResult(headers, rows);
     };
     reader.onerror = () => {
       this.previewLoading.set(false);
-      this.previewError.set('Could not read this file for preview.');
+      this.draft.setPreviewError('Could not read this file for preview.');
     };
     reader.readAsText(file);
   }
@@ -110,10 +121,12 @@ export class UploadData implements OnInit {
     const id = this.route.snapshot.paramMap.get('projectId') ?? '';
     this.projectId.set(id);
     this.tunnelService.selectProject(id);
+    this.draft.selectProject(id);
+    if (!this.modelType()) this.draft.setModelType(MODEL_OPTIONS[0].value);
   }
 
   selectModel(value: string): void {
-    this.modelType.set(value);
+    this.draft.setModelType(value);
   }
 
   onDragOver(event: DragEvent): void {
@@ -146,12 +159,7 @@ export class UploadData implements OnInit {
       return;
     }
     this.error.set(null);
-    this.file.set(picked);
-    // A new file invalidates any preview parsed from the old one.
-    this.previewOpen.set(false);
-    this.previewError.set(null);
-    this.previewHeaders.set([]);
-    this.previewRows.set([]);
+    this.draft.setFile(picked);
   }
 
   /**
@@ -182,6 +190,7 @@ export class UploadData implements OnInit {
           modelType: this.modelType(),
           local: false,
         });
+        this.draft.clearAll();
         this.router.navigate(['/configure', projectId, dataset.id]);
       },
       error: () => {
@@ -193,6 +202,7 @@ export class UploadData implements OnInit {
           modelType: this.modelType(),
           local: true,
         });
+        this.draft.clearAll();
         this.router.navigate(['/configure', projectId, localId]);
       },
     });
