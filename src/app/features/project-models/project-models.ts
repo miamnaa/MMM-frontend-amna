@@ -56,7 +56,7 @@ interface ModelRow {
   templateUrl: './project-models.html',
   styleUrl: './project-models.css',
 })
-export class ProjectModels implements OnInit {
+export class ProjectModels implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly projectService = inject(ProjectService);
@@ -73,9 +73,16 @@ export class ProjectModels implements OnInit {
   readonly deleting = signal(false);
   readonly deleteError = signal<string | null>(null);
 
+  /** One poll subscription per dataset currently training - cleaned up on delete and on leaving this screen. */
+  private readonly pollSubs = new Map<string, Subscription>();
+
   ngOnInit(): void {
     this.projectId.set(this.route.snapshot.paramMap.get('projectId') ?? '');
     this.load();
+  }
+
+  ngOnDestroy(): void {
+    this.pollSubs.forEach((sub) => sub.unsubscribe());
   }
 
   load(): void {
@@ -92,7 +99,7 @@ export class ProjectModels implements OnInit {
         this.rows.set(
           datasets.map((dataset) => {
             const status = computeModelStatus(dataset);
-            return { dataset, status, ...MODEL_STATUS_META[status] };
+            return { dataset, status, ...MODEL_STATUS_META[status], training: { phase: 'idle' as const } };
           }),
         );
         this.loading.set(false);
@@ -102,6 +109,65 @@ export class ProjectModels implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  private updateTraining(datasetId: string, training: TrainState): void {
+    this.rows.update((list) => list.map((r) => (r.dataset.id === datasetId ? { ...r, training } : r)));
+  }
+
+  /** Real POST .../train, then polls the real .../status endpoint every 3s until it reaches a terminal state, then fetches the real (currently simulated) .../results. */
+  startTraining(row: ModelRow): void {
+    const id = row.dataset.id;
+    if (row.training.phase !== 'idle' && row.training.phase !== 'failed') return;
+
+    this.updateTraining(id, { phase: 'starting' });
+
+    this.datasetService.trainModel(id).subscribe({
+      next: () => {
+        this.updateTraining(id, { phase: 'training' });
+        this.pollTraining(id);
+      },
+      error: (err: unknown) => {
+        this.updateTraining(id, { phase: 'failed', error: backendErrorMessage(err, 'Could not start training. Try again.') });
+      },
+    });
+  }
+
+  private pollTraining(id: string): void {
+    this.pollSubs.get(id)?.unsubscribe();
+
+    const sub = interval(POLL_INTERVAL_MS)
+      .pipe(
+        switchMap(() => this.datasetService.getTrainingStatus(id)),
+        takeWhile((res) => !isTerminalTrainingStatus(res.status), true),
+      )
+      .subscribe({
+        next: (res) => {
+          if (!isTerminalTrainingStatus(res.status)) {
+            this.updateTraining(id, { phase: 'training', progress: res.progress, message: res.message });
+            return;
+          }
+          if (isFailedTrainingStatus(res.status)) {
+            this.updateTraining(id, { phase: 'failed', error: res.message ?? 'Training failed.' });
+            return;
+          }
+          this.datasetService.getResults(id).subscribe({
+            next: (results) => this.updateTraining(id, { phase: 'completed', results }),
+            error: (err: unknown) =>
+              this.updateTraining(id, { phase: 'failed', error: backendErrorMessage(err, 'Training finished, but results could not be loaded.') }),
+          });
+        },
+        error: (err: unknown) => {
+          this.updateTraining(id, { phase: 'failed', error: backendErrorMessage(err, 'Lost track of this training run. Try again.') });
+        },
+      });
+
+    this.pollSubs.set(id, sub);
+  }
+
+  /** For display - Object.entries() so the results panel renders whatever real keys came back instead of assuming a specific shape. */
+  resultEntries(results: TrainingResults): [string, unknown][] {
+    return Object.entries(results);
   }
 
   confirmDelete(row: ModelRow): void {
