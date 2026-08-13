@@ -36,12 +36,26 @@ export const routes: Routes = [
   },
   {
     path: '',
-    // No layout component here on purpose (2026-08-13) - the model-build
-    // tunnel screens no longer show a shared top bar. Each one's own
-    // TunnelSteps sidebar has a "← Back" link (to /models/:projectId)
-    // instead, so this is just a guard-only grouping node.
+    // No layout component here on purpose (2026-08-13) - neither Projects,
+    // Models, nor the model-build tunnel screens show the left Sidebar or
+    // any shared top bar anymore. The tunnel screens' own TunnelSteps
+    // sidebar has a "← Back" link (to /models/:projectId) instead; this is
+    // just a guard-only grouping node.
     canActivateChild: [MsalGuard, otpGuard],
     children: [
+      {
+        path: 'projects',
+        title: 'Projects · ROIVIO',
+        loadComponent: () => import('./features/projects/projects').then((m) => m.Projects),
+      },
+      {
+        path: 'models/:projectId',
+        title: 'Models · ROIVIO',
+        // Project hub between the Project list and the per-model tunnel -
+        // real dataset list, real computed status per model.
+        canActivate: [projectContextGuard],
+        loadComponent: () => import('./features/project-models/project-models').then((m) => m.ProjectModels),
+      },
       {
         path: 'upload-data/:projectId',
         title: 'Upload data · ROIVIO',
@@ -85,10 +99,10 @@ export const routes: Routes = [
   {
     path: '',
     component: MainLayout,
-    // Projects and Models live here now (2026-08-13) for the real Cassandra-
-    // style left Sidebar nav. The rest (Overview, Datasets, Experiments,
-    // Model Studio, Results, Scenarios, Settings) stay as real, guarded
-    // routes for later - nothing links to them from the tunnel, but they
+    // Projects and Models moved out (2026-08-13) - no more left Sidebar on
+    // either. What's left here (Overview, Datasets, Experiments, Model
+    // Studio, Results, Scenarios, Settings) stays as real, guarded routes
+    // for later - nothing links to them from anywhere active, but they
     // still work if reached directly. MsalGuard on canActivateChild, not
     // per-child canActivate: one place to update, and it also covers routes
     // added here later. otpGuard runs after it, so "signed into Microsoft"
@@ -96,19 +110,6 @@ export const routes: Routes = [
     // under this layout.
     canActivateChild: [MsalGuard, otpGuard],
     children: [
-      {
-        path: 'projects',
-        title: 'Projects · ROIVIO',
-        loadComponent: () => import('./features/projects/projects').then((m) => m.Projects),
-      },
-      {
-        path: 'models/:projectId',
-        title: 'Models · ROIVIO',
-        // Project hub between the Project list and the per-model tunnel -
-        // real dataset list, real computed status per model.
-        canActivate: [projectContextGuard],
-        loadComponent: () => import('./features/project-models/project-models').then((m) => m.ProjectModels),
-      },
       {
         path: 'overview',
         title: 'Overview · ROIVIO',

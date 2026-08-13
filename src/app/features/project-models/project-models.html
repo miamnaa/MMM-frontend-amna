@@ -47,12 +47,12 @@
 
           <div class="row-actions">
             @if (row.status === 'ready') {
-              <button class="btn btn-secondary btn-sm" type="button" (click)="editModel(row)">Edit</button>
+              <button class="btn btn-secondary btn-sm" type="button" (click)="resume(row)">Edit</button>
               <button class="btn btn-primary btn-sm train-btn" type="button" disabled title="Coming soon">
                 Train Model <span class="coming-soon">Coming soon</span>
               </button>
             } @else {
-              <button class="btn btn-secondary btn-sm" type="button" (click)="continueSetup(row)">
+              <button class="btn btn-secondary btn-sm" type="button" (click)="resume(row)">
                 Continue Setup
               </button>
             }

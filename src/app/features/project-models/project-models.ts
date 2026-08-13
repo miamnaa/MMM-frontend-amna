@@ -110,66 +110,11 @@ export class ProjectModels implements OnInit {
   }
 
   /**
-   * Resumes a partially-configured dataset. Route guards check in-memory
-   * TunnelService state, built for a single linear session - this
-   * reconstructs that state from the real, persisted fields this row's
-   * dataset already carries, before navigating, otherwise the destination
-   * screen's guard would bounce straight back to /projects. columnMapping's
-   * exact shape is assumed to mirror saveConfiguration()'s body exactly
-   * (see ApiProjectDataset) - unverified beyond that assumption.
+   * Resumes a row - the next incomplete step for a partial model, or
+   * Configure (fully editable, every stage reloaded) for a finished one.
+   * Same shared logic the Projects page's eye icon uses.
    */
-  continueSetup(row: ModelRow): void {
-    const { dataset, status } = row;
-    this.tunnelService.selectProject(this.projectId());
-    this.tunnelService.setDataset({
-      id: dataset.id,
-      name: dataset.name,
-      modelType: dataset.modelType ?? '',
-      local: false,
-    });
-
-    if (status === 'uploaded') {
-      this.router.navigate(['/configure', this.projectId(), dataset.id]);
-      return;
-    }
-    if (dataset.columnMapping) this.tunnelService.setConfiguration(dataset.columnMapping);
-
-    if (status === 'configured') {
-      this.router.navigate(['/optimize', this.projectId(), dataset.id]);
-      return;
-    }
-    if (dataset.dateRange) this.tunnelService.setOptimize(dataset.dateRange);
-
-    if (status === 'optimized') {
-      this.router.navigate(['/calibrate', this.projectId(), dataset.id]);
-      return;
-    }
-    if (dataset.calibration) this.tunnelService.setCalibration(dataset.calibration);
-
-    // Only 'calibrated' remains here.
-    this.router.navigate(['/hyperparameters', this.projectId(), dataset.id]);
-  }
-
-  /**
-   * A finished ('ready') model stays fully editable - this reconstructs
-   * every saved stage into TunnelService (not just the ones continueSetup()
-   * would stop at), then opens Configure. With all four stages already
-   * loaded, TunnelSteps' own isReachable() check lets the sidebar jump
-   * straight to any of the five steps from there, not just the next one.
-   */
-  editModel(row: ModelRow): void {
-    const { dataset } = row;
-    this.tunnelService.selectProject(this.projectId());
-    this.tunnelService.setDataset({
-      id: dataset.id,
-      name: dataset.name,
-      modelType: dataset.modelType ?? '',
-      local: false,
-    });
-    if (dataset.columnMapping) this.tunnelService.setConfiguration(dataset.columnMapping);
-    if (dataset.dateRange) this.tunnelService.setOptimize(dataset.dateRange);
-    if (dataset.calibration) this.tunnelService.setCalibration(dataset.calibration);
-
-    this.router.navigate(['/configure', this.projectId(), dataset.id]);
+  resume(row: ModelRow): void {
+    this.router.navigate(resumeDatasetRoute(this.tunnelService, this.projectId(), row.dataset));
   }
 }
