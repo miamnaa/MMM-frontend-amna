@@ -285,8 +285,8 @@
     </div>
     <div class="dialog-foot">
       <button class="btn btn-secondary" type="button" (click)="closeView()">Close</button>
-      <button class="btn btn-primary" type="button" (click)="closeView(); open(v)">
-        View Models
+      <button class="btn btn-primary" type="button" [disabled]="opening()" (click)="openModel(v)">
+        {{ opening() ? 'Opening…' : 'Open Model' }}
       </button>
     </div>
   </div>
