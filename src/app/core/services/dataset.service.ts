@@ -94,11 +94,58 @@ export interface ApiProjectDataset {
 }
 
 /**
+ * Real endpoint, confirmed working 2026-08-13 - kicks off training. The
+ * response shape isn't documented beyond "it's real and tested," so this is
+ * left loosely typed; callers only need to know the request was accepted,
+ * then poll getTrainingStatus() for what happens next.
+ */
+export interface TrainModelResponse {
+  status?: string;
+}
+
+/**
+ * Real endpoint, confirmed working 2026-08-13. Status value names aren't
+ * documented - 'pending'/'running'/'completed'/'failed' is a reasonable
+ * guess at the real enum, not a verified one. isTerminalTrainingStatus()
+ * below is the one place that assumption is used, so it's easy to correct
+ * once a real response is seen.
+ */
+export interface TrainingStatusResponse {
+  status: string;
+  progress?: number;
+  message?: string;
+}
+
+const TERMINAL_TRAINING_STATUSES = ['completed', 'success', 'succeeded', 'failed', 'error'];
+
+/** True once training has reached any end state (success or failure) - see TrainingStatusResponse's caveat on the exact status names. */
+export function isTerminalTrainingStatus(status: string): boolean {
+  return TERMINAL_TRAINING_STATUSES.includes(status.toLowerCase());
+}
+
+/** True for any status name that looks like a failure, so the UI can show an error state rather than treating it as a quiet success. */
+export function isFailedTrainingStatus(status: string): boolean {
+  return ['failed', 'error'].includes(status.toLowerCase());
+}
+
+/**
+ * Real endpoint, confirmed working 2026-08-13. Anas's own description of
+ * this endpoint says results are currently simulated on the backend, not
+ * from a real trained model run - the UI surfacing these must say so
+ * clearly, not present them as real output. Shape is intentionally loose
+ * (`Record<string, unknown>`) since nothing beyond "it's real JSON" is
+ * documented - the results panel renders whatever keys are actually there
+ * rather than assuming a specific shape that might not match.
+ */
+export type TrainingResults = Record<string, unknown>;
+
+/**
  * `list`/`upload` still have no real backend (API-REFERENCE.md, "What is
- * not built yet") and stay honest about that. The four `save*` methods and
- * `getDataset()` below ARE real - each a thin PATCH/GET against
- * `/datasets/:id/...`, all requiring the dataset's own id (not the
- * project's), matching what the backend actually scopes them by.
+ * not built yet") and stay honest about that. The four `save*` methods,
+ * `getDataset()`, and the three train* methods below ARE real - each a thin
+ * PATCH/GET/POST against `/datasets/:id/...`, all requiring the dataset's
+ * own id (not the project's), matching what the backend actually scopes
+ * them by.
  */
 @Injectable({ providedIn: 'root' })
 export class DatasetService {
