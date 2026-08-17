@@ -240,6 +240,7 @@
 }
 
 .chart-wrap {
+  position: relative;
   padding: 10px 10px 4px;
   border: 1px solid var(--border);
   border-radius: var(--r-md);
@@ -272,6 +273,26 @@
 .chart-axis-text {
   fill: var(--text-muted);
   font-size: 9px;
+}
+
+.chart-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.chart-tooltip {
+  position: absolute;
+  transform: translate(-50%, -115%);
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 5;
 }
 
 .param-controls {

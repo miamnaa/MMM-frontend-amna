@@ -89,16 +89,31 @@ function plotY(value: number): number {
   );
 }
 
-function toPoints(values: number[]): string {
-  return values
-    .map((v, i) => `${plotX(i / (values.length - 1)).toFixed(1)},${plotY(v).toFixed(1)}`)
-    .join(' ');
+interface ChartPoint {
+  x: number;
+  y: number;
+  label: string;
+  value: number;
+}
+
+function toPointList(values: number[], labels: string[]): ChartPoint[] {
+  return values.map((v, i) => ({
+    x: plotX(i / (values.length - 1)),
+    y: plotY(v),
+    label: labels[i],
+    value: Math.round(Math.min(100, Math.max(0, v)) * 10) / 10,
+  }));
+}
+
+function pointsAttr(points: ChartPoint[]): string {
+  return points.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
 }
 
 /** theta^(week-1) * 100 - the standard AdStock decay curve for a real carryover value. */
-function adstockPoints(theta: number): string {
+function adstockPointList(theta: number): ChartPoint[] {
   const values = Array.from({ length: ADSTOCK_WEEKS }, (_, w) => 100 * Math.pow(theta, w));
-  return toPoints(values);
+  const labels = values.map((_, w) => `Week ${w + 1}`);
+  return toPointList(values, labels);
 }
 
 /**
@@ -107,15 +122,16 @@ function adstockPoints(theta: number): string {
  * bends; alpha (illustrative-only, see ChannelRow) sets where the half-max
  * point sits along the illustrative spend axis.
  */
-function saturationPoints(alpha: number, gamma: number): string {
+function saturationPointList(alpha: number, gamma: number): ChartPoint[] {
   const halfPoint = Math.max(0.01, alpha) * SATURATION_MAX_SPEND;
   const g = gamma || 0.01;
-  const values = Array.from({ length: SATURATION_STEPS }, (_, i) => {
-    const spend = (SATURATION_MAX_SPEND / (SATURATION_STEPS - 1)) * i;
+  const spends = Array.from({ length: SATURATION_STEPS }, (_, i) => (SATURATION_MAX_SPEND / (SATURATION_STEPS - 1)) * i);
+  const values = spends.map((spend) => {
     const spendG = Math.pow(spend, g);
     return (100 * spendG) / (Math.pow(halfPoint, g) + spendG);
   });
-  return toPoints(values);
+  const labels = spends.map((s) => `$${Math.round(s).toLocaleString()}`);
+  return toPointList(values, labels);
 }
 
 /**
@@ -264,12 +280,36 @@ export class Hyperparameters implements OnInit {
     );
   }
 
+  adstockChartData(row: ChannelRow): ChartPoint[] {
+    return adstockPointList(row.carryoverDraft);
+  }
+
   adstockChartPoints(row: ChannelRow): string {
-    return adstockPoints(row.carryoverDraft);
+    return pointsAttr(this.adstockChartData(row));
+  }
+
+  saturationChartData(row: ChannelRow): ChartPoint[] {
+    return saturationPointList(row.alpha, row.saturationDraft);
   }
 
   saturationChartPoints(row: ChannelRow): string {
-    return saturationPoints(row.alpha, row.saturationDraft);
+    return pointsAttr(this.saturationChartData(row));
+  }
+
+  /** Single shared tooltip - only one chart point can be hovered at a time. */
+  readonly hoveredPoint = signal<{ xPct: number; yPct: number; label: string; value: number } | null>(null);
+
+  showTooltip(point: ChartPoint): void {
+    this.hoveredPoint.set({
+      xPct: (point.x / CHART_WIDTH) * 100,
+      yPct: (point.y / CHART_HEIGHT) * 100,
+      label: point.label,
+      value: point.value,
+    });
+  }
+
+  hideTooltip(): void {
+    this.hoveredPoint.set(null);
   }
 
   readonly chartViewBox = `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`;

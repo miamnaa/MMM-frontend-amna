@@ -67,7 +67,16 @@
                           <text [attr.x]="tick.x" [attr.y]="chartPlotBottom + 14" class="chart-axis-text" text-anchor="middle">{{ tick.label }}</text>
                         }
                         <polyline [attr.points]="adstockChartPoints(row)" fill="none" stroke="var(--brand-500)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+                        @for (pt of adstockChartData(row); track pt.label) {
+                          <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="7" class="chart-hit" (mouseenter)="showTooltip(pt)" (mouseleave)="hideTooltip()" />
+                        }
                       </svg>
+                      @if (hoveredPoint(); as t) {
+                        <div class="chart-tooltip" [style.left.%]="t.xPct" [style.top.%]="t.yPct">
+                          <strong>{{ t.label }}</strong>
+                          <div>Effect (%): <strong>{{ t.value }}%</strong></div>
+                        </div>
+                      }
                     </div>
                     <p class="chart-axis-label">Time (weeks) →</p>
                   </div>
@@ -148,7 +157,16 @@
                           <text [attr.x]="tick.x" [attr.y]="chartPlotBottom + 14" class="chart-axis-text" text-anchor="middle">{{ tick.label }}</text>
                         }
                         <polyline [attr.points]="saturationChartPoints(row)" fill="none" stroke="var(--brand-500)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+                        @for (pt of saturationChartData(row); track pt.label) {
+                          <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="7" class="chart-hit" (mouseenter)="showTooltip(pt)" (mouseleave)="hideTooltip()" />
+                        }
                       </svg>
+                      @if (hoveredPoint(); as t) {
+                        <div class="chart-tooltip" [style.left.%]="t.xPct" [style.top.%]="t.yPct">
+                          <strong>{{ t.label }}</strong>
+                          <div>Effect (%): <strong>{{ t.value }}%</strong></div>
+                        </div>
+                      }
                     </div>
                     <p class="chart-axis-label">Spend ($, illustrative range) →</p>
                   </div>
