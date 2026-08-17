@@ -25,7 +25,7 @@
 }
 
 .tunnel-main-inner {
-  max-width: 760px;
+  max-width: 1180px;
   margin: 0 auto;
 }
 
@@ -137,6 +137,10 @@
 
 .field:last-child {
   margin-bottom: 0;
+}
+
+.field input[type='date'] {
+  max-width: 280px;
 }
 
 .drop-error {
