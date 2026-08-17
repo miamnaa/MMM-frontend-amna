@@ -24,6 +24,41 @@ function validRow(row: ChannelRow): boolean {
   );
 }
 
+const DEFAULT_CARRYOVER = 0.4;
+const DEFAULT_SATURATION = 1;
+
+const CHART_WIDTH = 560;
+const CHART_HEIGHT = 160;
+const CHART_PAD = 8;
+const ADSTOCK_WEEKS = 15;
+const SATURATION_STEPS = 16;
+const SATURATION_MAX_SPEND = 5500;
+
+function toPoints(values: number[]): string {
+  return values
+    .map((v, i) => {
+      const x = CHART_PAD + (i / (values.length - 1)) * (CHART_WIDTH - CHART_PAD * 2);
+      const y = CHART_HEIGHT - CHART_PAD - (Math.min(100, Math.max(0, v)) / 100) * (CHART_HEIGHT - CHART_PAD * 2);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(' ');
+}
+
+/** theta^(week-1) * 100 - the standard AdStock decay curve for a real carryover value. */
+function adstockPoints(theta: number): string {
+  const values = Array.from({ length: ADSTOCK_WEEKS }, (_, w) => 100 * Math.pow(theta, w));
+  return toPoints(values);
+}
+
+/** (spend/max)^saturation * 100 - shows how the real saturation exponent shapes diminishing returns. */
+function saturationPoints(saturation: number): string {
+  const values = Array.from({ length: SATURATION_STEPS }, (_, i) => {
+    const spend = (SATURATION_MAX_SPEND / (SATURATION_STEPS - 1)) * i;
+    return 100 * Math.pow(spend / SATURATION_MAX_SPEND, saturation || 0.01);
+  });
+  return toPoints(values);
+}
+
 /**
  * Real backend: PATCH /datasets/:id/hyperparameters, shipped 2026-08-12.
  * The backend requires `channels` to contain exactly the same names as
@@ -51,6 +86,17 @@ export class Hyperparameters implements OnInit {
   readonly saveError = signal<string | null>(null);
   readonly saved = signal(false);
 
+  readonly infoOpen = signal(false);
+  toggleInfo(): void {
+    this.infoOpen.update((open) => !open);
+  }
+
+  /** One channel expanded at a time, like the reference - first channel opens by default. */
+  readonly expandedIndex = signal<number | null>(null);
+  toggleChannel(index: number): void {
+    this.expandedIndex.update((current) => (current === index ? null : index));
+  }
+
   readonly canSave = computed(() => this.rows().length > 0 && this.rows().every(validRow));
 
   ngOnInit(): void {
@@ -58,14 +104,20 @@ export class Hyperparameters implements OnInit {
     this.datasetId.set(this.route.snapshot.paramMap.get('datasetId') ?? '');
 
     // Guaranteed non-empty by hyperparametersContextGuard, which requires
-    // Configuration to have been saved first.
+    // Configuration to have been saved first. Real, sensible starting values
+    // (not fabricated data) so every slider/chart below has something
+    // meaningful to show before the user touches anything - getDataset()
+    // below overrides these with the real saved numbers if there are any.
     const mediaColumns = this.tunnelService.configuration()?.mediaColumns ?? [];
-    this.rows.set(mediaColumns.map((channel) => ({ channel, carryover: null, saturation: null })));
+    this.rows.set(
+      mediaColumns.map((channel) => ({ channel, carryover: DEFAULT_CARRYOVER, saturation: DEFAULT_SATURATION })),
+    );
+    if (mediaColumns.length > 0) this.expandedIndex.set(0);
 
     // Real endpoint (GET /datasets/:id, confirmed working 2026-08-13) - the
     // channel names above were already correct, but carryover/saturation
     // used to always start blank even when already saved. Best-effort: a
-    // failure here just leaves them blank, same as before this existed.
+    // failure here just leaves them at the defaults set above.
     this.datasetService.getDataset(this.datasetId()).subscribe({
       next: (detail) => {
         const saved = detail.channelHyperparameters;
@@ -88,6 +140,16 @@ export class Hyperparameters implements OnInit {
   updateSaturation(index: number, value: number | null): void {
     this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, saturation: value } : r)));
   }
+
+  adstockChartPoints(row: ChannelRow): string {
+    return adstockPoints(row.carryover ?? DEFAULT_CARRYOVER);
+  }
+
+  saturationChartPoints(row: ChannelRow): string {
+    return saturationPoints(row.saturation ?? DEFAULT_SATURATION);
+  }
+
+  readonly chartViewBox = `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`;
 
   save(): void {
     if (!this.canSave() || this.saving()) return;

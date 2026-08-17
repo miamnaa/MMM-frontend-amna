@@ -65,30 +65,172 @@
   font-size: 12.5px;
 }
 
-.channel-table {
+/* ---- Info accordion - same pattern as the other tunnel screens ---- */
+
+.info-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  border-left: 3px solid var(--brand-500);
+  border-radius: var(--r-md);
+  background: var(--brand-50);
+  text-align: left;
+}
+
+.info-icon {
+  color: var(--brand-700);
+}
+
+.info-title {
+  flex: 1;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--brand-700);
+}
+
+.chevron {
+  transition: transform 0.15s;
+  color: var(--brand-700);
+}
+
+.chevron.open {
+  transform: rotate(180deg);
+}
+
+.info-body {
+  margin: -10px 0 18px;
+  padding: 14px 18px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 12.5px;
+}
+
+.info-body ul {
+  margin: 0;
+  padding-left: 4px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.info-body ul li {
+  position: relative;
+  padding-left: 16px;
+  line-height: 1.55;
+}
+
+.info-body ul li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 7px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--brand-500);
+}
+
+/* ---- Per-channel accordion ---- */
+
+.channel-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.channel-card {
+  margin-bottom: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.channel-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 16px 20px;
+  border: none;
+  background: none;
+  text-align: left;
+}
+
+.channel-name {
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.channel-body {
+  padding: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.param-section {
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.param-title {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.param-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 18px;
+  align-items: start;
+  margin-top: 12px;
+}
+
+@media (max-width: 700px) {
+  .param-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chart-wrap {
+  padding: 10px 10px 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--gray-50);
+}
+
+.line-chart {
+  display: block;
+  width: 100%;
+  height: 130px;
+}
+
+.chart-axis-label {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.param-controls {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.channel-row {
-  display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr;
-  gap: 10px;
-  align-items: center;
+.range {
+  width: 100%;
+  accent-color: var(--brand-500);
 }
 
-.channel-head {
-  font-size: 11.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-}
-
-.channel-name {
-  font-size: 13.5px;
-  font-weight: 600;
+.param-number {
+  width: 100%;
 }
 
 .drop-error {

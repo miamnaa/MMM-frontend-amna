@@ -8,50 +8,123 @@
       <div class="tunnel-main-inner">
 
   <app-page-header
-    title="Hyperparameterization"
-    subtitle="For each media channel, set how long its effect carries over and how quickly it saturates."
+    title="Tune Hyperparameters"
+    subtitle="Adjust how your model interprets the impact of marketing over time and with increased spend."
   />
 
-  <section class="card">
-    <h2 class="section-title">Channels</h2>
-    <p class="muted field-hint">
-      Channels are taken from what you saved in Configure — carryover is 0–1 (how much of this
-      week's spend still influences next week), saturation is 0 or above (how fast the channel's
-      effect flattens out as spend increases).
-    </p>
+  <button class="info-toggle" type="button" (click)="toggleInfo()" [attr.aria-expanded]="infoOpen()">
+    <span class="info-icon" aria-hidden="true">ⓘ</span>
+    <span class="info-title">What does hyperparameter tuning do?</span>
+    <span class="chevron" [class.open]="infoOpen()" aria-hidden="true">⌄</span>
+  </button>
 
-    <div class="channel-table">
-      <div class="channel-row channel-head">
-        <span>Channel</span>
-        <span>Carryover</span>
-        <span>Saturation</span>
-      </div>
-      @for (row of rows(); track row.channel; let i = $index) {
-        <div class="channel-row">
-          <span class="channel-name">{{ row.channel }}</span>
-          <input
-            class="input"
-            type="number"
-            min="0"
-            max="1"
-            step="0.05"
-            [ngModel]="row.carryover"
-            (ngModelChange)="updateCarryover(i, $event)"
-            placeholder="e.g. 0.4"
-          />
-          <input
-            class="input"
-            type="number"
-            min="0"
-            step="0.1"
-            [ngModel]="row.saturation"
-            (ngModelChange)="updateSaturation(i, $event)"
-            placeholder="e.g. 1.1"
-          />
-        </div>
-      }
+  @if (infoOpen()) {
+    <div class="info-body">
+      <ul>
+        <li><strong>Carryover (AdStock):</strong> Controls how much of this week's spend still influences next week — higher values keep the impact around longer.</li>
+        <li><strong>Saturation (Diminishing Returns):</strong> Sets how quickly a channel's effect flattens out as spend increases — higher values mean it takes more spend before the curve bends down.</li>
+        <li>Channels are taken from what you saved in Configure. Carryover must be 0–1; saturation must be 0 or above.</li>
+      </ul>
     </div>
-  </section>
+  }
+
+  <div class="channel-accordion">
+    @for (row of rows(); track row.channel; let i = $index) {
+      <section class="card channel-card">
+        <button type="button" class="channel-toggle" (click)="toggleChannel(i)" [attr.aria-expanded]="expandedIndex() === i">
+          <span class="channel-name">{{ row.channel }}</span>
+          <span class="chevron" [class.open]="expandedIndex() === i" aria-hidden="true">⌄</span>
+        </button>
+
+        @if (expandedIndex() === i) {
+          <div class="channel-body">
+            <div class="param-section">
+              <h3 class="param-title">AdStock — Effect Over Time</h3>
+              <p class="muted field-hint">
+                See how this channel's marketing impact fades week over week. The curve below is
+                computed directly from the carryover value you set — not sample data.
+              </p>
+
+              <div class="param-grid">
+                <div>
+                  <div class="chart-wrap">
+                    <svg class="line-chart" [attr.viewBox]="chartViewBox" preserveAspectRatio="none">
+                      <polyline [attr.points]="adstockChartPoints(row)" fill="none" stroke="var(--brand-500)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+                    </svg>
+                  </div>
+                  <p class="chart-axis-label">Time (weeks) →</p>
+                </div>
+
+                <div class="param-controls">
+                  <label class="label" for="cal-theta-{{ i }}">Carryover (theta): {{ row.carryover }}</label>
+                  <input
+                    id="cal-theta-{{ i }}"
+                    class="range"
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    [ngModel]="row.carryover"
+                    (ngModelChange)="updateCarryover(i, $event)"
+                  />
+                  <input
+                    class="input param-number"
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    [ngModel]="row.carryover"
+                    (ngModelChange)="updateCarryover(i, $event)"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="param-section">
+              <h3 class="param-title">Diminishing Returns — Saturation Curve</h3>
+              <p class="muted field-hint">
+                See how results change as spend increases. Computed directly from the saturation
+                value you set, over an illustrative spend range — not this channel's real spend numbers.
+              </p>
+
+              <div class="param-grid">
+                <div>
+                  <div class="chart-wrap">
+                    <svg class="line-chart" [attr.viewBox]="chartViewBox" preserveAspectRatio="none">
+                      <polyline [attr.points]="saturationChartPoints(row)" fill="none" stroke="var(--brand-500)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+                    </svg>
+                  </div>
+                  <p class="chart-axis-label">Spend ($, illustrative range) →</p>
+                </div>
+
+                <div class="param-controls">
+                  <label class="label" for="cal-sat-{{ i }}">Saturation: {{ row.saturation }}</label>
+                  <input
+                    id="cal-sat-{{ i }}"
+                    class="range"
+                    type="range"
+                    min="0"
+                    max="3"
+                    step="0.05"
+                    [ngModel]="row.saturation"
+                    (ngModelChange)="updateSaturation(i, $event)"
+                  />
+                  <input
+                    class="input param-number"
+                    type="number"
+                    min="0"
+                    step="0.05"
+                    [ngModel]="row.saturation"
+                    (ngModelChange)="updateSaturation(i, $event)"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </section>
+    }
+  </div>
 
   @if (saveError(); as err) {
     <p class="drop-error">{{ err }}</p>
