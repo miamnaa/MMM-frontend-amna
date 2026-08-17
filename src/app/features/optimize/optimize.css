@@ -420,21 +420,41 @@
 
 /* Channels review / Variable selection review - main content + "why remove" side panel */
 
-.review-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
+.review-columns {
+  display: flex;
+  align-items: flex-start;
   gap: 18px;
-  align-items: start;
   margin-bottom: 18px;
 }
 
-.review-grid .card {
+.review-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.review-side {
+  flex: none;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.review-main .card,
+.review-side .card {
   margin-bottom: 0;
 }
 
 @media (max-width: 900px) {
-  .review-grid {
-    grid-template-columns: 1fr;
+  .review-columns {
+    flex-direction: column;
+  }
+
+  .review-side {
+    width: 100%;
   }
 }
 
