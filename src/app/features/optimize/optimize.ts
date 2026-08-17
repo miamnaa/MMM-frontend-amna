@@ -121,6 +121,22 @@ export class Optimize implements OnInit {
 
   readonly selectedCombineChannels = signal<string[]>([]);
   readonly newFieldName = signal('');
+  readonly combineDropdownOpen = signal(false);
+
+  readonly combineDropdownLabel = computed(() => {
+    const selected = this.selectedCombineChannels();
+    return selected.length > 0 ? selected.join(', ') : 'Choose 2 or more…';
+  });
+
+  toggleCombineDropdown(): void {
+    this.combineDropdownOpen.update((open) => !open);
+  }
+
+  toggleCombineChannel(channel: string): void {
+    this.selectedCombineChannels.update((list) =>
+      list.includes(channel) ? list.filter((c) => c !== channel) : [...list, channel],
+    );
+  }
 
   readonly canAggregate = computed(
     () => this.selectedCombineChannels().length >= 2 && this.newFieldName().trim().length > 0,
@@ -132,6 +148,7 @@ export class Optimize implements OnInit {
       ...groups,
       { name: this.newFieldName().trim(), members: this.selectedCombineChannels() },
     ]);
+    this.combineDropdownOpen.set(false);
     this.selectedCombineChannels.set([]);
     this.newFieldName.set('');
   }

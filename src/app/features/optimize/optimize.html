@@ -137,18 +137,32 @@
           </div>
 
           <div class="field">
-            <label class="label" for="o-combine-select">Select variables (2 or more)</label>
-            <select
-              id="o-combine-select"
-              class="select combine-multiselect"
-              multiple
-              [ngModel]="selectedCombineChannels()"
-              (ngModelChange)="selectedCombineChannels.set($event)"
-            >
-              @for (ch of effectiveChannels(); track ch) {
-                <option [value]="ch">{{ ch }}</option>
+            <label class="label" for="o-combine-trigger">Select variables <span class="required">*</span></label>
+            <div class="dropdown-select">
+              <button
+                id="o-combine-trigger"
+                type="button"
+                class="dropdown-trigger"
+                (click)="toggleCombineDropdown()"
+                [attr.aria-expanded]="combineDropdownOpen()"
+              >
+                <span class="dropdown-trigger-text" [class.placeholder]="selectedCombineChannels().length === 0">
+                  {{ combineDropdownLabel() }}
+                </span>
+                <span class="dropdown-chevron" [class.open]="combineDropdownOpen()" aria-hidden="true">⌄</span>
+              </button>
+
+              @if (combineDropdownOpen()) {
+                <div class="dropdown-panel">
+                  @for (ch of effectiveChannels(); track ch) {
+                    <label class="dropdown-option">
+                      <input type="checkbox" [checked]="selectedCombineChannels().includes(ch)" (change)="toggleCombineChannel(ch)" />
+                      {{ ch }}
+                    </label>
+                  }
+                </div>
               }
-            </select>
+            </div>
           </div>
 
           <div class="field">
