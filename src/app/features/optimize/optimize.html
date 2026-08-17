@@ -143,7 +143,7 @@
   </section>
 
   @if (hasMediaChannels()) {
-    <div class="review-grid">
+    <div class="review-grid review-grid-stacked">
       <section class="card" [class.full-width]="!channelsReviewOpen()">
         <div class="example-head">
           <button type="button" class="param-switch-row" (click)="toggleChannelsReview()" [attr.aria-pressed]="channelsReviewOpen()">
@@ -267,7 +267,7 @@
       }
     </div>
 
-    <div class="review-grid">
+    <div class="review-grid review-grid-stacked">
       <section class="card" [class.full-width]="!variableReviewOpen()">
         <div class="example-head">
           <button type="button" class="param-switch-row" (click)="toggleVariableReview()" [attr.aria-pressed]="variableReviewOpen()">
