@@ -111,6 +111,10 @@
   gap: 6px;
 }
 
+.example-table-wrap {
+  margin-top: 14px;
+}
+
 /* ---- "Need help?" content - format rules + data-category breakdown ---- */
 
 .help-body {

@@ -178,6 +178,17 @@
     }
   </section>
 
+  <div class="tunnel-actions">
+    <button
+      class="btn btn-primary btn-lg"
+      type="button"
+      [disabled]="!file() || !modelName().trim() || uploading()"
+      (click)="continue()"
+    >
+      {{ uploading() ? 'Uploading…' : 'Continue' }}
+    </button>
+  </div>
+
   <button class="info-toggle" type="button" (click)="toggleNeedHelp()" [attr.aria-expanded]="needHelpOpen()">
     <span class="info-icon" aria-hidden="true">ⓘ</span>
     <span class="info-title">Need help?</span>
@@ -186,6 +197,29 @@
 
   @if (needHelpOpen()) {
     <div class="info-body help-body">
+      <h3 class="help-heading">Let's create your dataset</h3>
+      <ul>
+        <li>Data must be contained in a single spreadsheet, saved as CSV.</li>
+        <li>First column is for dates.</li>
+        <li>
+          Date format must be <code>YYYY-MM-DD</code> (e.g. <code>2024-01-30</code>). For weekly or
+          monthly data, use only the date of the first day of the week/month.
+        </li>
+        <li>Include at least 2 years of historical data for better models.</li>
+      </ul>
+      <div class="help-table-wrap example-table-wrap">
+        <table class="preview-table">
+          <thead>
+            <tr><th>date</th><th>revenue</th><th>meta_prospecting_spend</th><th>meta_retargeting_spend</th><th>tv_spend</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>2024-01-01</td><td>111043.36</td><td>1603.92</td><td>354.79</td><td>8200.00</td></tr>
+            <tr><td>2024-01-08</td><td>116951.62</td><td>1588.58</td><td>195.06</td><td>7650.00</td></tr>
+            <tr><td>2024-01-15</td><td>113450.57</td><td>2046.00</td><td>279.97</td><td>9100.00</td></tr>
+          </tbody>
+        </table>
+      </div>
+
       <h3 class="help-heading">What data should I include?</h3>
 
       <div class="help-category">
@@ -258,17 +292,6 @@
       </div>
     </div>
   }
-
-  <div class="tunnel-actions">
-    <button
-      class="btn btn-primary btn-lg"
-      type="button"
-      [disabled]="!file() || !modelName().trim() || uploading()"
-      (click)="continue()"
-    >
-      {{ uploading() ? 'Uploading…' : 'Continue' }}
-    </button>
-  </div>
       </div>
     </div>
   </div>
