@@ -111,6 +111,80 @@
   gap: 6px;
 }
 
+/* ---- "Need help?" content - format rules + data-category breakdown ---- */
+
+.help-body {
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.help-heading {
+  margin: 18px 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink, inherit);
+}
+
+.help-heading:first-child {
+  margin-top: 0;
+}
+
+.help-category {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.help-category:first-of-type {
+  margin-top: 10px;
+  padding-top: 0;
+  border-top: none;
+}
+
+.help-category-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.help-tag {
+  padding: 2px 9px;
+  border-radius: var(--r-full);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.help-tag.required {
+  background: var(--brand-50);
+  color: var(--brand-700);
+}
+
+.help-tag.optional {
+  background: var(--gray-50);
+  color: var(--text-muted);
+}
+
+.help-category-desc {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.help-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+
+.help-table-wrap .preview-table {
+  font-size: 11.5px;
+}
+
 /* ---- Model cards ---- */
 
 .model-grid {
