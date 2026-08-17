@@ -299,6 +299,24 @@
   font-size: 11.5px;
 }
 
+/* ---- Existing-file columns (read-only chips, not a picker) ---- */
+
+.chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.column-chip.static {
+  padding: 6px 12px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--border);
+  background: var(--gray-50);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
 .tunnel-actions {
   display: flex;
   justify-content: flex-end;

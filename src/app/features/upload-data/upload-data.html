@@ -67,6 +67,37 @@
         A file was already uploaded for <strong>{{ existingDataset()?.name }}</strong>. Picking a
         new file below starts a separate new model — it doesn't replace this one's file.
       </p>
+
+      <button
+        class="preview-toggle"
+        type="button"
+        (click)="toggleExistingColumns()"
+        [attr.aria-expanded]="existingColumnsOpen()"
+      >
+        <span class="info-icon" aria-hidden="true">▤</span>
+        <span class="info-title">Preview uploaded file's columns</span>
+        <span class="chevron" [class.open]="existingColumnsOpen()" aria-hidden="true">⌄</span>
+      </button>
+
+      @if (existingColumnsOpen()) {
+        <div class="preview-body">
+          @if (existingColumnsLoading()) {
+            <p class="muted">Reading this file's columns…</p>
+          } @else if (existingColumnsError(); as err) {
+            <p class="drop-error">{{ err }}</p>
+          } @else {
+            <div class="chip-grid">
+              @for (col of existingColumns(); track col) {
+                <span class="column-chip static">{{ col }}</span>
+              }
+            </div>
+            <p class="muted preview-note">
+              Column names only, read from the real uploaded file — sample row values aren't
+              available to preview here yet.
+            </p>
+          }
+        </div>
+      }
     }
 
     <div class="upload-row">

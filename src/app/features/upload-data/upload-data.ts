@@ -7,6 +7,7 @@ import { TunnelService } from '../../core/services/tunnel.service';
 import { UploadDraftService } from '../../core/services/upload-draft.service';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
 import { TunnelSteps } from '../../shared/ui/tunnel-steps/tunnel-steps';
+import { backendErrorMessage } from '../../shared/utils/backend-error';
 
 const ACCEPTED = ['.csv', '.xlsx', '.parquet'];
 const PREVIEW_ROW_COUNT = 8;
@@ -54,6 +55,16 @@ export class UploadData implements OnInit {
    */
   readonly existingDataset = computed(() => this.tunnelService.dataset());
   readonly hasExistingRealFile = computed(() => this.existingDataset()?.local === false);
+
+  // Preview for an *already-uploaded* dataset - no File object exists for
+  // this (it lives on the backend, not in this browser tab), so unlike the
+  // fresh-pick preview below, this can only show real column names (via
+  // GET /datasets/:id/columns), not sample row values - no endpoint returns
+  // those for an already-uploaded file yet.
+  readonly existingColumnsOpen = signal(false);
+  readonly existingColumnsLoading = signal(false);
+  readonly existingColumnsError = signal<string | null>(null);
+  readonly existingColumns = signal<string[]>([]);
 
   readonly projectId = signal('');
   readonly uploading = signal(false);
@@ -125,6 +136,34 @@ export class UploadData implements OnInit {
       this.draft.setPreviewError('Could not read this file for preview.');
     };
     reader.readAsText(file);
+  }
+
+  toggleExistingColumns(): void {
+    const opening = !this.existingColumnsOpen();
+    this.existingColumnsOpen.set(opening);
+    if (opening && this.existingColumns().length === 0 && !this.existingColumnsError()) {
+      this.loadExistingColumns();
+    }
+  }
+
+  /** Real endpoint - the only real look this screen can get at an already-uploaded file, since it never has the raw File object for one. Column names only, not sample rows - no endpoint returns those yet. */
+  private loadExistingColumns(): void {
+    const dataset = this.existingDataset();
+    if (!dataset) return;
+
+    this.existingColumnsLoading.set(true);
+    this.existingColumnsError.set(null);
+
+    this.datasetService.getColumns(dataset.id).subscribe({
+      next: ({ columns }) => {
+        this.existingColumnsLoading.set(false);
+        this.existingColumns.set(columns);
+      },
+      error: (err: unknown) => {
+        this.existingColumnsLoading.set(false);
+        this.existingColumnsError.set(backendErrorMessage(err, "Couldn't load this file's columns."));
+      },
+    });
   }
 
   ngOnInit(): void {
