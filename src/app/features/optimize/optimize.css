@@ -454,6 +454,22 @@
   margin-top: 4px;
 }
 
+.side-panel-divider {
+  margin: 18px 0;
+  border-top: 1px solid var(--border);
+}
+
+.combine-multiselect {
+  height: auto;
+  min-height: 84px;
+  padding: 6px;
+}
+
+.combine-multiselect option {
+  padding: 5px 8px;
+  border-radius: 4px;
+}
+
 /* "Almost done!" modal - the Calibrate/Hyperparameterization fork */
 
 .modal-backdrop {

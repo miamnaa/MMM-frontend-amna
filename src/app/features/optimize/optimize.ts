@@ -96,10 +96,50 @@ export class Optimize implements OnInit {
   readonly hasMediaChannels = computed(() => this.mediaChannels().length > 0);
   readonly hasControlColumns = computed(() => this.controlColumnsList().length > 0);
 
+  /**
+   * Channels review: combining two correlated channels into one. Nothing
+   * here is a real backend "aggregate columns" call (none exists) - like
+   * every other Optimize example section, it's local-only, driving the same
+   * illustrative chart/correlation/spend-share numbers below it.
+   */
+  readonly combinedGroups = signal<{ name: string; members: string[] }[]>([]);
+
+  readonly effectiveChannels = computed<string[]>(() => {
+    const memberToGroup = new Map<string, string>();
+    for (const g of this.combinedGroups()) for (const m of g.members) memberToGroup.set(m, g.name);
+    const seen = new Set<string>();
+    const result: string[] = [];
+    for (const ch of this.mediaChannels()) {
+      const mapped = memberToGroup.get(ch) ?? ch;
+      if (!seen.has(mapped)) {
+        seen.add(mapped);
+        result.push(mapped);
+      }
+    }
+    return result;
+  });
+
+  readonly selectedCombineChannels = signal<string[]>([]);
+  readonly newFieldName = signal('');
+
+  readonly canAggregate = computed(
+    () => this.selectedCombineChannels().length >= 2 && this.newFieldName().trim().length > 0,
+  );
+
+  aggregateChannels(): void {
+    if (!this.canAggregate()) return;
+    this.combinedGroups.update((groups) => [
+      ...groups,
+      { name: this.newFieldName().trim(), members: this.selectedCombineChannels() },
+    ]);
+    this.selectedCombineChannels.set([]);
+    this.newFieldName.set('');
+  }
+
   /** Custom Timeframe: example weekly trend for the target + up to 5 media channels. */
   readonly chartSeries = computed<ChartSeries[]>(() => {
     const target = this.config()?.targetColumn;
-    const names = [target, ...this.mediaChannels()].filter((n): n is string => !!n).slice(0, 6);
+    const names = [target, ...this.effectiveChannels()].filter((n): n is string => !!n).slice(0, 6);
     return names.map((name, i) => {
       const values = Array.from({ length: WEEK_COUNT }, (_, w) => seededValue(`${name}-${w}`, 15, 92));
       const points = values
@@ -119,7 +159,7 @@ export class Optimize implements OnInit {
   private readonly removedPairs = signal<Set<string>>(new Set());
 
   readonly correlationRows = computed<CorrelationRow[]>(() => {
-    const channels = this.mediaChannels();
+    const channels = this.effectiveChannels();
     const rows: CorrelationRow[] = [];
     for (let i = 0; i < channels.length; i++) {
       for (let j = i + 1; j < channels.length; j++) {
@@ -158,7 +198,7 @@ export class Optimize implements OnInit {
   private readonly removedVariables = signal<Set<string>>(new Set());
 
   readonly spendShareBars = computed<SpendShareBar[]>(() => {
-    const channels = this.mediaChannels();
+    const channels = this.effectiveChannels();
     const raw = channels.map((name) => ({ name, raw: seededValue(name, 3, 25) }));
     const total = raw.reduce((sum, r) => sum + r.raw, 0) || 1;
     return raw
