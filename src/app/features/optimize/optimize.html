@@ -268,10 +268,16 @@
     </div>
 
     <div class="review-grid">
-      <section class="card">
+      <section class="card" [class.full-width]="!variableReviewOpen()">
         <div class="example-head">
-          <h2 class="section-title">Variable selection review</h2>
+          <button type="button" class="param-switch-row" (click)="toggleVariableReview()" [attr.aria-pressed]="variableReviewOpen()">
+            <span class="switch" [class.on]="variableReviewOpen()">
+              <span class="switch-thumb"></span>
+            </span>
+            <h2 class="section-title">Variable selection review</h2>
+          </button>
         </div>
+        @if (variableReviewOpen()) {
         <p class="muted field-hint">
           Low-spend or redundant channels add noise without adding signal. Share of spend is
           summed from your uploaded file's real values.
@@ -297,8 +303,10 @@
         } @else {
           <p class="muted">No variables left to review.</p>
         }
+        }
       </section>
 
+      @if (variableReviewOpen()) {
       <aside class="card side-panel">
         <h3 class="side-panel-title">Why remove a variable?</h3>
         <p class="muted field-hint">
@@ -323,15 +331,22 @@
           <p class="muted">Nothing left to remove.</p>
         }
       </aside>
+      }
     </div>
   }
 
   @if (hasControlColumns()) {
     <section class="card">
       <div class="example-head">
-        <h2 class="section-title">Exposure metrics</h2>
+        <button type="button" class="param-switch-row" (click)="toggleExposureMetrics()" [attr.aria-pressed]="exposureMetricsOpen()">
+          <span class="switch" [class.on]="exposureMetricsOpen()">
+            <span class="switch-thumb"></span>
+          </span>
+          <h2 class="section-title">Exposure metrics</h2>
+        </button>
         <span class="example-badge">Example data — not from your uploaded file</span>
       </div>
+      @if (exposureMetricsOpen()) {
       <p class="muted field-hint">
         Control columns like promotions or holidays can push your outcome up or down. This is
         what setting that direction will look like, shown with your real control columns.
@@ -355,6 +370,7 @@
         <button type="button" class="link-btn-inline" (click)="setAllExposure('positive')">Set ALL variables on Positive</button>
         <button type="button" class="link-btn-inline" (click)="setAllExposure('negative')">Set ALL variables on Negative</button>
       </div>
+      }
     </section>
   }
 

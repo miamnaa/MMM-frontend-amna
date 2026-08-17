@@ -126,6 +126,20 @@ export class Optimize implements OnInit {
     this.channelsReviewOpen.update((open) => !open);
   }
 
+  /** Shows/hides the whole "Variable selection review" card - purely a display toggle. */
+  readonly variableReviewOpen = signal(true);
+
+  toggleVariableReview(): void {
+    this.variableReviewOpen.update((open) => !open);
+  }
+
+  /** Shows/hides the whole "Exposure metrics" card - purely a display toggle. */
+  readonly exposureMetricsOpen = signal(true);
+
+  toggleExposureMetrics(): void {
+    this.exposureMetricsOpen.update((open) => !open);
+  }
+
   /** Mirrors the backend's own 400 rule - caught here before round-tripping. */
   readonly rangeInvalid = computed(
     () => this.startDate().length > 0 && this.endDate().length > 0 && this.startDate() >= this.endDate(),
