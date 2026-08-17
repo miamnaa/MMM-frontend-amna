@@ -573,13 +573,6 @@
   grid-column: 1 / -1;
 }
 
-/* Channels review / Variable selection review - the table needs its full
-   card width to lay out channel-name pills without wrapping, so these two
-   stack the side panel below instead of squeezing it in beside the table. */
-.review-grid-stacked {
-  grid-template-columns: 1fr;
-}
-
 @media (max-width: 900px) {
   .review-grid {
     grid-template-columns: 1fr;
