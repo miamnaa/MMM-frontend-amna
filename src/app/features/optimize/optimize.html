@@ -29,21 +29,8 @@
     </div>
   }
 
-  <div class="review-grid">
   <section class="card">
     <h2 class="section-title">Training date range</h2>
-
-    <div class="callout">
-      <span class="callout-icon" aria-hidden="true">💡</span>
-      <div>
-        <p class="callout-title">Why adjust the timeframe?</p>
-        <p class="callout-body">
-          Choose the training date range that best reflects your current strategy — an early
-          ramp-up phase or a stretch with missing/unreliable data can drag your model's accuracy
-          down if left in.
-        </p>
-      </div>
-    </div>
 
     @if (dateRangeAutoFilled()) {
       <p class="muted field-hint auto-filled-note">
@@ -87,7 +74,10 @@
         </button>
         @if (customTimeframeOpen()) {
         <p class="muted field-hint">
-          Your target and channel spend, read from your uploaded file.
+          Why adjust the timeframe? Choose the range that best reflects your current strategy — an
+          early ramp-up phase or a stretch with missing/unreliable data can drag your model's
+          accuracy down if left in. The chart below is your target and channel spend, read from
+          your uploaded file.
         </p>
         @if (rowsLoading()) {
           <p class="muted">Loading your data…</p>
@@ -151,20 +141,6 @@
       </div>
     }
   </section>
-
-  <aside class="card side-panel">
-    <h3 class="side-panel-title">Why adjust the timeframe?</h3>
-    <p class="muted field-hint">
-      Choose the training date range that best reflects your current strategy — an early ramp-up
-      phase or a stretch with missing/unreliable data can drag your model's accuracy down if left in.
-    </p>
-    <p class="muted field-hint">
-      You can either type a range in directly, or use the real earliest/latest dates found in your
-      uploaded file (filled in automatically above the first time you visit this step) as a starting
-      point and narrow it from there.
-    </p>
-  </aside>
-  </div>
 
   @if (hasMediaChannels()) {
     <div class="review-grid">
