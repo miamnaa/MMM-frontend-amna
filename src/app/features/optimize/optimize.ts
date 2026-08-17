@@ -2,7 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { DatasetService } from '../../core/services/dataset.service';
+import { DatasetService, HyperparameterChannel } from '../../core/services/dataset.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
@@ -245,11 +245,66 @@ export class Optimize implements OnInit {
       next: () => {
         this.saving.set(false);
         this.tunnelService.setOptimize(body);
-        this.router.navigate(['/calibrate', this.projectId(), this.datasetId()]);
+        // Calibrate and Hyperparameterization are optional from here - this
+        // dialog is the fork: customize them for real, or finish with
+        // reasonable defaults instead of forcing every model through both.
+        this.showFinishModal.set(true);
       },
       error: (err: unknown) => {
         this.saving.set(false);
         this.saveError.set(backendErrorMessage(err, 'Could not save this date range. Try again.'));
+      },
+    });
+  }
+
+  // ---- "Almost done!" fork after Optimize is saved ----
+
+  readonly showFinishModal = signal(false);
+  readonly finishing = signal(false);
+  readonly finishError = signal<string | null>(null);
+
+  customizeModel(): void {
+    this.showFinishModal.set(false);
+    this.router.navigate(['/calibrate', this.projectId(), this.datasetId()]);
+  }
+
+  /**
+   * Skips Calibrate + Hyperparameterization by saving both for real with
+   * neutral defaults (50/50 calibration, mid-range carryover/saturation per
+   * channel) rather than bypassing their guards - the model ends up in the
+   * exact same "Ready" state either way, just without manual input.
+   */
+  finishSetup(): void {
+    if (this.finishing()) return;
+    this.finishing.set(true);
+    this.finishError.set(null);
+
+    const calibrationBody = { contributionBeliefPercent: 50, confidencePercent: 50 };
+    this.datasetService.saveCalibration(this.datasetId(), calibrationBody).subscribe({
+      next: () => {
+        this.tunnelService.setCalibration(calibrationBody);
+
+        const channels: HyperparameterChannel[] = this.mediaChannels().map((channel) => ({
+          channel,
+          carryover: 0.5,
+          saturation: 1,
+        }));
+
+        this.datasetService.saveHyperparameters(this.datasetId(), channels).subscribe({
+          next: () => {
+            this.finishing.set(false);
+            this.showFinishModal.set(false);
+            this.router.navigate(['/models', this.projectId()]);
+          },
+          error: (err: unknown) => {
+            this.finishing.set(false);
+            this.finishError.set(backendErrorMessage(err, "Couldn't finish setup automatically. Try again, or customize the model instead."));
+          },
+        });
+      },
+      error: (err: unknown) => {
+        this.finishing.set(false);
+        this.finishError.set(backendErrorMessage(err, "Couldn't finish setup automatically. Try again, or customize the model instead."));
       },
     });
   }

@@ -454,6 +454,68 @@
   margin-top: 4px;
 }
 
+/* "Almost done!" modal - the Calibrate/Hyperparameterization fork */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 480px;
+  padding: 32px;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  text-align: center;
+}
+
+.modal-info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 16px;
+  border: 2px solid var(--brand-500);
+  border-radius: 50%;
+  color: var(--brand-500);
+  font-size: 18px;
+  font-style: italic;
+  font-weight: 700;
+}
+
+.modal-title {
+  margin: 0 0 14px;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.modal-body {
+  margin: 0 0 12px;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+@media (max-width: 480px) {
+  .modal-actions {
+    flex-direction: column;
+  }
+}
+
 /* Shared chip / pill styles - same visual language as Configure's */
 
 .column-chip {

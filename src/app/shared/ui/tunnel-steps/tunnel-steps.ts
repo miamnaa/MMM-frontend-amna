@@ -8,14 +8,15 @@ export type TunnelStepKey = 'upload-data' | 'configure' | 'optimize' | 'calibrat
 interface StepDef {
   key: TunnelStepKey;
   label: string;
+  optional?: boolean;
 }
 
 const STEPS: StepDef[] = [
   { key: 'upload-data', label: 'Upload Data' },
   { key: 'configure', label: 'Configure' },
   { key: 'optimize', label: 'Optimize' },
-  { key: 'calibrate', label: 'Calibrate' },
-  { key: 'hyperparameters', label: 'Hyperparameterization' },
+  { key: 'calibrate', label: 'Calibrate', optional: true },
+  { key: 'hyperparameters', label: 'Hyperparameterization', optional: true },
 ];
 
 /**

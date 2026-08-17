@@ -23,7 +23,12 @@
       (click)="go(step)"
     >
       <span class="dot" aria-hidden="true"></span>
-      <span class="step-label">{{ step.label }}</span>
+      <span class="step-label">
+        {{ step.label }}
+        @if (step.optional) {
+          <span class="step-optional">(optional)</span>
+        }
+      </span>
     </button>
   }
 </nav>
