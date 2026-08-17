@@ -39,86 +39,133 @@
         @if (expandedIndex() === i) {
           <div class="channel-body">
             <div class="param-section">
-              <h3 class="param-title">AdStock — Effect Over Time</h3>
-              <p class="muted field-hint">
-                See how this channel's marketing impact fades week over week. The curve below is
-                computed directly from the carryover value you set — not sample data.
-              </p>
+              <button type="button" class="param-switch-row" (click)="toggleAdstockOpen(i)" [attr.aria-pressed]="row.adstockOpen">
+                <span class="switch" [class.on]="row.adstockOpen">
+                  <span class="switch-thumb"></span>
+                </span>
+                <h3 class="param-title">AdStock — Effect Over Time</h3>
+              </button>
 
-              <div class="param-grid">
-                <div>
-                  <div class="chart-wrap">
-                    <svg class="line-chart" [attr.viewBox]="chartViewBox" preserveAspectRatio="none">
-                      <polyline [attr.points]="adstockChartPoints(row)" fill="none" stroke="var(--brand-500)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
-                    </svg>
+              @if (row.adstockOpen) {
+                <p class="muted field-hint">
+                  See how this channel's marketing impact fades week over week. The curve below is
+                  computed directly from the carryover value below — not sample data.
+                </p>
+
+                <div class="param-grid">
+                  <div>
+                    <div class="chart-wrap">
+                      <svg class="line-chart" [attr.viewBox]="chartViewBox" preserveAspectRatio="none">
+                        <polyline [attr.points]="adstockChartPoints(row)" fill="none" stroke="var(--brand-500)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+                      </svg>
+                    </div>
+                    <p class="chart-axis-label">Time (weeks) →</p>
                   </div>
-                  <p class="chart-axis-label">Time (weeks) →</p>
-                </div>
 
-                <div class="param-controls">
-                  <label class="label" for="cal-theta-{{ i }}">Carryover (theta): {{ row.carryover }}</label>
-                  <input
-                    id="cal-theta-{{ i }}"
-                    class="range"
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    [ngModel]="row.carryover"
-                    (ngModelChange)="updateCarryover(i, $event)"
-                  />
-                  <input
-                    class="input param-number"
-                    type="number"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    [ngModel]="row.carryover"
-                    (ngModelChange)="updateCarryover(i, $event)"
-                  />
+                  <div class="param-controls">
+                    <label class="label" for="cal-theta-{{ i }}">Theta (carryover): {{ row.carryoverDraft }}</label>
+                    <input
+                      id="cal-theta-{{ i }}"
+                      class="range"
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      [ngModel]="row.carryoverDraft"
+                      (ngModelChange)="setCarryoverDraft(i, $event)"
+                    />
+
+                    <div class="variance-row">
+                      <div>
+                        <label class="label" for="cal-theta-variance-{{ i }}">% variance (+/-)</label>
+                        <input
+                          id="cal-theta-variance-{{ i }}"
+                          class="input param-number"
+                          type="number"
+                          min="0"
+                          max="100"
+                          [ngModel]="row.adstockVariance"
+                          (ngModelChange)="setAdstockVariance(i, $event)"
+                        />
+                      </div>
+                    </div>
+
+                    @if (row.carryover !== row.carryoverDraft) {
+                      <p class="unsaved-note">Not applied yet — saved value is {{ row.carryover }}.</p>
+                    }
+
+                    <button class="btn btn-primary param-action" type="button" (click)="applyCarryover(i)">Apply</button>
+                    <button class="btn btn-secondary param-action" type="button" (click)="randomizeCarryover(i)">
+                      Randomize within variance
+                    </button>
+                  </div>
                 </div>
-              </div>
+              }
             </div>
 
             <div class="param-section">
-              <h3 class="param-title">Diminishing Returns — Saturation Curve</h3>
-              <p class="muted field-hint">
-                See how results change as spend increases. Computed directly from the saturation
-                value you set, over an illustrative spend range — not this channel's real spend numbers.
-              </p>
+              <button type="button" class="param-switch-row" (click)="toggleSaturationOpen(i)" [attr.aria-pressed]="row.saturationOpen">
+                <span class="switch" [class.on]="row.saturationOpen">
+                  <span class="switch-thumb"></span>
+                </span>
+                <h3 class="param-title">Diminishing Returns — Saturation Curve</h3>
+              </button>
 
-              <div class="param-grid">
-                <div>
-                  <div class="chart-wrap">
-                    <svg class="line-chart" [attr.viewBox]="chartViewBox" preserveAspectRatio="none">
-                      <polyline [attr.points]="saturationChartPoints(row)" fill="none" stroke="var(--brand-500)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
-                    </svg>
+              @if (row.saturationOpen) {
+                <p class="muted field-hint">
+                  See how results change as spend increases. Computed directly from the saturation
+                  value below, over an illustrative spend range — not this channel's real spend numbers.
+                </p>
+
+                <div class="param-grid">
+                  <div>
+                    <div class="chart-wrap">
+                      <svg class="line-chart" [attr.viewBox]="chartViewBox" preserveAspectRatio="none">
+                        <polyline [attr.points]="saturationChartPoints(row)" fill="none" stroke="var(--brand-500)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+                      </svg>
+                    </div>
+                    <p class="chart-axis-label">Spend ($, illustrative range) →</p>
                   </div>
-                  <p class="chart-axis-label">Spend ($, illustrative range) →</p>
-                </div>
 
-                <div class="param-controls">
-                  <label class="label" for="cal-sat-{{ i }}">Saturation: {{ row.saturation }}</label>
-                  <input
-                    id="cal-sat-{{ i }}"
-                    class="range"
-                    type="range"
-                    min="0"
-                    max="3"
-                    step="0.05"
-                    [ngModel]="row.saturation"
-                    (ngModelChange)="updateSaturation(i, $event)"
-                  />
-                  <input
-                    class="input param-number"
-                    type="number"
-                    min="0"
-                    step="0.05"
-                    [ngModel]="row.saturation"
-                    (ngModelChange)="updateSaturation(i, $event)"
-                  />
+                  <div class="param-controls">
+                    <label class="label" for="cal-sat-{{ i }}">Saturation: {{ row.saturationDraft }}</label>
+                    <input
+                      id="cal-sat-{{ i }}"
+                      class="range"
+                      type="range"
+                      min="0"
+                      max="3"
+                      step="0.05"
+                      [ngModel]="row.saturationDraft"
+                      (ngModelChange)="setSaturationDraft(i, $event)"
+                    />
+
+                    <div class="variance-row">
+                      <div>
+                        <label class="label" for="cal-sat-variance-{{ i }}">% variance (+/-)</label>
+                        <input
+                          id="cal-sat-variance-{{ i }}"
+                          class="input param-number"
+                          type="number"
+                          min="0"
+                          max="100"
+                          [ngModel]="row.saturationVariance"
+                          (ngModelChange)="setSaturationVariance(i, $event)"
+                        />
+                      </div>
+                    </div>
+
+                    @if (row.saturation !== row.saturationDraft) {
+                      <p class="unsaved-note">Not applied yet — saved value is {{ row.saturation }}.</p>
+                    }
+
+                    <button class="btn btn-primary param-action" type="button" (click)="applySaturation(i)">Apply</button>
+                    <button class="btn btn-secondary param-action" type="button" (click)="randomizeSaturation(i)">
+                      Randomize within variance
+                    </button>
+                  </div>
                 </div>
-              </div>
+              }
             </div>
           </div>
         }

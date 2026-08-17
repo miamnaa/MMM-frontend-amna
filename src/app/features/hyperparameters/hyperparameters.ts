@@ -10,8 +10,20 @@ import { TunnelSteps } from '../../shared/ui/tunnel-steps/tunnel-steps';
 
 interface ChannelRow {
   channel: string;
+  /** Committed values - what Save actually sends. */
   carryover: number | null;
   saturation: number | null;
+  /**
+   * Draft slider positions - what the chart previews live while dragging.
+   * Manual edits only become the committed value once Apply is clicked;
+   * Randomize commits immediately since it's a one-shot action, not a drag.
+   */
+  carryoverDraft: number;
+  saturationDraft: number;
+  adstockOpen: boolean;
+  saturationOpen: boolean;
+  adstockVariance: number;
+  saturationVariance: number;
 }
 
 function validRow(row: ChannelRow): boolean {
@@ -26,6 +38,16 @@ function validRow(row: ChannelRow): boolean {
 
 const DEFAULT_CARRYOVER = 0.4;
 const DEFAULT_SATURATION = 1;
+const DEFAULT_VARIANCE = 20;
+const MAX_SATURATION = 3;
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
 
 const CHART_WIDTH = 560;
 const CHART_HEIGHT = 160;
@@ -110,7 +132,17 @@ export class Hyperparameters implements OnInit {
     // below overrides these with the real saved numbers if there are any.
     const mediaColumns = this.tunnelService.configuration()?.mediaColumns ?? [];
     this.rows.set(
-      mediaColumns.map((channel) => ({ channel, carryover: DEFAULT_CARRYOVER, saturation: DEFAULT_SATURATION })),
+      mediaColumns.map((channel) => ({
+        channel,
+        carryover: DEFAULT_CARRYOVER,
+        saturation: DEFAULT_SATURATION,
+        carryoverDraft: DEFAULT_CARRYOVER,
+        saturationDraft: DEFAULT_SATURATION,
+        adstockOpen: true,
+        saturationOpen: true,
+        adstockVariance: DEFAULT_VARIANCE,
+        saturationVariance: DEFAULT_VARIANCE,
+      })),
     );
     if (mediaColumns.length > 0) this.expandedIndex.set(0);
 
@@ -125,7 +157,9 @@ export class Hyperparameters implements OnInit {
         this.rows.update((rows) =>
           rows.map((row) => {
             const match = saved.find((s) => s.channel === row.channel);
-            return match ? { ...row, carryover: match.carryover, saturation: match.saturation } : row;
+            return match
+              ? { ...row, carryover: match.carryover, saturation: match.saturation, carryoverDraft: match.carryover, saturationDraft: match.saturation }
+              : row;
           }),
         );
       },
@@ -133,20 +167,69 @@ export class Hyperparameters implements OnInit {
     });
   }
 
-  updateCarryover(index: number, value: number | null): void {
-    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, carryover: value } : r)));
+  toggleAdstockOpen(index: number): void {
+    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, adstockOpen: !r.adstockOpen } : r)));
   }
 
-  updateSaturation(index: number, value: number | null): void {
-    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, saturation: value } : r)));
+  toggleSaturationOpen(index: number): void {
+    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, saturationOpen: !r.saturationOpen } : r)));
+  }
+
+  setCarryoverDraft(index: number, value: number): void {
+    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, carryoverDraft: value } : r)));
+  }
+
+  setSaturationDraft(index: number, value: number): void {
+    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, saturationDraft: value } : r)));
+  }
+
+  setAdstockVariance(index: number, value: number): void {
+    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, adstockVariance: value } : r)));
+  }
+
+  setSaturationVariance(index: number, value: number): void {
+    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, saturationVariance: value } : r)));
+  }
+
+  /** Commits the current slider position as the real value that gets saved. */
+  applyCarryover(index: number): void {
+    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, carryover: r.carryoverDraft } : r)));
+  }
+
+  applySaturation(index: number): void {
+    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, saturation: r.saturationDraft } : r)));
+  }
+
+  /**
+   * A real local randomized search within +/-variance% of the current
+   * committed value, applied immediately - not a call to a backend
+   * optimizer (none exists), just an honest in-browser random draw the user
+   * can see reflected on the chart and in the number field right away.
+   */
+  randomizeCarryover(index: number): void {
+    const row = this.rows()[index];
+    if (!row) return;
+    const base = row.carryover ?? DEFAULT_CARRYOVER;
+    const delta = (row.adstockVariance / 100) * base;
+    const next = round2(clamp(base + (Math.random() * 2 - 1) * delta, 0, 1));
+    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, carryover: next, carryoverDraft: next } : r)));
+  }
+
+  randomizeSaturation(index: number): void {
+    const row = this.rows()[index];
+    if (!row) return;
+    const base = row.saturation ?? DEFAULT_SATURATION;
+    const delta = (row.saturationVariance / 100) * (base || DEFAULT_SATURATION);
+    const next = round2(clamp(base + (Math.random() * 2 - 1) * delta, 0, MAX_SATURATION));
+    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, saturation: next, saturationDraft: next } : r)));
   }
 
   adstockChartPoints(row: ChannelRow): string {
-    return adstockPoints(row.carryover ?? DEFAULT_CARRYOVER);
+    return adstockPoints(row.carryoverDraft);
   }
 
   saturationChartPoints(row: ChannelRow): string {
-    return saturationPoints(row.saturation ?? DEFAULT_SATURATION);
+    return saturationPoints(row.saturationDraft);
   }
 
   readonly chartViewBox = `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`;
