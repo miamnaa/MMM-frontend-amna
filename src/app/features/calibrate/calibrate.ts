@@ -35,8 +35,24 @@ export class Calibrate implements OnInit {
   readonly saving = signal(false);
   readonly saveError = signal<string | null>(null);
 
+  /** Neutral values sent when the toggle below is switched off - real save, just not manually entered. */
+  private static readonly DEFAULT_BELIEF = 50;
+  private static readonly DEFAULT_CONFIDENCE = 50;
+
+  /** Defaults to on, same as Cassandra's reference - most models do want a calibration entered. */
+  readonly calibrationEnabled = signal(true);
+
+  /** True once this dataset actually has a saved calibration - drives the right-hand summary panel. */
+  readonly hasSavedCalibration = signal(false);
+
+  toggleCalibration(): void {
+    this.calibrationEnabled.update((on) => !on);
+  }
+
   readonly canSave = computed(
-    () => inRange(this.contributionBeliefPercent()) && inRange(this.confidencePercent()),
+    () =>
+      !this.calibrationEnabled() ||
+      (inRange(this.contributionBeliefPercent()) && inRange(this.confidencePercent())),
   );
 
   ngOnInit(): void {
@@ -52,6 +68,7 @@ export class Calibrate implements OnInit {
         if (detail.calibration) {
           this.contributionBeliefPercent.set(detail.calibration.contributionBeliefPercent);
           this.confidencePercent.set(detail.calibration.confidencePercent);
+          this.hasSavedCalibration.set(true);
         }
       },
       error: () => {},
@@ -65,10 +82,9 @@ export class Calibrate implements OnInit {
   save(): void {
     if (!this.canSave() || this.saving()) return;
 
-    const body = {
-      contributionBeliefPercent: this.contributionBeliefPercent()!,
-      confidencePercent: this.confidencePercent()!,
-    };
+    const body = this.calibrationEnabled()
+      ? { contributionBeliefPercent: this.contributionBeliefPercent()!, confidencePercent: this.confidencePercent()! }
+      : { contributionBeliefPercent: Calibrate.DEFAULT_BELIEF, confidencePercent: Calibrate.DEFAULT_CONFIDENCE };
 
     this.saving.set(true);
     this.saveError.set(null);
@@ -76,6 +92,7 @@ export class Calibrate implements OnInit {
     this.datasetService.saveCalibration(this.datasetId(), body).subscribe({
       next: () => {
         this.saving.set(false);
+        this.hasSavedCalibration.set(true);
         this.tunnelService.setCalibration(body);
         this.router.navigate(['/hyperparameters', this.projectId(), this.datasetId()]);
       },

@@ -8,56 +8,103 @@
       <div class="tunnel-main-inner">
 
   <app-page-header
-    title="Calibrate"
-    subtitle="Tell the model what you already believe about your marketing, and how sure you are."
+    title="Calibrate Your Results"
+    subtitle="Fine-tune the model results based on your business knowledge and expertise."
   />
 
   <button class="info-toggle" type="button" (click)="toggleInfo()" [attr.aria-expanded]="infoOpen()">
     <span class="info-icon" aria-hidden="true">ⓘ</span>
-    <span class="info-title">What do these numbers mean?</span>
+    <span class="info-title">Why calibrate your model?</span>
     <span class="chevron" [class.open]="infoOpen()" aria-hidden="true">⌄</span>
   </button>
 
   @if (infoOpen()) {
     <div class="info-body">
       <ul>
-        <li><strong>Contribution belief</strong> — roughly how much of your outcome (revenue, signups, etc.) you already believe marketing actually drove, versus everything else (seasonality, word of mouth, pricing). If you think marketing explains about a third of it, that's 30%.</li>
+        <li><strong>Contribution belief</strong> — roughly how much of your outcome (revenue, signups, etc.) you already believe marketing actually drove, versus everything else (seasonality, word of mouth, pricing). If a past incrementality experiment or lift study told you marketing explains about a third of it, that's 30%.</li>
         <li><strong>Confidence</strong> — how sure you are about that belief. A guess based on a gut feeling might be 40–50% confident; a belief backed by a real prior study or experiment might be 80%+.</li>
+        <li>Prefer not to guess? Leave calibration off below and Roivio uses neutral defaults instead.</li>
       </ul>
     </div>
   }
 
-  <section class="card">
-    <h2 class="section-title">Calibration inputs</h2>
+  <div class="calibrate-grid">
+    <section class="card">
+      <button type="button" class="switch-row" (click)="toggleCalibration()" [attr.aria-pressed]="calibrationEnabled()">
+        <span class="switch" [class.on]="calibrationEnabled()">
+          <span class="switch-thumb"></span>
+        </span>
+        <span class="switch-label">Model Calibration <span class="muted">(Optional)</span></span>
+      </button>
+      <p class="muted field-hint switch-hint">
+        Use your incrementality experiment results to fine-tune the model. Calibration improves
+        accuracy for variables with limited data.
+      </p>
 
-    <div class="field">
-      <label class="label" for="cal-belief">Contribution belief (%)</label>
-      <input
-        id="cal-belief"
-        class="input"
-        type="number"
-        min="0"
-        max="100"
-        [ngModel]="contributionBeliefPercent()"
-        (ngModelChange)="contributionBeliefPercent.set($event)"
-        placeholder="e.g. 30"
-      />
-    </div>
+      @if (calibrationEnabled()) {
+        <div class="callout">
+          <span class="callout-icon" aria-hidden="true">💡</span>
+          <div>
+            <p class="callout-title">Why calibrate your model?</p>
+            <p class="callout-body">Apply your marketing expertise by incorporating insights from incrementality experiments or lift studies you've run.</p>
+          </div>
+        </div>
 
-    <div class="field">
-      <label class="label" for="cal-confidence">Confidence (%)</label>
-      <input
-        id="cal-confidence"
-        class="input"
-        type="number"
-        min="0"
-        max="100"
-        [ngModel]="confidencePercent()"
-        (ngModelChange)="confidencePercent.set($event)"
-        placeholder="e.g. 80"
-      />
-    </div>
-  </section>
+        <div class="field">
+          <label class="label" for="cal-belief">Contribution belief (%)</label>
+          <input
+            id="cal-belief"
+            class="input"
+            type="number"
+            min="0"
+            max="100"
+            [ngModel]="contributionBeliefPercent()"
+            (ngModelChange)="contributionBeliefPercent.set($event)"
+            placeholder="e.g. 30"
+          />
+        </div>
+
+        <div class="field">
+          <label class="label" for="cal-confidence">Confidence level (%)</label>
+          <input
+            id="cal-confidence"
+            class="input"
+            type="number"
+            min="0"
+            max="100"
+            [ngModel]="confidencePercent()"
+            (ngModelChange)="confidencePercent.set($event)"
+            placeholder="e.g. 80"
+          />
+        </div>
+      }
+    </section>
+
+    <aside class="card side-panel">
+      @if (calibrationEnabled() && hasSavedCalibration() && contributionBeliefPercent() !== null) {
+        <h3 class="side-panel-title">Saved calibration</h3>
+        <p class="saved-summary">
+          Contribution belief <strong>{{ contributionBeliefPercent() }}%</strong> · Confidence <strong>{{ confidencePercent() }}%</strong>
+        </p>
+      } @else {
+        <p class="muted no-calibrations">No calibrations found.</p>
+      }
+
+      @if (calibrationEnabled()) {
+        <div class="callout callout-muted">
+          <span class="callout-icon" aria-hidden="true">❓</span>
+          <div>
+            <p class="callout-title">What is confidence level?</p>
+            <p class="callout-body">
+              This represents how certain you are about the calibration value you entered. You can
+              typically find this in your incrementality test or lift study results (e.g., "90%
+              confidence interval"). If unsure, 80–90% is a common range for well-designed experiments.
+            </p>
+          </div>
+        </div>
+      }
+    </aside>
+  </div>
 
   @if (saveError(); as err) {
     <p class="drop-error">{{ err }}</p>
