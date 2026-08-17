@@ -9,13 +9,34 @@ import { PageHeader } from '../../shared/ui/page-header/page-header';
 import { TunnelSteps } from '../../shared/ui/tunnel-steps/tunnel-steps';
 
 const CHART_WIDTH = 640;
-const CHART_HEIGHT = 200;
-const CHART_PAD = 8;
+const CHART_HEIGHT = 220;
+// Room for real axis labels - a $ scale on the left, dates along the bottom.
+const CHART_PAD_TOP = 10;
+const CHART_PAD_RIGHT = 12;
+const CHART_PAD_LEFT = 48;
+const CHART_PAD_BOTTOM = 46;
+const CHART_Y_TICKS = 5;
+const CHART_X_TICKS = 8;
 const SERIES_COLORS = ['#e0554f', '#1baf7a', '#3b82f6', '#f59e0b', '#8b5cf6', '#0891b2'];
 
 function toNumber(value: unknown): number {
   const n = typeof value === 'number' ? value : parseFloat(String(value ?? ''));
   return Number.isFinite(n) ? n : 0;
+}
+
+/** "8000" -> "8K", "950" -> "950" - matches how the axis labels read in the reference. */
+function formatAxisNumber(value: number): string {
+  if (value >= 1000) return `${Math.round(value / 100) / 10}K`;
+  return String(Math.round(value));
+}
+
+/** "2024-01-08" -> "08 Jan 2024" - falls back to the raw string if it isn't a parseable date. */
+function formatAxisDate(raw: string): string {
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw;
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = d.toLocaleString('en-US', { month: 'short' });
+  return `${day} ${month} ${d.getFullYear()}`;
 }
 
 /** Standard Pearson correlation coefficient, -1..1. */
@@ -196,28 +217,67 @@ export class Optimize implements OnInit {
     });
   }
 
-  /** Custom Timeframe: real weekly trend for the target + up to 5 media channels. */
+  private plotX(index: number, count: number): number {
+    const plotWidth = CHART_WIDTH - CHART_PAD_LEFT - CHART_PAD_RIGHT;
+    return CHART_PAD_LEFT + (count <= 1 ? 0 : (index / (count - 1)) * plotWidth);
+  }
+
+  private plotY(value: number, max: number): number {
+    const plotHeight = CHART_HEIGHT - CHART_PAD_TOP - CHART_PAD_BOTTOM;
+    return CHART_HEIGHT - CHART_PAD_BOTTOM - (value / max) * plotHeight;
+  }
+
+  /** Real max across every plotted series - one shared $ scale, not a per-line 0-100% normalization. */
+  private readonly chartMaxValue = computed(() => {
+    const target = this.config()?.targetColumn;
+    const names = [target, ...this.effectiveChannels()].filter((n): n is string => !!n).slice(0, 6);
+    const rows = this.sortedRows();
+    const allValues = names.flatMap((name) => rows.map((r) => toNumber(r[name])));
+    return Math.max(1, ...allValues);
+  });
+
+  /** Custom Timeframe: real weekly trend for the target + up to 5 media channels, one shared $ scale. */
   readonly chartSeries = computed<ChartSeries[]>(() => {
     const target = this.config()?.targetColumn;
     const names = [target, ...this.effectiveChannels()].filter((n): n is string => !!n).slice(0, 6);
     const rows = this.sortedRows();
     if (rows.length === 0) return [];
 
+    const max = this.chartMaxValue();
     return names.map((name, i) => {
       const values = rows.map((r) => toNumber(r[name]));
-      const max = Math.max(1, ...values);
       const points = values
-        .map((v, w) => {
-          const x = CHART_PAD + (rows.length === 1 ? 0 : (w / (rows.length - 1)) * (CHART_WIDTH - CHART_PAD * 2));
-          const y = CHART_HEIGHT - CHART_PAD - (v / max) * (CHART_HEIGHT - CHART_PAD * 2);
-          return `${x.toFixed(1)},${y.toFixed(1)}`;
-        })
+        .map((v, w) => `${this.plotX(w, rows.length).toFixed(1)},${this.plotY(v, max).toFixed(1)}`)
         .join(' ');
       return { name, color: SERIES_COLORS[i % SERIES_COLORS.length], points };
     });
   });
 
   readonly chartViewBox = `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`;
+  readonly chartPlotLeft = CHART_PAD_LEFT;
+  readonly chartPlotRight = CHART_WIDTH - CHART_PAD_RIGHT;
+  readonly chartPlotTop = CHART_PAD_TOP;
+  readonly chartPlotBottom = CHART_HEIGHT - CHART_PAD_BOTTOM;
+
+  readonly chartYAxisTicks = computed(() => {
+    const max = this.chartMaxValue();
+    return Array.from({ length: CHART_Y_TICKS + 1 }, (_, i) => {
+      const value = (max / CHART_Y_TICKS) * i;
+      return { y: this.plotY(value, max), label: formatAxisNumber(value) };
+    });
+  });
+
+  readonly chartXAxisTicks = computed(() => {
+    const dateCol = this.config()?.dateColumn;
+    const rows = this.sortedRows();
+    if (!dateCol || rows.length === 0) return [];
+
+    const count = Math.min(CHART_X_TICKS, rows.length);
+    return Array.from({ length: count }, (_, i) => {
+      const rowIndex = count === 1 ? 0 : Math.round((i / (count - 1)) * (rows.length - 1));
+      return { x: this.plotX(rowIndex, rows.length), label: formatAxisDate(String(rows[rowIndex][dateCol] ?? '')) };
+    });
+  });
 
   /** Channels Review: real Pearson correlation between every media-channel pair, highest first. */
   private readonly removedPairs = signal<Set<string>>(new Set());

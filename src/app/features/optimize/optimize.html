@@ -81,6 +81,15 @@
         } @else {
           <div class="chart-wrap">
             <svg class="line-chart" [attr.viewBox]="chartViewBox" preserveAspectRatio="none">
+              @for (tick of chartYAxisTicks(); track tick.label) {
+                <line [attr.x1]="chartPlotLeft" [attr.x2]="chartPlotRight" [attr.y1]="tick.y" [attr.y2]="tick.y" class="chart-gridline" />
+                <text [attr.x]="chartPlotLeft - 8" [attr.y]="tick.y + 3" class="chart-axis-text" text-anchor="end">{{ tick.label }}</text>
+              }
+              <line [attr.x1]="chartPlotLeft" [attr.x2]="chartPlotLeft" [attr.y1]="chartPlotTop" [attr.y2]="chartPlotBottom" class="chart-axis-line" />
+              <line [attr.x1]="chartPlotLeft" [attr.x2]="chartPlotRight" [attr.y1]="chartPlotBottom" [attr.y2]="chartPlotBottom" class="chart-axis-line" />
+              @for (tick of chartXAxisTicks(); track tick.label) {
+                <text [attr.x]="tick.x" [attr.y]="chartPlotBottom + 14" class="chart-axis-text" text-anchor="end" [attr.transform]="'rotate(-40 ' + tick.x + ' ' + (chartPlotBottom + 14) + ')'">{{ tick.label }}</text>
+              }
               @for (s of chartSeries(); track s.name) {
                 <polyline [attr.points]="s.points" fill="none" [attr.stroke]="s.color" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
               }
