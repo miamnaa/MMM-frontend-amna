@@ -340,7 +340,7 @@ export class Optimize implements OnInit {
           this.startDate.set(detail.dateRange.startDate);
           this.endDate.set(detail.dateRange.endDate);
         }
-        this.maybeAutoFillDateRange();
+        this.maybeSuggestDateRange();
       },
       error: () => {},
     });
@@ -353,7 +353,6 @@ export class Optimize implements OnInit {
       next: ({ rows }) => {
         this.rowsLoading.set(false);
         this.rows.set(rows);
-        this.maybeAutoFillDateRange();
       },
       error: (err: unknown) => {
         this.rowsLoading.set(false);
@@ -364,27 +363,24 @@ export class Optimize implements OnInit {
 
   /**
    * First-visit convenience only: if this dataset has never had an Optimize
-   * date range saved, prefill Start/End with the real min/max dates found
-   * in the uploaded file's date column - still fully editable, and never
-   * overwrites a real saved range (getDataset() runs in parallel with
-   * getRows(), so this is called from both and no-ops until real row data
-   * and a confirmed "nothing saved yet" state are both in).
+   * date range saved, prefill Start/End with the real min/max date the
+   * backend found in the uploaded file (GET /datasets/:id/date-range) -
+   * still fully editable. Requires Configuration to already be saved; the
+   * 400 that comes back otherwise is expected (this screen is unreachable
+   * before Configure anyway) and just leaves the fields blank, same as
+   * before this existed. Called only after getDataset() confirms there's no
+   * real saved range to protect - never overwrites one.
    */
-  private maybeAutoFillDateRange(): void {
-    if (this.hasSavedDateRange || this.startDate() || this.endDate()) return;
-    const dateCol = this.config()?.dateColumn;
-    const rows = this.rows();
-    if (!dateCol || rows.length === 0) return;
-
-    const dates = rows
-      .map((r) => String(r[dateCol] ?? ''))
-      .filter((d) => d.length > 0)
-      .sort();
-    if (dates.length === 0) return;
-
-    this.startDate.set(dates[0]);
-    this.endDate.set(dates[dates.length - 1]);
-    this.dateRangeAutoFilled.set(true);
+  private maybeSuggestDateRange(): void {
+    if (this.hasSavedDateRange) return;
+    this.datasetService.getDateRange(this.datasetId()).subscribe({
+      next: ({ minDate, maxDate }) => {
+        this.startDate.set(minDate);
+        this.endDate.set(maxDate);
+        this.dateRangeAutoFilled.set(true);
+      },
+      error: () => {},
+    });
   }
 
   save(): void {

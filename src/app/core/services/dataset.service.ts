@@ -57,6 +57,12 @@ export interface CombineColumnsResponse {
   series: { date: string; value: number }[];
 }
 
+/** Real endpoint: GET /datasets/:id/date-range - the real min/max date found in the uploaded file. */
+export interface DateRangeResponse {
+  minDate: string;
+  maxDate: string;
+}
+
 /** The columnMapping shape GET /datasets/:id actually returns - same fields as SavedConfiguration, minus kpiType/revenuePerKpiValue, which come back as siblings instead. */
 export interface SavedColumnMapping {
   dateColumn: string;
@@ -239,6 +245,18 @@ export class DatasetService {
     return this.http.post<CombineColumnsResponse>(`${environment.apiBaseUrl}/datasets/${datasetId}/combine-columns`, {
       columns,
     });
+  }
+
+  /**
+   * Real endpoint - the real min/max date found in the uploaded file, used
+   * to suggest a training date range on Optimize instead of leaving the
+   * user to guess. Requires Configuration to already be saved (needs the
+   * real date column) - throws a clear 400 otherwise, which is expected,
+   * not a bug: optimizeContextGuard's own step order already prevents
+   * reaching Optimize before Configure is saved.
+   */
+  getDateRange(datasetId: string): Observable<DateRangeResponse> {
+    return this.http.get<DateRangeResponse>(`${environment.apiBaseUrl}/datasets/${datasetId}/date-range`);
   }
 
   /** Real endpoint - what the project-models hub lists, with real per-dataset progress. */
