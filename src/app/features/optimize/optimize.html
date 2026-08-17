@@ -62,26 +62,32 @@
       <div class="example-section">
         <div class="example-head">
           <h3 class="example-title">Spend &amp; revenue trend</h3>
-          <span class="example-badge">Example data — not from your uploaded file</span>
         </div>
         <p class="muted field-hint">
-          Once real row-level data has a place to come from, this will chart your actual weekly numbers
-          across the range above — for now it's shaped from your real channel names, with placeholder values.
+          Your target and channel spend, read from your uploaded file.
         </p>
-        <div class="chart-wrap">
-          <svg class="line-chart" [attr.viewBox]="chartViewBox" preserveAspectRatio="none">
+        @if (rowsLoading()) {
+          <p class="muted">Loading your data…</p>
+        } @else if (rowsError(); as err) {
+          <p class="drop-error">{{ err }}</p>
+        } @else if (chartSeries().length === 0) {
+          <p class="muted">No rows to chart yet.</p>
+        } @else {
+          <div class="chart-wrap">
+            <svg class="line-chart" [attr.viewBox]="chartViewBox" preserveAspectRatio="none">
+              @for (s of chartSeries(); track s.name) {
+                <polyline [attr.points]="s.points" fill="none" [attr.stroke]="s.color" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+              }
+            </svg>
+          </div>
+          <div class="chart-legend">
             @for (s of chartSeries(); track s.name) {
-              <polyline [attr.points]="s.points" fill="none" [attr.stroke]="s.color" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+              <span class="legend-item">
+                <span class="legend-dot" [style.background]="s.color"></span>{{ s.name }}
+              </span>
             }
-          </svg>
-        </div>
-        <div class="chart-legend">
-          @for (s of chartSeries(); track s.name) {
-            <span class="legend-item">
-              <span class="legend-dot" [style.background]="s.color"></span>{{ s.name }}
-            </span>
-          }
-        </div>
+          </div>
+        }
       </div>
     }
   </section>
@@ -91,14 +97,17 @@
       <section class="card">
         <div class="example-head">
           <h2 class="section-title">Channels review</h2>
-          <span class="example-badge">Example data — not from your uploaded file</span>
         </div>
         <p class="muted field-hint">
           Highly correlated channels compete for attribution and can make a model less stable.
-          This is what reviewing that will look like, shown with your real channel names.
+          Correlation is computed from your uploaded file's real values.
         </p>
 
-        @if (visibleCorrelationRows().length > 0) {
+        @if (rowsLoading()) {
+          <p class="muted">Loading your data…</p>
+        } @else if (rowsError(); as err) {
+          <p class="drop-error">{{ err }}</p>
+        } @else if (visibleCorrelationRows().length > 0) {
           <div class="correlation-table">
             <div class="correlation-row correlation-head">
               <span>Channel A</span>
@@ -186,8 +195,12 @@
             />
           </div>
 
+          @if (aggregateError(); as err) {
+            <p class="drop-error">{{ err }}</p>
+          }
+
           <button class="btn btn-primary btn-sm side-panel-action" type="button" [disabled]="!canAggregate()" (click)="aggregateChannels()">
-            Aggregate
+            {{ aggregating() ? 'Combining…' : 'Aggregate' }}
           </button>
         } @else {
           <p class="muted">Need at least 2 channels left to combine.</p>
@@ -199,14 +212,17 @@
       <section class="card">
         <div class="example-head">
           <h2 class="section-title">Variable selection review</h2>
-          <span class="example-badge">Example data — not from your uploaded file</span>
         </div>
         <p class="muted field-hint">
-          Low-spend or redundant channels add noise without adding signal. This is what reviewing
-          share of spend will look like, shown with your real channel names.
+          Low-spend or redundant channels add noise without adding signal. Share of spend is
+          summed from your uploaded file's real values.
         </p>
 
-        @if (visibleSpendShareBars().length > 0) {
+        @if (rowsLoading()) {
+          <p class="muted">Loading your data…</p>
+        } @else if (rowsError(); as err) {
+          <p class="drop-error">{{ err }}</p>
+        } @else if (visibleSpendShareBars().length > 0) {
           <div class="spend-bars">
             @for (bar of visibleSpendShareBars(); track bar.name) {
               <div class="spend-bar-row">

@@ -75,25 +75,39 @@
         [attr.aria-expanded]="existingColumnsOpen()"
       >
         <span class="info-icon" aria-hidden="true">▤</span>
-        <span class="info-title">Preview uploaded file's columns</span>
+        <span class="info-title">Preview uploaded data</span>
         <span class="chevron" [class.open]="existingColumnsOpen()" aria-hidden="true">⌄</span>
       </button>
 
       @if (existingColumnsOpen()) {
         <div class="preview-body">
           @if (existingColumnsLoading()) {
-            <p class="muted">Reading this file's columns…</p>
+            <p class="muted">Reading this file's data…</p>
           } @else if (existingColumnsError(); as err) {
             <p class="drop-error">{{ err }}</p>
           } @else {
-            <div class="chip-grid">
-              @for (col of existingColumns(); track col) {
-                <span class="column-chip static">{{ col }}</span>
-              }
+            <div class="preview-table-wrap">
+              <table class="preview-table">
+                <thead>
+                  <tr>
+                    @for (h of existingPreviewHeaders(); track h) {
+                      <th>{{ h }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of existingPreviewRows(); track $index) {
+                    <tr>
+                      @for (h of existingPreviewHeaders(); track h) {
+                        <td>{{ row[h] }}</td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
             </div>
             <p class="muted preview-note">
-              Column names only, read from the real uploaded file — sample row values aren't
-              available to preview here yet.
+              First {{ existingPreviewRows().length }} rows, read from the real uploaded file.
             </p>
           }
         </div>

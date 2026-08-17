@@ -12,19 +12,30 @@ const CHART_WIDTH = 640;
 const CHART_HEIGHT = 200;
 const CHART_PAD = 8;
 const SERIES_COLORS = ['#e0554f', '#1baf7a', '#3b82f6', '#f59e0b', '#8b5cf6', '#0891b2'];
-const WEEK_COUNT = 10;
 
-/**
- * Deterministic "random" number from a string seed, so the same channel
- * name always produces the same example value on every render (no flicker,
- * no re-render surprises) - not real randomness, just a stand-in until real
- * row-level data has somewhere to come from.
- */
-function seededValue(seed: string, min: number, max: number): number {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-  const t = (hash % 10000) / 10000;
-  return min + t * (max - min);
+function toNumber(value: unknown): number {
+  const n = typeof value === 'number' ? value : parseFloat(String(value ?? ''));
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** Standard Pearson correlation coefficient, -1..1. */
+function pearson(xs: number[], ys: number[]): number {
+  const n = xs.length;
+  if (n === 0) return 0;
+  const meanX = xs.reduce((s, v) => s + v, 0) / n;
+  const meanY = ys.reduce((s, v) => s + v, 0) / n;
+  let num = 0;
+  let denX = 0;
+  let denY = 0;
+  for (let i = 0; i < n; i++) {
+    const dx = xs[i] - meanX;
+    const dy = ys[i] - meanY;
+    num += dx * dy;
+    denX += dx * dx;
+    denY += dy * dy;
+  }
+  const den = Math.sqrt(denX * denY);
+  return den === 0 ? 0 : num / den;
 }
 
 interface ChartSeries {
@@ -45,6 +56,7 @@ interface SpendShareBar {
 }
 
 type ExposureMode = 'auto' | 'positive' | 'negative';
+type Row = Record<string, unknown>;
 
 /** Real backend: PATCH /datasets/:id/optimize, shipped 2026-08-12. */
 @Component({
@@ -83,11 +95,9 @@ export class Optimize implements OnInit {
     () => this.startDate().length > 0 && this.endDate().length > 0 && !this.rangeInvalid(),
   );
 
-  // ---- Everything below is illustrative only - see the "Example data" badge
-  // on each section. Real channel/target/control NAMES come from Configure's
-  // saved mapping (real), but no backend endpoint returns actual row-level
-  // values for a dataset yet, so the numbers themselves are generated,
-  // deterministic placeholders until one exists. Nothing here is saved.
+  // ---- Everything below is real: GET /datasets/:id/rows (real per-row
+  // values) drives the chart, correlation table, and spend-share bars.
+  // Channel/target/control NAMES still come from Configure's saved mapping.
 
   private readonly config = computed(() => this.tunnelService.configuration());
   private readonly mediaChannels = computed(() => this.config()?.mediaColumns ?? []);
@@ -96,13 +106,27 @@ export class Optimize implements OnInit {
   readonly hasMediaChannels = computed(() => this.mediaChannels().length > 0);
   readonly hasControlColumns = computed(() => this.controlColumnsList().length > 0);
 
+  readonly rows = signal<Row[]>([]);
+  readonly rowsLoading = signal(false);
+  readonly rowsError = signal<string | null>(null);
+
+  private readonly sortedRows = computed(() => {
+    const dateCol = this.config()?.dateColumn;
+    const list = this.rows();
+    if (!dateCol) return list;
+    return [...list].sort((a, b) => String(a[dateCol] ?? '').localeCompare(String(b[dateCol] ?? '')));
+  });
+
   /**
-   * Channels review: combining two correlated channels into one. Nothing
-   * here is a real backend "aggregate columns" call (none exists) - like
-   * every other Optimize example section, it's local-only, driving the same
-   * illustrative chart/correlation/spend-share numbers below it.
+   * Channels review: combining two correlated channels into one. Real call
+   * to POST /datasets/:id/combine-columns - the returned per-date series is
+   * merged into `rows` under the new field name, so the chart, correlation
+   * table, and spend-share bars below all pick it up the same way they'd
+   * pick up any other real column.
    */
   readonly combinedGroups = signal<{ name: string; members: string[] }[]>([]);
+  readonly aggregating = signal(false);
+  readonly aggregateError = signal<string | null>(null);
 
   readonly effectiveChannels = computed<string[]>(() => {
     const memberToGroup = new Map<string, string>();
@@ -139,30 +163,50 @@ export class Optimize implements OnInit {
   }
 
   readonly canAggregate = computed(
-    () => this.selectedCombineChannels().length >= 2 && this.newFieldName().trim().length > 0,
+    () => this.selectedCombineChannels().length >= 2 && this.newFieldName().trim().length > 0 && !this.aggregating(),
   );
 
   aggregateChannels(): void {
     if (!this.canAggregate()) return;
-    this.combinedGroups.update((groups) => [
-      ...groups,
-      { name: this.newFieldName().trim(), members: this.selectedCombineChannels() },
-    ]);
-    this.combineDropdownOpen.set(false);
-    this.selectedCombineChannels.set([]);
-    this.newFieldName.set('');
+    const members = this.selectedCombineChannels();
+    const name = this.newFieldName().trim();
+
+    this.aggregating.set(true);
+    this.aggregateError.set(null);
+
+    this.datasetService.combineColumns(this.datasetId(), members).subscribe({
+      next: ({ dateColumn, series }) => {
+        this.aggregating.set(false);
+        const valueByDate = new Map(series.map((s) => [s.date, s.value]));
+        this.rows.update((rows) =>
+          rows.map((r) => ({ ...r, [name]: valueByDate.get(String(r[dateColumn])) ?? 0 })),
+        );
+        this.combinedGroups.update((groups) => [...groups, { name, members }]);
+        this.combineDropdownOpen.set(false);
+        this.selectedCombineChannels.set([]);
+        this.newFieldName.set('');
+      },
+      error: (err: unknown) => {
+        this.aggregating.set(false);
+        this.aggregateError.set(backendErrorMessage(err, 'Could not combine these channels. Try again.'));
+      },
+    });
   }
 
-  /** Custom Timeframe: example weekly trend for the target + up to 5 media channels. */
+  /** Custom Timeframe: real weekly trend for the target + up to 5 media channels. */
   readonly chartSeries = computed<ChartSeries[]>(() => {
     const target = this.config()?.targetColumn;
     const names = [target, ...this.effectiveChannels()].filter((n): n is string => !!n).slice(0, 6);
+    const rows = this.sortedRows();
+    if (rows.length === 0) return [];
+
     return names.map((name, i) => {
-      const values = Array.from({ length: WEEK_COUNT }, (_, w) => seededValue(`${name}-${w}`, 15, 92));
+      const values = rows.map((r) => toNumber(r[name]));
+      const max = Math.max(1, ...values);
       const points = values
         .map((v, w) => {
-          const x = CHART_PAD + (w / (WEEK_COUNT - 1)) * (CHART_WIDTH - CHART_PAD * 2);
-          const y = CHART_HEIGHT - CHART_PAD - (v / 100) * (CHART_HEIGHT - CHART_PAD * 2);
+          const x = CHART_PAD + (rows.length === 1 ? 0 : (w / (rows.length - 1)) * (CHART_WIDTH - CHART_PAD * 2));
+          const y = CHART_HEIGHT - CHART_PAD - (v / max) * (CHART_HEIGHT - CHART_PAD * 2);
           return `${x.toFixed(1)},${y.toFixed(1)}`;
         })
         .join(' ');
@@ -172,18 +216,21 @@ export class Optimize implements OnInit {
 
   readonly chartViewBox = `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`;
 
-  /** Channels Review: example correlation between every media-channel pair, highest first. */
+  /** Channels Review: real Pearson correlation between every media-channel pair, highest first. */
   private readonly removedPairs = signal<Set<string>>(new Set());
 
   readonly correlationRows = computed<CorrelationRow[]>(() => {
     const channels = this.effectiveChannels();
-    const rows: CorrelationRow[] = [];
+    const rows = this.rows();
+    const result: CorrelationRow[] = [];
     for (let i = 0; i < channels.length; i++) {
       for (let j = i + 1; j < channels.length; j++) {
-        rows.push({ a: channels[i], b: channels[j], pct: Math.round(seededValue(`${channels[i]}|${channels[j]}`, 35, 92)) });
+        const xs = rows.map((r) => toNumber(r[channels[i]]));
+        const ys = rows.map((r) => toNumber(r[channels[j]]));
+        result.push({ a: channels[i], b: channels[j], pct: Math.round(Math.abs(pearson(xs, ys)) * 100) });
       }
     }
-    return rows.sort((r1, r2) => r2.pct - r1.pct).slice(0, 8);
+    return result.sort((r1, r2) => r2.pct - r1.pct).slice(0, 8);
   });
 
   pairKey(row: CorrelationRow): string {
@@ -202,12 +249,25 @@ export class Optimize implements OnInit {
     return pct >= 80 ? 'high' : 'medium';
   }
 
-  /** Variable Selection Review: example share-of-spend per media channel. */
+  readonly selectedPairKey = signal('');
+
+  removeSelectedPair(): void {
+    const row = this.visibleCorrelationRows().find((r) => this.pairKey(r) === this.selectedPairKey());
+    if (!row) return;
+    this.removePair(row);
+    this.selectedPairKey.set('');
+  }
+
+  /** Variable Selection Review: real share-of-spend per media channel, summed across every row. */
   private readonly removedVariables = signal<Set<string>>(new Set());
 
   readonly spendShareBars = computed<SpendShareBar[]>(() => {
     const channels = this.effectiveChannels();
-    const raw = channels.map((name) => ({ name, raw: seededValue(name, 3, 25) }));
+    const rows = this.rows();
+    const raw = channels.map((name) => ({
+      name,
+      raw: rows.reduce((sum, r) => sum + toNumber(r[name]), 0),
+    }));
     const total = raw.reduce((sum, r) => sum + r.raw, 0) || 1;
     return raw
       .map((r) => ({ name: r.name, pct: Math.round((r.raw / total) * 1000) / 10 }))
@@ -235,7 +295,7 @@ export class Optimize implements OnInit {
     this.selectedVariableToRemove.set('');
   }
 
-  /** Exposure Metrics: per-control-column impact direction - illustrative, not saved anywhere real yet. */
+  /** Exposure Metrics: per-control-column impact direction - no backend endpoint for this exists yet, still illustrative. */
   readonly exposureModes = signal<Record<string, ExposureMode>>({});
   readonly exposureToast = signal(false);
   private exposureToastTimer?: ReturnType<typeof setTimeout>;
@@ -278,6 +338,21 @@ export class Optimize implements OnInit {
         }
       },
       error: () => {},
+    });
+
+    // Real endpoint - drives the chart/correlation/spend-share sections
+    // below. Best-effort: a failure just leaves those sections empty rather
+    // than blocking the rest of the page.
+    this.rowsLoading.set(true);
+    this.datasetService.getRows(this.datasetId()).subscribe({
+      next: ({ rows }) => {
+        this.rowsLoading.set(false);
+        this.rows.set(rows);
+      },
+      error: (err: unknown) => {
+        this.rowsLoading.set(false);
+        this.rowsError.set(backendErrorMessage(err, "Couldn't load this dataset's data."));
+      },
     });
   }
 

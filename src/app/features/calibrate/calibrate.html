@@ -50,130 +50,44 @@
           </div>
         </div>
 
-        <div class="wizard-row">
-          <div class="field">
-            <label class="label" for="cal-var-type">1. Variable type</label>
-            <select id="cal-var-type" class="select" [ngModel]="variableType()" (ngModelChange)="setVariableType($event)">
-              @for (opt of variableTypeOptions(); track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-              }
-            </select>
-          </div>
-
-          <div class="field">
-            <label class="label" for="cal-variable">2. Variable</label>
-            <select id="cal-variable" class="select" [ngModel]="selectedVariable()" (ngModelChange)="selectedVariable.set($event)">
-              <option value="" disabled>Select variable</option>
-              @for (v of variableOptions(); track v) {
-                <option [value]="v">{{ v }}</option>
-              }
-            </select>
-          </div>
-        </div>
-
         <div class="field">
-          <span class="label">3. Metric</span>
-          <div class="toggle-row">
-            @for (m of metricOptions(); track m) {
-              <button type="button" class="pill-toggle" [class.active]="metricLabel() === m" (click)="metricLabel.set(m)">{{ m }}</button>
-            }
-          </div>
-        </div>
-
-        <div class="field">
-          <span class="label">4. Time period</span>
-          <div class="toggle-row">
-            <button type="button" class="pill-toggle" [class.active]="timePeriodMode() === 'full'" (click)="timePeriodMode.set('full')">Full period</button>
-            <button type="button" class="pill-toggle" [class.active]="timePeriodMode() === 'custom'" (click)="timePeriodMode.set('custom')">Custom range</button>
-          </div>
-          @if (timePeriodMode() === 'full') {
-            <p class="muted field-hint period-hint">{{ periodLabel() }} — locked to what you saved on Optimize.</p>
-          } @else {
-            <div class="wizard-row period-inputs">
-              <input class="input" type="date" [ngModel]="customStartDate()" (ngModelChange)="customStartDate.set($event)" />
-              <input class="input" type="date" [ngModel]="customEndDate()" (ngModelChange)="customEndDate.set($event)" />
-            </div>
-          }
-        </div>
-
-        <div class="field">
-          <label class="label" for="cal-actual-value">5. {{ metricLabel() }} during period</label>
+          <label class="label" for="cal-belief">Contribution belief (%)</label>
           <input
-            id="cal-actual-value"
+            id="cal-belief"
             class="input"
             type="number"
             min="0"
-            [ngModel]="actualValueDuringPeriod()"
-            (ngModelChange)="actualValueDuringPeriod.set($event)"
-            placeholder="e.g. 120000"
+            max="100"
+            [ngModel]="contributionBeliefPercent()"
+            (ngModelChange)="contributionBeliefPercent.set($event)"
+            placeholder="e.g. 30"
           />
         </div>
 
-        <div class="wizard-row">
-          <div class="field">
-            <label class="label" for="cal-belief">6. Contribution belief (%)</label>
-            <input
-              id="cal-belief"
-              class="input"
-              type="number"
-              min="0"
-              max="100"
-              [ngModel]="contributionBeliefPercent()"
-              (ngModelChange)="contributionBeliefPercent.set($event)"
-              placeholder="e.g. 30"
-            />
-          </div>
-
-          <div class="field">
-            <label class="label" for="cal-confidence">7. Confidence level (%)</label>
-            <input
-              id="cal-confidence"
-              class="input"
-              type="number"
-              min="0"
-              max="100"
-              [ngModel]="confidencePercent()"
-              (ngModelChange)="confidencePercent.set($event)"
-              placeholder="e.g. 80"
-            />
-          </div>
+        <div class="field">
+          <label class="label" for="cal-confidence">Confidence level (%)</label>
+          <input
+            id="cal-confidence"
+            class="input"
+            type="number"
+            min="0"
+            max="100"
+            [ngModel]="confidencePercent()"
+            (ngModelChange)="confidencePercent.set($event)"
+            placeholder="e.g. 80"
+          />
         </div>
-
-        <button class="btn btn-primary side-panel-action" type="button" [disabled]="!canAddCalibration()" (click)="addCalibration()">
-          + Add calibration
-        </button>
       }
     </section>
 
     <aside class="card side-panel">
-      @if (calibrationEnabled() && calibrationEntries().length > 0) {
-        <h3 class="side-panel-title">Calibrations added</h3>
-        <div class="entry-list">
-          @for (entry of calibrationEntries(); track entry.id) {
-            <div class="entry-row">
-              <div>
-                <p class="entry-variable">{{ entry.variable }} <span class="muted">({{ entry.variableType }})</span></p>
-                <p class="entry-detail muted">{{ entry.metricLabel }}: {{ entry.actualValue }} · {{ entry.periodLabel }}</p>
-                <p class="entry-detail">Belief <strong>{{ entry.contributionBeliefPercent }}%</strong> · Confidence <strong>{{ entry.confidencePercent }}%</strong></p>
-              </div>
-              <button class="btn btn-ghost btn-sm icon-btn" type="button" (click)="removeCalibrationEntry(entry.id)" aria-label="Remove this entry" title="Remove">✕</button>
-            </div>
-          }
-        </div>
-        <p class="muted field-hint entry-note">
-          The most recently added entry's belief and confidence are what get saved to this model —
-          there's no per-variable calibration storage on the backend yet, so this list is a working
-          scratchpad, not separate saved records.
-        </p>
-      } @else {
-        <p class="muted no-calibrations">No calibrations found.</p>
-      }
-
       @if (calibrationEnabled() && hasSavedCalibration() && contributionBeliefPercent() !== null) {
         <div class="saved-summary">
           <p class="side-panel-title">Saved to this model</p>
           Contribution belief <strong>{{ contributionBeliefPercent() }}%</strong> · Confidence <strong>{{ confidencePercent() }}%</strong>
         </div>
+      } @else {
+        <p class="muted no-calibrations">No calibration saved yet.</p>
       }
 
       @if (calibrationEnabled()) {

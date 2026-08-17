@@ -46,6 +46,17 @@ export interface ColumnsResponse {
   suggestions: ColumnSuggestions;
 }
 
+/** Real endpoint: GET /datasets/:id/rows - one real object per uploaded row, numbers as numbers. */
+export interface RowsResponse {
+  rows: Record<string, unknown>[];
+}
+
+/** Real endpoint: POST /datasets/:id/combine-columns - a real summed series per date. */
+export interface CombineColumnsResponse {
+  dateColumn: string;
+  series: { date: string; value: number }[];
+}
+
 /** The columnMapping shape GET /datasets/:id actually returns - same fields as SavedConfiguration, minus kpiType/revenuePerKpiValue, which come back as siblings instead. */
 export interface SavedColumnMapping {
   dateColumn: string;
@@ -207,6 +218,27 @@ export class DatasetService {
    */
   getColumns(datasetId: string): Observable<ColumnsResponse> {
     return this.http.get<ColumnsResponse>(`${environment.apiBaseUrl}/datasets/${datasetId}/columns`);
+  }
+
+  /**
+   * Real endpoint, shipped alongside combine-columns - one real object per
+   * uploaded row, numbers as numbers. Replaces the "Example data" placeholders
+   * on Upload Data's preview and Optimize's timeframe chart/correlation
+   * table/spend-share bars.
+   */
+  getRows(datasetId: string): Observable<RowsResponse> {
+    return this.http.get<RowsResponse>(`${environment.apiBaseUrl}/datasets/${datasetId}/rows`);
+  }
+
+  /**
+   * Real endpoint - a real summed series per date for the given columns.
+   * Requires Configuration to already be saved (needs the real date column
+   * to group by), same requirement Optimize's date-range already has.
+   */
+  combineColumns(datasetId: string, columns: string[]): Observable<CombineColumnsResponse> {
+    return this.http.post<CombineColumnsResponse>(`${environment.apiBaseUrl}/datasets/${datasetId}/combine-columns`, {
+      columns,
+    });
   }
 
   /** Real endpoint - what the project-models hub lists, with real per-dataset progress. */

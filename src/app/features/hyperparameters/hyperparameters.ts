@@ -32,6 +32,15 @@ interface ChannelRow {
    * the local preview chart, same honesty rule as the illustrative spend axis.
    */
   alpha: number;
+  /**
+   * True right after Automatic Optimization sets this value - cleared as
+   * soon as the user touches the slider or Applies a manual edit. Drives
+   * the "Estimated" label: real training may pick a different value once
+   * that's connected for real, same honesty rule as the mock training
+   * results elsewhere in this app.
+   */
+  carryoverEstimated: boolean;
+  saturationEstimated: boolean;
 }
 
 function validRow(row: ChannelRow): boolean {
@@ -160,6 +169,8 @@ export class Hyperparameters implements OnInit {
         adstockVariance: DEFAULT_VARIANCE,
         saturationVariance: DEFAULT_VARIANCE,
         alpha: DEFAULT_ALPHA,
+        carryoverEstimated: false,
+        saturationEstimated: false,
       })),
     );
     if (mediaColumns.length > 0) this.expandedIndex.set(0);
@@ -176,7 +187,15 @@ export class Hyperparameters implements OnInit {
           rows.map((row) => {
             const match = saved.find((s) => s.channel === row.channel);
             return match
-              ? { ...row, carryover: match.carryover, saturation: match.saturation, carryoverDraft: match.carryover, saturationDraft: match.saturation }
+              ? {
+                  ...row,
+                  carryover: match.carryover,
+                  saturation: match.saturation,
+                  carryoverDraft: match.carryover,
+                  saturationDraft: match.saturation,
+                  carryoverEstimated: false,
+                  saturationEstimated: false,
+                }
               : row;
           }),
         );
@@ -194,11 +213,15 @@ export class Hyperparameters implements OnInit {
   }
 
   setCarryoverDraft(index: number, value: number): void {
-    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, carryoverDraft: value } : r)));
+    this.rows.update((rows) =>
+      rows.map((r, i) => (i === index ? { ...r, carryoverDraft: value, carryoverEstimated: false } : r)),
+    );
   }
 
   setSaturationDraft(index: number, value: number): void {
-    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, saturationDraft: value } : r)));
+    this.rows.update((rows) =>
+      rows.map((r, i) => (i === index ? { ...r, saturationDraft: value, saturationEstimated: false } : r)),
+    );
   }
 
   setAlpha(index: number, value: number): void {
@@ -234,7 +257,9 @@ export class Hyperparameters implements OnInit {
     const base = row.carryover ?? DEFAULT_CARRYOVER;
     const delta = (row.adstockVariance / 100) * base;
     const next = round2(clamp(base + (Math.random() * 2 - 1) * delta, 0, 1));
-    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, carryover: next, carryoverDraft: next } : r)));
+    this.rows.update((rows) =>
+      rows.map((r, i) => (i === index ? { ...r, carryover: next, carryoverDraft: next, carryoverEstimated: true } : r)),
+    );
   }
 
   randomizeSaturation(index: number): void {
@@ -243,7 +268,9 @@ export class Hyperparameters implements OnInit {
     const base = row.saturation ?? DEFAULT_SATURATION;
     const delta = (row.saturationVariance / 100) * (base || DEFAULT_SATURATION);
     const next = round2(clamp(base + (Math.random() * 2 - 1) * delta, 0, MAX_SATURATION));
-    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, saturation: next, saturationDraft: next } : r)));
+    this.rows.update((rows) =>
+      rows.map((r, i) => (i === index ? { ...r, saturation: next, saturationDraft: next, saturationEstimated: true } : r)),
+    );
   }
 
   adstockChartPoints(row: ChannelRow): string {

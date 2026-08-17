@@ -58,13 +58,14 @@ export class UploadData implements OnInit {
 
   // Preview for an *already-uploaded* dataset - no File object exists for
   // this (it lives on the backend, not in this browser tab), so unlike the
-  // fresh-pick preview below, this can only show real column names (via
-  // GET /datasets/:id/columns), not sample row values - no endpoint returns
-  // those for an already-uploaded file yet.
+  // fresh-pick preview below (which reads the raw File in-browser), this
+  // uses the real GET /datasets/:id/rows endpoint - actual row values, not
+  // just column names.
   readonly existingColumnsOpen = signal(false);
   readonly existingColumnsLoading = signal(false);
   readonly existingColumnsError = signal<string | null>(null);
-  readonly existingColumns = signal<string[]>([]);
+  readonly existingPreviewHeaders = signal<string[]>([]);
+  readonly existingPreviewRows = signal<Record<string, unknown>[]>([]);
 
   readonly projectId = signal('');
   readonly uploading = signal(false);
@@ -146,27 +147,29 @@ export class UploadData implements OnInit {
   toggleExistingColumns(): void {
     const opening = !this.existingColumnsOpen();
     this.existingColumnsOpen.set(opening);
-    if (opening && this.existingColumns().length === 0 && !this.existingColumnsError()) {
-      this.loadExistingColumns();
+    if (opening && this.existingPreviewRows().length === 0 && !this.existingColumnsError()) {
+      this.loadExistingRows();
     }
   }
 
-  /** Real endpoint - the only real look this screen can get at an already-uploaded file, since it never has the raw File object for one. Column names only, not sample rows - no endpoint returns those yet. */
-  private loadExistingColumns(): void {
+  /** Real endpoint - the only real look this screen can get at an already-uploaded file, since it never has the raw File object for one. */
+  private loadExistingRows(): void {
     const dataset = this.existingDataset();
     if (!dataset) return;
 
     this.existingColumnsLoading.set(true);
     this.existingColumnsError.set(null);
 
-    this.datasetService.getColumns(dataset.id).subscribe({
-      next: ({ columns }) => {
+    this.datasetService.getRows(dataset.id).subscribe({
+      next: ({ rows }) => {
         this.existingColumnsLoading.set(false);
-        this.existingColumns.set(columns);
+        const preview = rows.slice(0, PREVIEW_ROW_COUNT);
+        this.existingPreviewHeaders.set(preview.length > 0 ? Object.keys(preview[0]) : []);
+        this.existingPreviewRows.set(preview);
       },
       error: (err: unknown) => {
         this.existingColumnsLoading.set(false);
-        this.existingColumnsError.set(backendErrorMessage(err, "Couldn't load this file's columns."));
+        this.existingColumnsError.set(backendErrorMessage(err, "Couldn't load this file's data."));
       },
     });
   }
