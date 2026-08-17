@@ -57,7 +57,128 @@
     @if (rangeInvalid()) {
       <p class="drop-error">Start date must be before end date.</p>
     }
+
+    @if (hasMediaChannels()) {
+      <div class="example-section">
+        <div class="example-head">
+          <h3 class="example-title">Spend &amp; revenue trend</h3>
+          <span class="example-badge">Example data — not from your uploaded file</span>
+        </div>
+        <p class="muted field-hint">
+          Once real row-level data has a place to come from, this will chart your actual weekly numbers
+          across the range above — for now it's shaped from your real channel names, with placeholder values.
+        </p>
+        <div class="chart-wrap">
+          <svg class="line-chart" [attr.viewBox]="chartViewBox" preserveAspectRatio="none">
+            @for (s of chartSeries(); track s.name) {
+              <polyline [attr.points]="s.points" fill="none" [attr.stroke]="s.color" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+            }
+          </svg>
+        </div>
+        <div class="chart-legend">
+          @for (s of chartSeries(); track s.name) {
+            <span class="legend-item">
+              <span class="legend-dot" [style.background]="s.color"></span>{{ s.name }}
+            </span>
+          }
+        </div>
+      </div>
+    }
   </section>
+
+  @if (hasMediaChannels()) {
+    <section class="card">
+      <div class="example-head">
+        <h2 class="section-title">Channels review</h2>
+        <span class="example-badge">Example data — not from your uploaded file</span>
+      </div>
+      <p class="muted field-hint">
+        Highly correlated channels compete for attribution and can make a model less stable.
+        This is what reviewing that will look like, shown with your real channel names.
+      </p>
+
+      @if (visibleCorrelationRows().length > 0) {
+        <div class="correlation-table">
+          <div class="correlation-row correlation-head">
+            <span>Channel A</span>
+            <span>Channel B</span>
+            <span>Correlation</span>
+            <span></span>
+          </div>
+          @for (row of visibleCorrelationRows(); track pairKey(row)) {
+            <div class="correlation-row">
+              <span class="column-chip static">{{ row.a }}</span>
+              <span class="column-chip static">{{ row.b }}</span>
+              <span class="correlation-pct" [class.high]="correlationLevel(row.pct) === 'high'">{{ row.pct }}%</span>
+              <button class="btn btn-ghost btn-sm icon-btn" type="button" (click)="removePair(row)" aria-label="Dismiss this pair" title="Dismiss">✕</button>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="muted">No pairs left to review.</p>
+      }
+    </section>
+
+    <section class="card">
+      <div class="example-head">
+        <h2 class="section-title">Variable selection review</h2>
+        <span class="example-badge">Example data — not from your uploaded file</span>
+      </div>
+      <p class="muted field-hint">
+        Low-spend or redundant channels add noise without adding signal. This is what reviewing
+        share of spend will look like, shown with your real channel names.
+      </p>
+
+      @if (visibleSpendShareBars().length > 0) {
+        <div class="spend-bars">
+          @for (bar of visibleSpendShareBars(); track bar.name) {
+            <div class="spend-bar-row">
+              <span class="spend-bar-label">{{ bar.name }}</span>
+              <div class="spend-bar-track">
+                <div class="spend-bar-fill" [style.width.%]="(bar.pct / maxSpendSharePct()) * 100"></div>
+              </div>
+              <span class="spend-bar-pct">{{ bar.pct }}%</span>
+              <button class="btn btn-ghost btn-sm icon-btn" type="button" (click)="removeVariable(bar.name)" aria-label="Remove this variable" title="Remove">✕</button>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="muted">No variables left to review.</p>
+      }
+    </section>
+  }
+
+  @if (hasControlColumns()) {
+    <section class="card">
+      <div class="example-head">
+        <h2 class="section-title">Exposure metrics</h2>
+        <span class="example-badge">Example data — not from your uploaded file</span>
+      </div>
+      <p class="muted field-hint">
+        Control columns like promotions or holidays can push your outcome up or down. This is
+        what setting that direction will look like, shown with your real control columns.
+      </p>
+
+      <div class="exposure-list">
+        @for (col of controlColumnsList(); track col) {
+          <div class="exposure-row">
+            <span class="column-chip static">{{ col }}</span>
+            <div class="exposure-modes">
+              <button type="button" class="pill-toggle sm" [class.active]="exposureMode(col) === 'auto'" (click)="setExposureMode(col, 'auto')">Auto</button>
+              <button type="button" class="pill-toggle sm" [class.active]="exposureMode(col) === 'positive'" (click)="setExposureMode(col, 'positive')">Positive</button>
+              <button type="button" class="pill-toggle sm" [class.active]="exposureMode(col) === 'negative'" (click)="setExposureMode(col, 'negative')">Negative</button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="exposure-bulk">
+        <button type="button" class="link-btn-inline" (click)="setAllExposure('auto')">Set all on Auto</button>
+        <button type="button" class="link-btn-inline" (click)="setAllExposure('positive')">Set all on Positive</button>
+        <button type="button" class="link-btn-inline" (click)="setAllExposure('negative')">Set all on Negative</button>
+      </div>
+    </section>
+  }
 
   @if (saveError(); as err) {
     <p class="drop-error">{{ err }}</p>

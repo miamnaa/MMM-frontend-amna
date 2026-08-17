@@ -8,6 +8,44 @@ import { backendErrorMessage } from '../../shared/utils/backend-error';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
 import { TunnelSteps } from '../../shared/ui/tunnel-steps/tunnel-steps';
 
+const CHART_WIDTH = 640;
+const CHART_HEIGHT = 200;
+const CHART_PAD = 8;
+const SERIES_COLORS = ['#e0554f', '#1baf7a', '#3b82f6', '#f59e0b', '#8b5cf6', '#0891b2'];
+const WEEK_COUNT = 10;
+
+/**
+ * Deterministic "random" number from a string seed, so the same channel
+ * name always produces the same example value on every render (no flicker,
+ * no re-render surprises) - not real randomness, just a stand-in until real
+ * row-level data has somewhere to come from.
+ */
+function seededValue(seed: string, min: number, max: number): number {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  const t = (hash % 10000) / 10000;
+  return min + t * (max - min);
+}
+
+interface ChartSeries {
+  name: string;
+  color: string;
+  points: string;
+}
+
+interface CorrelationRow {
+  a: string;
+  b: string;
+  pct: number;
+}
+
+interface SpendShareBar {
+  name: string;
+  pct: number;
+}
+
+type ExposureMode = 'auto' | 'positive' | 'negative';
+
 /** Real backend: PATCH /datasets/:id/optimize, shipped 2026-08-12. */
 @Component({
   selector: 'app-optimize',
@@ -44,6 +82,109 @@ export class Optimize implements OnInit {
   readonly canSave = computed(
     () => this.startDate().length > 0 && this.endDate().length > 0 && !this.rangeInvalid(),
   );
+
+  // ---- Everything below is illustrative only - see the "Example data" badge
+  // on each section. Real channel/target/control NAMES come from Configure's
+  // saved mapping (real), but no backend endpoint returns actual row-level
+  // values for a dataset yet, so the numbers themselves are generated,
+  // deterministic placeholders until one exists. Nothing here is saved.
+
+  private readonly config = computed(() => this.tunnelService.configuration());
+  private readonly mediaChannels = computed(() => this.config()?.mediaColumns ?? []);
+  readonly controlColumnsList = computed(() => this.config()?.controlColumns ?? []);
+
+  readonly hasMediaChannels = computed(() => this.mediaChannels().length > 0);
+  readonly hasControlColumns = computed(() => this.controlColumnsList().length > 0);
+
+  /** Custom Timeframe: example weekly trend for the target + up to 5 media channels. */
+  readonly chartSeries = computed<ChartSeries[]>(() => {
+    const target = this.config()?.targetColumn;
+    const names = [target, ...this.mediaChannels()].filter((n): n is string => !!n).slice(0, 6);
+    return names.map((name, i) => {
+      const values = Array.from({ length: WEEK_COUNT }, (_, w) => seededValue(`${name}-${w}`, 15, 92));
+      const points = values
+        .map((v, w) => {
+          const x = CHART_PAD + (w / (WEEK_COUNT - 1)) * (CHART_WIDTH - CHART_PAD * 2);
+          const y = CHART_HEIGHT - CHART_PAD - (v / 100) * (CHART_HEIGHT - CHART_PAD * 2);
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        })
+        .join(' ');
+      return { name, color: SERIES_COLORS[i % SERIES_COLORS.length], points };
+    });
+  });
+
+  readonly chartViewBox = `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`;
+
+  /** Channels Review: example correlation between every media-channel pair, highest first. */
+  private readonly removedPairs = signal<Set<string>>(new Set());
+
+  readonly correlationRows = computed<CorrelationRow[]>(() => {
+    const channels = this.mediaChannels();
+    const rows: CorrelationRow[] = [];
+    for (let i = 0; i < channels.length; i++) {
+      for (let j = i + 1; j < channels.length; j++) {
+        rows.push({ a: channels[i], b: channels[j], pct: Math.round(seededValue(`${channels[i]}|${channels[j]}`, 35, 92)) });
+      }
+    }
+    return rows.sort((r1, r2) => r2.pct - r1.pct).slice(0, 8);
+  });
+
+  pairKey(row: CorrelationRow): string {
+    return `${row.a}|${row.b}`;
+  }
+
+  readonly visibleCorrelationRows = computed(() =>
+    this.correlationRows().filter((row) => !this.removedPairs().has(this.pairKey(row))),
+  );
+
+  removePair(row: CorrelationRow): void {
+    this.removedPairs.update((set) => new Set(set).add(this.pairKey(row)));
+  }
+
+  correlationLevel(pct: number): 'high' | 'medium' {
+    return pct >= 80 ? 'high' : 'medium';
+  }
+
+  /** Variable Selection Review: example share-of-spend per media channel. */
+  private readonly removedVariables = signal<Set<string>>(new Set());
+
+  readonly spendShareBars = computed<SpendShareBar[]>(() => {
+    const channels = this.mediaChannels();
+    const raw = channels.map((name) => ({ name, raw: seededValue(name, 3, 25) }));
+    const total = raw.reduce((sum, r) => sum + r.raw, 0) || 1;
+    return raw
+      .map((r) => ({ name: r.name, pct: Math.round((r.raw / total) * 1000) / 10 }))
+      .sort((a, b) => a.pct - b.pct);
+  });
+
+  readonly visibleSpendShareBars = computed(() =>
+    this.spendShareBars().filter((bar) => !this.removedVariables().has(bar.name)),
+  );
+
+  readonly maxSpendSharePct = computed(() =>
+    Math.max(1, ...this.visibleSpendShareBars().map((b) => b.pct)),
+  );
+
+  removeVariable(name: string): void {
+    this.removedVariables.update((set) => new Set(set).add(name));
+  }
+
+  /** Exposure Metrics: per-control-column impact direction - illustrative, not saved anywhere real yet. */
+  readonly exposureModes = signal<Record<string, ExposureMode>>({});
+
+  exposureMode(col: string): ExposureMode {
+    return this.exposureModes()[col] ?? 'auto';
+  }
+
+  setExposureMode(col: string, mode: ExposureMode): void {
+    this.exposureModes.update((modes) => ({ ...modes, [col]: mode }));
+  }
+
+  setAllExposure(mode: ExposureMode): void {
+    const next: Record<string, ExposureMode> = {};
+    for (const col of this.controlColumnsList()) next[col] = mode;
+    this.exposureModes.set(next);
+  }
 
   ngOnInit(): void {
     this.projectId.set(this.route.snapshot.paramMap.get('projectId') ?? '');
