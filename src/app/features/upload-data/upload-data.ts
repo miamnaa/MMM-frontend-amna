@@ -70,6 +70,7 @@ export class UploadData implements OnInit {
   readonly uploading = signal(false);
   readonly error = signal<string | null>(null);
   readonly infoOpen = signal(false);
+  readonly needHelpOpen = signal(false);
   readonly dragging = signal(false);
 
   // Everything below is the draft itself - kept in UploadDraftService (not
@@ -90,6 +91,10 @@ export class UploadData implements OnInit {
 
   toggleInfo(): void {
     this.infoOpen.update((open) => !open);
+  }
+
+  toggleNeedHelp(): void {
+    this.needHelpOpen.update((open) => !open);
   }
 
   setModelName(value: string): void {

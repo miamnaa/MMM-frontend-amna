@@ -14,91 +14,18 @@
 
   <button class="info-toggle" type="button" (click)="toggleInfo()" [attr.aria-expanded]="infoOpen()">
     <span class="info-icon" aria-hidden="true">ⓘ</span>
-    <span class="info-title">Need help?</span>
+    <span class="info-title">How to prepare your data?</span>
     <span class="chevron" [class.open]="infoOpen()" aria-hidden="true">⌄</span>
   </button>
 
   @if (infoOpen()) {
-    <div class="info-body help-body">
-      <h3 class="help-heading">File format</h3>
+    <div class="info-body">
       <ul>
         <li>One row per period (e.g. per week) — not one row per transaction.</li>
-        <li>A single date column, first column in the file, in a consistent format (e.g. <code>YYYY-MM-DD</code>).</li>
+        <li>A single date column, in a consistent format (e.g. <code>YYYY-MM-DD</code>).</li>
         <li>Spend and revenue columns as plain numbers — no currency symbols or commas.</li>
         <li>Use the same column names throughout the file — they're what you'll map in the next step.</li>
-        <li>Include at least 2 years of history if you can — short files make for weaker models.</li>
       </ul>
-
-      <h3 class="help-heading">What data should I include?</h3>
-
-      <div class="help-category">
-        <div class="help-category-head">
-          <strong>1. Target variable</strong>
-          <span class="help-tag required">Required — one per model</span>
-        </div>
-        <p class="muted help-category-desc">
-          What you're trying to explain — revenue, conversions, leads, sign-ups, app installs.
-        </p>
-        <div class="help-table-wrap">
-          <table class="preview-table">
-            <thead><tr><th>date</th><th>revenue</th><th>conversions</th></tr></thead>
-            <tbody>
-              <tr><td>2024-01-01</td><td>12000</td><td>150</td></tr>
-              <tr><td>2024-01-08</td><td>11500</td><td>145</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="help-category">
-        <div class="help-category-head">
-          <strong>2. Media spend — digital &amp; offline</strong>
-          <span class="help-tag required">Required — all relevant channels</span>
-        </div>
-        <p class="muted help-category-desc">
-          One column per channel: spend, impressions/clicks, or GRP/reach.
-          <strong>Digital:</strong> Google, Meta, Microsoft, TikTok ads.
-          <strong>Offline:</strong> TV, out-of-home, radio, PR, influencers.
-        </p>
-      </div>
-
-      <div class="help-category">
-        <div class="help-category-head">
-          <strong>3. Organic activity</strong>
-          <span class="help-tag optional">Optional, but recommended</span>
-        </div>
-        <p class="muted help-category-desc">Non-paid activity: SEO, email sends, organic social posts.</p>
-        <div class="help-table-wrap">
-          <table class="preview-table">
-            <thead><tr><th>date</th><th>social_posts</th><th>emails_sent</th></tr></thead>
-            <tbody>
-              <tr><td>2024-01-01</td><td>1</td><td>20000</td></tr>
-              <tr><td>2024-01-08</td><td>2</td><td>21000</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="help-category">
-        <div class="help-category-head">
-          <strong>4. Internal &amp; external events</strong>
-          <span class="help-tag optional">Optional, but recommended</span>
-        </div>
-        <p class="muted help-category-desc">
-          Anything that could explain a spike or dip outside of media — promotions, price changes,
-          new product launches, or external events. Use <code>1</code> for "happened that period" and
-          <code>0</code> for "didn't."
-        </p>
-        <div class="help-table-wrap">
-          <table class="preview-table">
-            <thead><tr><th>date</th><th>promotion</th><th>price_change</th></tr></thead>
-            <tbody>
-              <tr><td>2024-01-01</td><td>0</td><td>0</td></tr>
-              <tr><td>2024-01-08</td><td>1</td><td>0</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   }
 
@@ -250,6 +177,87 @@
       }
     }
   </section>
+
+  <button class="info-toggle" type="button" (click)="toggleNeedHelp()" [attr.aria-expanded]="needHelpOpen()">
+    <span class="info-icon" aria-hidden="true">ⓘ</span>
+    <span class="info-title">Need help?</span>
+    <span class="chevron" [class.open]="needHelpOpen()" aria-hidden="true">⌄</span>
+  </button>
+
+  @if (needHelpOpen()) {
+    <div class="info-body help-body">
+      <h3 class="help-heading">What data should I include?</h3>
+
+      <div class="help-category">
+        <div class="help-category-head">
+          <strong>1. Target variable</strong>
+          <span class="help-tag required">Required — one per model</span>
+        </div>
+        <p class="muted help-category-desc">
+          What you're trying to explain — revenue, conversions, leads, sign-ups, app installs.
+        </p>
+        <div class="help-table-wrap">
+          <table class="preview-table">
+            <thead><tr><th>date</th><th>revenue</th><th>conversions</th></tr></thead>
+            <tbody>
+              <tr><td>2024-01-01</td><td>12000</td><td>150</td></tr>
+              <tr><td>2024-01-08</td><td>11500</td><td>145</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="help-category">
+        <div class="help-category-head">
+          <strong>2. Media spend — digital &amp; offline</strong>
+          <span class="help-tag required">Required — all relevant channels</span>
+        </div>
+        <p class="muted help-category-desc">
+          One column per channel: spend, impressions/clicks, or GRP/reach.
+          <strong>Digital:</strong> Google, Meta, Microsoft, TikTok ads.
+          <strong>Offline:</strong> TV, out-of-home, radio, PR, influencers.
+        </p>
+      </div>
+
+      <div class="help-category">
+        <div class="help-category-head">
+          <strong>3. Organic activity</strong>
+          <span class="help-tag optional">Optional, but recommended</span>
+        </div>
+        <p class="muted help-category-desc">Non-paid activity: SEO, email sends, organic social posts.</p>
+        <div class="help-table-wrap">
+          <table class="preview-table">
+            <thead><tr><th>date</th><th>social_posts</th><th>emails_sent</th></tr></thead>
+            <tbody>
+              <tr><td>2024-01-01</td><td>1</td><td>20000</td></tr>
+              <tr><td>2024-01-08</td><td>2</td><td>21000</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="help-category">
+        <div class="help-category-head">
+          <strong>4. Internal &amp; external events</strong>
+          <span class="help-tag optional">Optional, but recommended</span>
+        </div>
+        <p class="muted help-category-desc">
+          Anything that could explain a spike or dip outside of media — promotions, price changes,
+          new product launches, or external events. Use <code>1</code> for "happened that period" and
+          <code>0</code> for "didn't."
+        </p>
+        <div class="help-table-wrap">
+          <table class="preview-table">
+            <thead><tr><th>date</th><th>promotion</th><th>price_change</th></tr></thead>
+            <tbody>
+              <tr><td>2024-01-01</td><td>0</td><td>0</td></tr>
+              <tr><td>2024-01-08</td><td>1</td><td>0</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  }
 
   <div class="tunnel-actions">
     <button
