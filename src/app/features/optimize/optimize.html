@@ -144,10 +144,16 @@
 
   @if (hasMediaChannels()) {
     <div class="review-grid">
-      <section class="card">
+      <section class="card" [class.full-width]="!channelsReviewOpen()">
         <div class="example-head">
-          <h2 class="section-title">Channels review</h2>
+          <button type="button" class="param-switch-row" (click)="toggleChannelsReview()" [attr.aria-pressed]="channelsReviewOpen()">
+            <span class="switch" [class.on]="channelsReviewOpen()">
+              <span class="switch-thumb"></span>
+            </span>
+            <h2 class="section-title">Channels review</h2>
+          </button>
         </div>
+        @if (channelsReviewOpen()) {
         <p class="muted field-hint">
           Highly correlated channels compete for attribution and can make a model less stable.
           Correlation is computed from your uploaded file's real values.
@@ -187,8 +193,10 @@
             Add more media columns in Configure to see additional pairs here.
           }
         </p>
+        }
       </section>
 
+      @if (channelsReviewOpen()) {
       <aside class="card side-panel">
         <h3 class="side-panel-title">Why combine similar channels?</h3>
         <p class="muted field-hint">
@@ -256,6 +264,7 @@
           <p class="muted">Need at least 2 channels left to combine.</p>
         }
       </aside>
+      }
     </div>
 
     <div class="review-grid">

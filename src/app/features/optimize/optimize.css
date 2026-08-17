@@ -569,6 +569,10 @@
   margin-bottom: 0;
 }
 
+.review-grid .card.full-width {
+  grid-column: 1 / -1;
+}
+
 @media (max-width: 900px) {
   .review-grid {
     grid-template-columns: 1fr;
