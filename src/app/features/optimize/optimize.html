@@ -81,6 +81,8 @@
         } @else {
           <div class="chart-wrap">
             <svg class="line-chart" [attr.viewBox]="chartViewBox" preserveAspectRatio="none">
+              <text [attr.x]="chartYTitleX" [attr.y]="chartYTitleY" [attr.transform]="chartYTitleTransform" class="chart-axis-title" text-anchor="middle">Spend ($)</text>
+              <text [attr.x]="chartXTitleX" [attr.y]="chartXTitleY" class="chart-axis-title" text-anchor="middle">Date</text>
               @for (tick of chartYAxisTicks(); track tick.label) {
                 <line [attr.x1]="chartPlotLeft" [attr.x2]="chartPlotRight" [attr.y1]="tick.y" [attr.y2]="tick.y" class="chart-gridline" />
                 <text [attr.x]="chartPlotLeft - 8" [attr.y]="tick.y + 3" class="chart-axis-text" text-anchor="end">{{ tick.label }}</text>
@@ -93,7 +95,32 @@
               @for (s of chartSeries(); track s.name) {
                 <polyline [attr.points]="s.points" fill="none" [attr.stroke]="s.color" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
               }
+              @if (hoveredChartPoint(); as t) {
+                <line [attr.x1]="(t.xPct / 100) * chartWidth" [attr.x2]="(t.xPct / 100) * chartWidth" [attr.y1]="chartPlotTop" [attr.y2]="chartPlotBottom" class="chart-hover-line" />
+              }
+              @for (col of chartHoverColumns(); track col.index) {
+                <rect
+                  [attr.x]="col.x - col.width / 2"
+                  [attr.y]="chartPlotTop"
+                  [attr.width]="col.width"
+                  [attr.height]="chartPlotBottom - chartPlotTop"
+                  class="chart-hit"
+                  (mouseenter)="showChartTooltip(col.index)"
+                  (mouseleave)="hideChartTooltip()"
+                />
+              }
             </svg>
+            @if (hoveredChartPoint(); as t) {
+              <div class="chart-tooltip chart-tooltip-wide" [style.left.%]="t.xPct">
+                <strong>{{ t.label }}</strong>
+                @for (item of t.items; track item.name) {
+                  <div class="chart-tooltip-row">
+                    <span class="legend-dot" [style.background]="item.color"></span>
+                    {{ item.name }}: <strong>${{ item.value | number: '1.0-2' }}</strong>
+                  </div>
+                }
+              </div>
+            }
           </div>
           <div class="chart-legend">
             @for (s of chartSeries(); track s.name) {

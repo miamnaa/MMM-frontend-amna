@@ -1,3 +1,4 @@
+import { DecimalPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -10,11 +11,12 @@ import { TunnelSteps } from '../../shared/ui/tunnel-steps/tunnel-steps';
 
 const CHART_WIDTH = 640;
 const CHART_HEIGHT = 220;
-// Room for real axis labels - a $ scale on the left, dates along the bottom.
+// Room for real axis labels - a $ scale + title on the left, dates + a
+// title along the bottom.
 const CHART_PAD_TOP = 10;
 const CHART_PAD_RIGHT = 12;
-const CHART_PAD_LEFT = 48;
-const CHART_PAD_BOTTOM = 46;
+const CHART_PAD_LEFT = 58;
+const CHART_PAD_BOTTOM = 62;
 const CHART_Y_TICKS = 5;
 const CHART_X_TICKS = 8;
 const SERIES_COLORS = ['#e0554f', '#1baf7a', '#3b82f6', '#f59e0b', '#8b5cf6', '#0891b2'];
@@ -82,7 +84,7 @@ type Row = Record<string, unknown>;
 /** Real backend: PATCH /datasets/:id/optimize, shipped 2026-08-12. */
 @Component({
   selector: 'app-optimize',
-  imports: [FormsModule, PageHeader, TunnelSteps],
+  imports: [FormsModule, DecimalPipe, PageHeader, TunnelSteps],
   templateUrl: './optimize.html',
   styleUrl: './optimize.css',
 })
@@ -236,10 +238,14 @@ export class Optimize implements OnInit {
     return Math.max(1, ...allValues);
   });
 
+  private readonly chartNames = computed(() => {
+    const target = this.config()?.targetColumn;
+    return [target, ...this.effectiveChannels()].filter((n): n is string => !!n).slice(0, 6);
+  });
+
   /** Custom Timeframe: real weekly trend for the target + up to 5 media channels, one shared $ scale. */
   readonly chartSeries = computed<ChartSeries[]>(() => {
-    const target = this.config()?.targetColumn;
-    const names = [target, ...this.effectiveChannels()].filter((n): n is string => !!n).slice(0, 6);
+    const names = this.chartNames();
     const rows = this.sortedRows();
     if (rows.length === 0) return [];
 
@@ -254,10 +260,19 @@ export class Optimize implements OnInit {
   });
 
   readonly chartViewBox = `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`;
+  readonly chartWidth = CHART_WIDTH;
   readonly chartPlotLeft = CHART_PAD_LEFT;
   readonly chartPlotRight = CHART_WIDTH - CHART_PAD_RIGHT;
   readonly chartPlotTop = CHART_PAD_TOP;
   readonly chartPlotBottom = CHART_HEIGHT - CHART_PAD_BOTTOM;
+
+  /** Rotated "Spend ($)" y-axis title, centered along the plot area's left edge. */
+  readonly chartYTitleX = 14;
+  readonly chartYTitleY = (CHART_PAD_TOP + (CHART_HEIGHT - CHART_PAD_BOTTOM)) / 2;
+  readonly chartYTitleTransform = `rotate(-90 14 ${this.chartYTitleY})`;
+  /** "Date" x-axis title, below the rotated date tick labels. */
+  readonly chartXTitleX = (CHART_PAD_LEFT + (CHART_WIDTH - CHART_PAD_RIGHT)) / 2;
+  readonly chartXTitleY = CHART_HEIGHT - 8;
 
   readonly chartYAxisTicks = computed(() => {
     const max = this.chartMaxValue();
@@ -278,6 +293,46 @@ export class Optimize implements OnInit {
       return { x: this.plotX(rowIndex, rows.length), label: formatAxisDate(String(rows[rowIndex][dateCol] ?? '')) };
     });
   });
+
+  /**
+   * One invisible hover column per real row, spanning the full plot height,
+   * so hovering anywhere near a date shows that date's real value for every
+   * plotted series - not just the ~8 dates that get a visible tick label.
+   */
+  readonly chartHoverColumns = computed(() => {
+    const rows = this.sortedRows();
+    if (rows.length === 0) return [];
+    const cellWidth = (CHART_WIDTH - CHART_PAD_LEFT - CHART_PAD_RIGHT) / Math.max(1, rows.length - 1 || 1);
+    return rows.map((_, i) => ({ index: i, x: this.plotX(i, rows.length), width: Math.max(2, cellWidth) }));
+  });
+
+  readonly hoveredChartPoint = signal<{
+    xPct: number;
+    label: string;
+    items: { name: string; color: string; value: number }[];
+  } | null>(null);
+
+  showChartTooltip(rowIndex: number): void {
+    const rows = this.sortedRows();
+    const dateCol = this.config()?.dateColumn;
+    const row = rows[rowIndex];
+    if (!row) return;
+
+    const names = this.chartNames();
+    this.hoveredChartPoint.set({
+      xPct: (this.plotX(rowIndex, rows.length) / CHART_WIDTH) * 100,
+      label: dateCol ? formatAxisDate(String(row[dateCol] ?? '')) : '',
+      items: names.map((name, i) => ({
+        name,
+        color: SERIES_COLORS[i % SERIES_COLORS.length],
+        value: toNumber(row[name]),
+      })),
+    });
+  }
+
+  hideChartTooltip(): void {
+    this.hoveredChartPoint.set(null);
+  }
 
   /** Channels Review: real Pearson correlation between every media-channel pair, highest first. */
   private readonly removedPairs = signal<Set<string>>(new Set());
