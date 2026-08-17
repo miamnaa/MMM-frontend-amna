@@ -76,6 +76,9 @@ export class Optimize implements OnInit {
 
   readonly startDate = signal('');
   readonly endDate = signal('');
+  /** True once GET /datasets/:id confirmed a real saved date range exists - guards the auto-fill below from ever overwriting it. */
+  private hasSavedDateRange = false;
+  readonly dateRangeAutoFilled = signal(false);
 
   readonly saving = signal(false);
   readonly saveError = signal<string | null>(null);
@@ -333,9 +336,11 @@ export class Optimize implements OnInit {
     this.datasetService.getDataset(this.datasetId()).subscribe({
       next: (detail) => {
         if (detail.dateRange) {
+          this.hasSavedDateRange = true;
           this.startDate.set(detail.dateRange.startDate);
           this.endDate.set(detail.dateRange.endDate);
         }
+        this.maybeAutoFillDateRange();
       },
       error: () => {},
     });
@@ -348,12 +353,38 @@ export class Optimize implements OnInit {
       next: ({ rows }) => {
         this.rowsLoading.set(false);
         this.rows.set(rows);
+        this.maybeAutoFillDateRange();
       },
       error: (err: unknown) => {
         this.rowsLoading.set(false);
         this.rowsError.set(backendErrorMessage(err, "Couldn't load this dataset's data."));
       },
     });
+  }
+
+  /**
+   * First-visit convenience only: if this dataset has never had an Optimize
+   * date range saved, prefill Start/End with the real min/max dates found
+   * in the uploaded file's date column - still fully editable, and never
+   * overwrites a real saved range (getDataset() runs in parallel with
+   * getRows(), so this is called from both and no-ops until real row data
+   * and a confirmed "nothing saved yet" state are both in).
+   */
+  private maybeAutoFillDateRange(): void {
+    if (this.hasSavedDateRange || this.startDate() || this.endDate()) return;
+    const dateCol = this.config()?.dateColumn;
+    const rows = this.rows();
+    if (!dateCol || rows.length === 0) return;
+
+    const dates = rows
+      .map((r) => String(r[dateCol] ?? ''))
+      .filter((d) => d.length > 0)
+      .sort();
+    if (dates.length === 0) return;
+
+    this.startDate.set(dates[0]);
+    this.endDate.set(dates[dates.length - 1]);
+    this.dateRangeAutoFilled.set(true);
   }
 
   save(): void {

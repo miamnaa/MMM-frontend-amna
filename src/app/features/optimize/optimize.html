@@ -32,6 +32,12 @@
   <section class="card">
     <h2 class="section-title">Training date range</h2>
 
+    @if (dateRangeAutoFilled()) {
+      <p class="muted field-hint auto-filled-note">
+        Filled in from the earliest and latest dates in your uploaded file — change either field if you want a narrower range.
+      </p>
+    }
+
     <div class="field">
       <label class="label" for="o-start">Start date</label>
       <input
@@ -39,7 +45,7 @@
         class="input"
         type="date"
         [ngModel]="startDate()"
-        (ngModelChange)="startDate.set($event)"
+        (ngModelChange)="startDate.set($event); dateRangeAutoFilled.set(false)"
       />
     </div>
 
@@ -50,7 +56,7 @@
         class="input"
         type="date"
         [ngModel]="endDate()"
-        (ngModelChange)="endDate.set($event)"
+        (ngModelChange)="endDate.set($event); dateRangeAutoFilled.set(false)"
       />
     </div>
 

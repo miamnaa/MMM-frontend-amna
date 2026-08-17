@@ -160,6 +160,13 @@
   font-size: 12.5px;
 }
 
+.auto-filled-note {
+  padding: 8px 12px;
+  border-radius: var(--r-md);
+  background: var(--brand-50);
+  color: var(--brand-700);
+}
+
 /* ---- Example-data sections (Custom Timeframe, Channels Review, Variable
    Selection Review, Exposure Metrics) - honestly labeled placeholder UI,
    shaped from the real dataset's column names ---- */
