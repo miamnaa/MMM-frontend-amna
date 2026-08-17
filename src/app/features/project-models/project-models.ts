@@ -14,6 +14,7 @@ import { Project } from '../../core/models/domain.models';
 import { MODEL_STATUS_META, ModelStatus, computeModelStatus, resumeDatasetRoute } from '../../core/services/model-status';
 import { ProjectService } from '../../core/services/project.service';
 import { TunnelService } from '../../core/services/tunnel.service';
+import { UploadDraftService } from '../../core/services/upload-draft.service';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
@@ -62,6 +63,7 @@ export class ProjectModels implements OnInit, OnDestroy {
   private readonly projectService = inject(ProjectService);
   private readonly datasetService = inject(DatasetService);
   private readonly tunnelService = inject(TunnelService);
+  private readonly uploadDraft = inject(UploadDraftService);
 
   readonly projectId = signal('');
   readonly project = signal<Project | null>(null);
@@ -199,7 +201,17 @@ export class ProjectModels implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * selectProject() (called in Upload Data's own ngOnInit) only clears the
+   * previous dataset when the project actually changes - starting a new
+   * model within this *same* project wouldn't otherwise clear whichever
+   * dataset was last selected/edited here, so Upload Data would open
+   * showing that other model's name/type and "already uploaded" notice
+   * instead of a blank form. Clear both explicitly before navigating.
+   */
   newModel(): void {
+    this.tunnelService.clearDataset();
+    this.uploadDraft.clearAll();
     this.router.navigate(['/upload-data', this.projectId()]);
   }
 

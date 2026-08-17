@@ -77,6 +77,21 @@ export class TunnelService {
     this.calibration.set(calibration);
   }
 
+  /**
+   * Clears whichever dataset was previously selected/edited within the
+   * *same* project - selectProject() alone doesn't do this, since it only
+   * clears on an actual project change. Needed for "+ New model": starting
+   * a new model in the same project you were just editing another one in
+   * must not carry that other dataset's name/type/saved stages into the
+   * fresh Upload Data screen.
+   */
+  clearDataset(): void {
+    this.dataset.set(null);
+    this.configuration.set(null);
+    this.optimize.set(null);
+    this.calibration.set(null);
+  }
+
   reset(): void {
     this.projectId.set(null);
     this.dataset.set(null);
