@@ -418,6 +418,42 @@
   flex: none;
 }
 
+/* Channels review / Variable selection review - main content + "why remove" side panel */
+
+.review-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 18px;
+}
+
+.review-grid .card {
+  margin-bottom: 0;
+}
+
+@media (max-width: 900px) {
+  .review-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.side-panel {
+  margin-bottom: 0;
+  background: var(--gray-50);
+}
+
+.side-panel-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.side-panel-action {
+  width: 100%;
+  margin-top: 4px;
+}
+
 /* Shared chip / pill styles - same visual language as Configure's */
 
 .column-chip {

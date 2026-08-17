@@ -145,6 +145,15 @@ export class Optimize implements OnInit {
     return pct >= 80 ? 'high' : 'medium';
   }
 
+  readonly selectedPairKey = signal('');
+
+  removeSelectedPair(): void {
+    const row = this.visibleCorrelationRows().find((r) => this.pairKey(r) === this.selectedPairKey());
+    if (!row) return;
+    this.removePair(row);
+    this.selectedPairKey.set('');
+  }
+
   /** Variable Selection Review: example share-of-spend per media channel. */
   private readonly removedVariables = signal<Set<string>>(new Set());
 
@@ -167,6 +176,15 @@ export class Optimize implements OnInit {
 
   removeVariable(name: string): void {
     this.removedVariables.update((set) => new Set(set).add(name));
+  }
+
+  readonly selectedVariableToRemove = signal('');
+
+  removeSelectedVariable(): void {
+    const name = this.selectedVariableToRemove();
+    if (!name) return;
+    this.removeVariable(name);
+    this.selectedVariableToRemove.set('');
   }
 
   /** Exposure Metrics: per-control-column impact direction - illustrative, not saved anywhere real yet. */

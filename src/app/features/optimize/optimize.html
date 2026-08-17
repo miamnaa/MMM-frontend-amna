@@ -87,65 +87,119 @@
   </section>
 
   @if (hasMediaChannels()) {
-    <section class="card">
-      <div class="example-head">
-        <h2 class="section-title">Channels review</h2>
-        <span class="example-badge">Example data — not from your uploaded file</span>
-      </div>
-      <p class="muted field-hint">
-        Highly correlated channels compete for attribution and can make a model less stable.
-        This is what reviewing that will look like, shown with your real channel names.
-      </p>
-
-      @if (visibleCorrelationRows().length > 0) {
-        <div class="correlation-table">
-          <div class="correlation-row correlation-head">
-            <span>Channel A</span>
-            <span>Channel B</span>
-            <span>Correlation</span>
-            <span></span>
-          </div>
-          @for (row of visibleCorrelationRows(); track pairKey(row)) {
-            <div class="correlation-row">
-              <span class="column-chip static">{{ row.a }}</span>
-              <span class="column-chip static">{{ row.b }}</span>
-              <span class="correlation-pct" [class.high]="correlationLevel(row.pct) === 'high'">{{ row.pct }}%</span>
-              <button class="btn btn-ghost btn-sm icon-btn" type="button" (click)="removePair(row)" aria-label="Dismiss this pair" title="Dismiss">✕</button>
-            </div>
-          }
+    <div class="review-grid">
+      <section class="card">
+        <div class="example-head">
+          <h2 class="section-title">Channels review</h2>
+          <span class="example-badge">Example data — not from your uploaded file</span>
         </div>
-      } @else {
-        <p class="muted">No pairs left to review.</p>
-      }
-    </section>
+        <p class="muted field-hint">
+          Highly correlated channels compete for attribution and can make a model less stable.
+          This is what reviewing that will look like, shown with your real channel names.
+        </p>
 
-    <section class="card">
-      <div class="example-head">
-        <h2 class="section-title">Variable selection review</h2>
-        <span class="example-badge">Example data — not from your uploaded file</span>
-      </div>
-      <p class="muted field-hint">
-        Low-spend or redundant channels add noise without adding signal. This is what reviewing
-        share of spend will look like, shown with your real channel names.
-      </p>
-
-      @if (visibleSpendShareBars().length > 0) {
-        <div class="spend-bars">
-          @for (bar of visibleSpendShareBars(); track bar.name) {
-            <div class="spend-bar-row">
-              <span class="spend-bar-label">{{ bar.name }}</span>
-              <div class="spend-bar-track">
-                <div class="spend-bar-fill" [style.width.%]="(bar.pct / maxSpendSharePct()) * 100"></div>
+        @if (visibleCorrelationRows().length > 0) {
+          <div class="correlation-table">
+            <div class="correlation-row correlation-head">
+              <span>Channel A</span>
+              <span>Channel B</span>
+              <span>Correlation</span>
+              <span></span>
+            </div>
+            @for (row of visibleCorrelationRows(); track pairKey(row)) {
+              <div class="correlation-row">
+                <span class="column-chip static">{{ row.a }}</span>
+                <span class="column-chip static">{{ row.b }}</span>
+                <span class="correlation-pct" [class.high]="correlationLevel(row.pct) === 'high'">{{ row.pct }}%</span>
+                <button class="btn btn-ghost btn-sm icon-btn" type="button" (click)="removePair(row)" aria-label="Dismiss this pair" title="Dismiss">✕</button>
               </div>
-              <span class="spend-bar-pct">{{ bar.pct }}%</span>
-              <button class="btn btn-ghost btn-sm icon-btn" type="button" (click)="removeVariable(bar.name)" aria-label="Remove this variable" title="Remove">✕</button>
-            </div>
-          }
+            }
+          </div>
+        } @else {
+          <p class="muted">No pairs left to review.</p>
+        }
+      </section>
+
+      <aside class="card side-panel">
+        <h3 class="side-panel-title">Why remove a pair?</h3>
+        <p class="muted field-hint">
+          When two channels move together, the model can't tell which one actually drove the
+          outcome. Removing one of a highly-correlated pair keeps attribution cleaner.
+        </p>
+
+        @if (visibleCorrelationRows().length > 0) {
+          <div class="field">
+            <label class="label" for="o-pair-select">Select pair</label>
+            <select id="o-pair-select" class="select" [ngModel]="selectedPairKey()" (ngModelChange)="selectedPairKey.set($event)">
+              <option value="" disabled>Choose a pair…</option>
+              @for (row of visibleCorrelationRows(); track pairKey(row)) {
+                <option [value]="pairKey(row)">{{ row.a }} – {{ row.b }} ({{ row.pct }}%)</option>
+              }
+            </select>
+          </div>
+          <button class="btn btn-secondary btn-sm side-panel-action" type="button" [disabled]="!selectedPairKey()" (click)="removeSelectedPair()">
+            Remove selected pair
+          </button>
+        } @else {
+          <p class="muted">Nothing left to remove.</p>
+        }
+      </aside>
+    </div>
+
+    <div class="review-grid">
+      <section class="card">
+        <div class="example-head">
+          <h2 class="section-title">Variable selection review</h2>
+          <span class="example-badge">Example data — not from your uploaded file</span>
         </div>
-      } @else {
-        <p class="muted">No variables left to review.</p>
-      }
-    </section>
+        <p class="muted field-hint">
+          Low-spend or redundant channels add noise without adding signal. This is what reviewing
+          share of spend will look like, shown with your real channel names.
+        </p>
+
+        @if (visibleSpendShareBars().length > 0) {
+          <div class="spend-bars">
+            @for (bar of visibleSpendShareBars(); track bar.name) {
+              <div class="spend-bar-row">
+                <span class="spend-bar-label">{{ bar.name }}</span>
+                <div class="spend-bar-track">
+                  <div class="spend-bar-fill" [style.width.%]="(bar.pct / maxSpendSharePct()) * 100"></div>
+                </div>
+                <span class="spend-bar-pct">{{ bar.pct }}%</span>
+                <button class="btn btn-ghost btn-sm icon-btn" type="button" (click)="removeVariable(bar.name)" aria-label="Remove this variable" title="Remove">✕</button>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="muted">No variables left to review.</p>
+        }
+      </section>
+
+      <aside class="card side-panel">
+        <h3 class="side-panel-title">Why remove a variable?</h3>
+        <p class="muted field-hint">
+          Low-spend (under ~3%) or redundant channels can make it harder to isolate true
+          performance drivers. Removing them reduces noise and can improve model accuracy.
+        </p>
+
+        @if (visibleSpendShareBars().length > 0) {
+          <div class="field">
+            <label class="label" for="o-variable-select">Select variable</label>
+            <select id="o-variable-select" class="select" [ngModel]="selectedVariableToRemove()" (ngModelChange)="selectedVariableToRemove.set($event)">
+              <option value="" disabled>Choose a variable…</option>
+              @for (bar of visibleSpendShareBars(); track bar.name) {
+                <option [value]="bar.name">{{ bar.name }} ({{ bar.pct }}%)</option>
+              }
+            </select>
+          </div>
+          <button class="btn btn-secondary btn-sm side-panel-action" type="button" [disabled]="!selectedVariableToRemove()" (click)="removeSelectedVariable()">
+            Remove selected variable
+          </button>
+        } @else {
+          <p class="muted">Nothing left to remove.</p>
+        }
+      </aside>
+    </div>
   }
 
   @if (hasControlColumns()) {
