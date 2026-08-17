@@ -45,6 +45,16 @@ export class UploadData implements OnInit {
   readonly modelOptions = MODEL_OPTIONS;
   readonly accepted = ACCEPTED.join(',');
 
+  /**
+   * Set when you arrive here already resuming a real dataset (via "Open
+   * Model"/Edit, or the tunnel sidebar's "Upload Data" step while one is
+   * selected) - unlike Configure/Optimize/etc., this screen has no
+   * :datasetId in its own URL and nothing to re-fetch from the backend, so
+   * this is the only way it can know a real dataset already exists here.
+   */
+  readonly existingDataset = computed(() => this.tunnelService.dataset());
+  readonly hasExistingRealFile = computed(() => this.existingDataset()?.local === false);
+
   readonly projectId = signal('');
   readonly uploading = signal(false);
   readonly error = signal<string | null>(null);
@@ -123,6 +133,17 @@ export class UploadData implements OnInit {
     this.tunnelService.selectProject(id);
     this.draft.selectProject(id);
     if (!this.modelType()) this.draft.setModelType(MODEL_OPTIONS[0].value);
+
+    // selectProject() above only clears TunnelService's dataset if this is
+    // actually a *different* project than before - so on the same project,
+    // dataset() still holds whatever "Open Model"/Edit (or the tunnel
+    // sidebar) already loaded. Reflect its real name/type here instead of
+    // showing a blank form as if nothing had ever been uploaded.
+    const existing = this.tunnelService.dataset();
+    if (existing && !this.modelName()) {
+      this.draft.setModelName(existing.name);
+      if (existing.modelType) this.draft.setModelType(existing.modelType);
+    }
   }
 
   selectModel(value: string): void {

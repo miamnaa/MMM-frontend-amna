@@ -62,6 +62,13 @@
   <section class="card">
     <h2 class="section-title">Dataset file</h2>
 
+    @if (hasExistingRealFile() && !file()) {
+      <p class="muted field-hint">
+        A file was already uploaded for <strong>{{ existingDataset()?.name }}</strong>. Picking a
+        new file below starts a separate new model — it doesn't replace this one's file.
+      </p>
+    }
+
     <div class="upload-row">
       <div
         class="dropzone"
