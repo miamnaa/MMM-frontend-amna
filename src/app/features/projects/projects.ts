@@ -5,10 +5,7 @@ import { Router } from '@angular/router';
 import { MsalService } from '@azure/msal-angular';
 
 import { localSignOut } from '../../core/auth/local-sign-out';
-import { DatasetService } from '../../core/services/dataset.service';
-import { resumeDatasetRoute } from '../../core/services/model-status';
 import { ProjectService } from '../../core/services/project.service';
-import { TunnelService } from '../../core/services/tunnel.service';
 import { Project } from '../../core/models/domain.models';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
@@ -49,8 +46,6 @@ function backendErrorMessage(err: unknown, fallback: string): string {
 })
 export class Projects {
   private readonly projectService = inject(ProjectService);
-  private readonly datasetService = inject(DatasetService);
-  private readonly tunnelService = inject(TunnelService);
   private readonly router = inject(Router);
   private readonly msalService = inject(MsalService);
 
@@ -109,7 +104,6 @@ export class Projects {
   readonly shortDate = shortDate;
 
   readonly viewTarget = signal<Project | null>(null);
-  readonly opening = signal(false);
 
   constructor() {
     this.reload();
@@ -179,31 +173,10 @@ export class Projects {
     void localSignOut(this.msalService);
   }
 
-  /**
-   * "Open Model" in the details dialog - jumps straight into whichever
-   * model this project has (or Upload Data if it has none), skipping the
-   * Models list. No timestamp field exists to pick a "most recent" dataset
-   * by, so with more than one this just takes the first the backend returns.
-   */
+  /** "View Models" in the details dialog - goes to this project's Models list. */
   openModel(project: Project): void {
-    this.opening.set(true);
-    this.datasetService.listForProject(project.id).subscribe({
-      next: (datasets) => {
-        this.opening.set(false);
-        this.viewTarget.set(null);
-        if (datasets.length === 0) {
-          this.router.navigate(['/upload-data', project.id]);
-          return;
-        }
-        this.router.navigate(resumeDatasetRoute(this.tunnelService, project.id, datasets[0]));
-      },
-      error: () => {
-        this.opening.set(false);
-        this.viewTarget.set(null);
-        // Don't dead-end on a failed lookup - the Models list still works standalone.
-        this.router.navigate(['/models', project.id]);
-      },
-    });
+    this.viewTarget.set(null);
+    this.router.navigate(['/models', project.id]);
   }
 
   openView(project: Project): void {
