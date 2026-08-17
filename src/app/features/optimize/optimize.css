@@ -359,7 +359,7 @@
 
 .correlation-row {
   display: grid;
-  grid-template-columns: 1fr 1fr auto 32px;
+  grid-template-columns: 1fr 1fr 110px 32px;
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
