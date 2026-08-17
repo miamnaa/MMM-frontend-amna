@@ -66,9 +66,13 @@
 
     @if (hasMediaChannels()) {
       <div class="example-section">
-        <div class="example-head">
-          <h3 class="example-title">Spend &amp; revenue trend</h3>
-        </div>
+        <button type="button" class="param-switch-row" (click)="toggleCustomTimeframe()" [attr.aria-pressed]="customTimeframeOpen()">
+          <span class="switch" [class.on]="customTimeframeOpen()">
+            <span class="switch-thumb"></span>
+          </span>
+          <h3 class="example-title">Custom Timeframe</h3>
+        </button>
+        @if (customTimeframeOpen()) {
         <p class="muted field-hint">
           Your target and channel spend, read from your uploaded file.
         </p>
@@ -129,6 +133,7 @@
               </span>
             }
           </div>
+        }
         }
       </div>
     }

@@ -112,6 +112,13 @@ export class Optimize implements OnInit {
     this.infoOpen.update((open) => !open);
   }
 
+  /** Shows/hides the "Custom Timeframe" trend chart below - purely a display toggle, doesn't affect the real Start/End date fields above it. */
+  readonly customTimeframeOpen = signal(true);
+
+  toggleCustomTimeframe(): void {
+    this.customTimeframeOpen.update((open) => !open);
+  }
+
   /** Mirrors the backend's own 400 rule - caught here before round-tripping. */
   readonly rangeInvalid = computed(
     () => this.startDate().length > 0 && this.endDate().length > 0 && this.startDate() >= this.endDate(),
