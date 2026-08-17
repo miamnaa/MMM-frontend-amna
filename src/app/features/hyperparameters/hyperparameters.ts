@@ -297,20 +297,39 @@ export class Hyperparameters implements OnInit {
     return pointsAttr(this.saturationChartData(row));
   }
 
-  /** Single shared tooltip - only one chart point can be hovered at a time. */
-  readonly hoveredPoint = signal<{ xPct: number; yPct: number; label: string; value: number } | null>(null);
+  /**
+   * Separate tooltip state per chart - AdStock and Diminishing Returns are
+   * both visible at once (same channel section, both open by default), so a
+   * single shared signal meant hovering either chart showed its tooltip in
+   * both at the same relative position instead of just the one you're
+   * actually pointing at.
+   */
+  readonly hoveredAdstockPoint = signal<{ xPct: number; yPct: number; label: string; value: number } | null>(null);
+  readonly hoveredSaturationPoint = signal<{ xPct: number; yPct: number; label: string; value: number } | null>(null);
 
-  showTooltip(point: ChartPoint): void {
-    this.hoveredPoint.set({
+  private toTooltip(point: ChartPoint) {
+    return {
       xPct: (point.x / CHART_WIDTH) * 100,
       yPct: (point.y / CHART_HEIGHT) * 100,
       label: point.label,
       value: point.value,
-    });
+    };
   }
 
-  hideTooltip(): void {
-    this.hoveredPoint.set(null);
+  showAdstockTooltip(point: ChartPoint): void {
+    this.hoveredAdstockPoint.set(this.toTooltip(point));
+  }
+
+  hideAdstockTooltip(): void {
+    this.hoveredAdstockPoint.set(null);
+  }
+
+  showSaturationTooltip(point: ChartPoint): void {
+    this.hoveredSaturationPoint.set(this.toTooltip(point));
+  }
+
+  hideSaturationTooltip(): void {
+    this.hoveredSaturationPoint.set(null);
   }
 
   readonly chartViewBox = `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`;

@@ -69,10 +69,10 @@
                         }
                         <polyline [attr.points]="adstockChartPoints(row)" fill="none" stroke="var(--brand-500)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
                         @for (pt of adstockChartData(row); track pt.label) {
-                          <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="7" class="chart-hit" (mouseenter)="showTooltip(pt)" (mouseleave)="hideTooltip()" />
+                          <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="7" class="chart-hit" (mouseenter)="showAdstockTooltip(pt)" (mouseleave)="hideAdstockTooltip()" />
                         }
                       </svg>
-                      @if (hoveredPoint(); as t) {
+                      @if (hoveredAdstockPoint(); as t) {
                         <div class="chart-tooltip" [style.left.%]="t.xPct" [style.top.%]="t.yPct">
                           <strong>{{ t.label }}</strong>
                           <div>Effect (%): <strong>{{ t.value }}%</strong></div>
@@ -160,10 +160,10 @@
                         }
                         <polyline [attr.points]="saturationChartPoints(row)" fill="none" stroke="var(--brand-500)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
                         @for (pt of saturationChartData(row); track pt.label) {
-                          <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="7" class="chart-hit" (mouseenter)="showTooltip(pt)" (mouseleave)="hideTooltip()" />
+                          <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="7" class="chart-hit" (mouseenter)="showSaturationTooltip(pt)" (mouseleave)="hideSaturationTooltip()" />
                         }
                       </svg>
-                      @if (hoveredPoint(); as t) {
+                      @if (hoveredSaturationPoint(); as t) {
                         <div class="chart-tooltip" [style.left.%]="t.xPct" [style.top.%]="t.yPct">
                           <strong>{{ t.label }}</strong>
                           <div>Effect (%): <strong>{{ t.value }}%</strong></div>
