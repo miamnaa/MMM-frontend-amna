@@ -68,10 +68,11 @@ function round2(value: number): number {
 
 const CHART_WIDTH = 560;
 const CHART_HEIGHT = 160;
-// Extra left/bottom room for axis tick labels - top/right stay tight.
+// Extra left/bottom room for axis tick labels (plus a rotated axis title on
+// the left) - top/right stay tight.
 const CHART_PAD_TOP = 10;
 const CHART_PAD_RIGHT = 10;
-const CHART_PAD_LEFT = 34;
+const CHART_PAD_LEFT = 44;
 const CHART_PAD_BOTTOM = 22;
 const ADSTOCK_WEEKS = 15;
 const SATURATION_STEPS = 16;
@@ -317,6 +318,10 @@ export class Hyperparameters implements OnInit {
   readonly chartPlotRight = CHART_WIDTH - CHART_PAD_RIGHT;
   readonly chartPlotBottom = CHART_HEIGHT - CHART_PAD_BOTTOM;
   readonly chartPlotTop = CHART_PAD_TOP;
+  /** Rotated "Effect (%)" axis title, centered along the plot area's left edge. */
+  readonly chartYLabelX = 12;
+  readonly chartYLabelY = (CHART_PAD_TOP + (CHART_HEIGHT - CHART_PAD_BOTTOM)) / 2;
+  readonly chartYLabelTransform = `rotate(-90 12 ${this.chartYLabelY})`;
 
   /** 0/25/50/75/100 gridlines - both charts plot on a 0-100 "Effect (%)" scale. */
   readonly yAxisTicks = [0, 25, 50, 75, 100].map((value) => ({ value, y: plotY(value) }));

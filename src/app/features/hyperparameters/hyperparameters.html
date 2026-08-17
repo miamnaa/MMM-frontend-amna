@@ -57,6 +57,7 @@
                   <div>
                     <div class="chart-wrap">
                       <svg class="line-chart" [attr.viewBox]="chartViewBox" preserveAspectRatio="none">
+                        <text [attr.x]="chartYLabelX" [attr.y]="chartYLabelY" [attr.transform]="chartYLabelTransform" class="chart-axis-title" text-anchor="middle">Effect (%)</text>
                         @for (tick of yAxisTicks; track tick.value) {
                           <line [attr.x1]="chartPlotLeft" [attr.x2]="chartPlotRight" [attr.y1]="tick.y" [attr.y2]="tick.y" class="chart-gridline" />
                           <text [attr.x]="chartPlotLeft - 6" [attr.y]="tick.y + 3" class="chart-axis-text" text-anchor="end">{{ tick.value }}</text>
@@ -147,6 +148,7 @@
                   <div>
                     <div class="chart-wrap">
                       <svg class="line-chart" [attr.viewBox]="chartViewBox" preserveAspectRatio="none">
+                        <text [attr.x]="chartYLabelX" [attr.y]="chartYLabelY" [attr.transform]="chartYLabelTransform" class="chart-axis-title" text-anchor="middle">Effect (%)</text>
                         @for (tick of yAxisTicks; track tick.value) {
                           <line [attr.x1]="chartPlotLeft" [attr.x2]="chartPlotRight" [attr.y1]="tick.y" [attr.y2]="tick.y" class="chart-gridline" />
                           <text [attr.x]="chartPlotLeft - 6" [attr.y]="tick.y + 3" class="chart-axis-text" text-anchor="end">{{ tick.value }}</text>
