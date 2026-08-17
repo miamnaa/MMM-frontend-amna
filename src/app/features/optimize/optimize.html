@@ -118,6 +118,13 @@
         } @else {
           <p class="muted">No pairs left to review.</p>
         }
+
+        <p class="muted correlation-note">
+          Showing every pair among your {{ effectiveChannels().length }} configured media channel{{ effectiveChannels().length === 1 ? '' : 's' }}.
+          @if (effectiveChannels().length < 4) {
+            Add more media columns in Configure to see additional pairs here.
+          }
+        </p>
       </section>
 
       <aside class="card side-panel">

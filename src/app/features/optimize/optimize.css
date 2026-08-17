@@ -243,6 +243,12 @@
   overflow: hidden;
 }
 
+.correlation-note {
+  margin: 14px 0 0;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
 .correlation-row {
   display: grid;
   grid-template-columns: 1fr 1fr auto 32px;
