@@ -33,6 +33,13 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
+.back-arrow {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: rgba(255, 255, 255, 0.85);
+}
+
 .step {
   display: flex;
   align-items: center;

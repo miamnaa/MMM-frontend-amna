@@ -1,6 +1,15 @@
 <nav class="tunnel-steps" aria-label="Progress">
   <button type="button" class="back-link" (click)="back()">
-    <span aria-hidden="true">←</span> Back
+    <svg class="back-arrow" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path
+        d="M12.5 4.5 6 10l6.5 5.5M6 10h9"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    Back
   </button>
 
   @for (step of steps; track step.key) {
