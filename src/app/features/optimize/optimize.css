@@ -271,14 +271,28 @@
   color: var(--text-muted);
 }
 
+.correlation-pct-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .correlation-pct {
   font-size: 13px;
   font-weight: 700;
-  color: var(--text-muted);
+  color: var(--text);
 }
 
-.correlation-pct.high {
-  color: var(--red-600);
+.correlation-dot {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 50%;
+  background: #f5b942;
+}
+
+.correlation-dot.high {
+  background: var(--red-500, #e0554f);
 }
 
 .icon-btn {

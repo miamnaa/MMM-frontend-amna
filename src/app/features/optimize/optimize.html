@@ -110,7 +110,10 @@
               <div class="correlation-row">
                 <span class="column-chip static">{{ row.a }}</span>
                 <span class="column-chip static">{{ row.b }}</span>
-                <span class="correlation-pct" [class.high]="correlationLevel(row.pct) === 'high'">{{ row.pct }}%</span>
+                <span class="correlation-pct-wrap">
+                  <span class="correlation-pct" [class.high]="correlationLevel(row.pct) === 'high'">{{ row.pct }}%</span>
+                  <span class="correlation-dot" [class.high]="correlationLevel(row.pct) === 'high'" aria-hidden="true"></span>
+                </span>
                 <button class="btn btn-ghost btn-sm icon-btn" type="button" (click)="removePair(row)" aria-label="Dismiss this pair" title="Dismiss">✕</button>
               </div>
             }
