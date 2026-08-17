@@ -22,8 +22,9 @@
     <div class="info-body">
       <ul>
         <li><strong>Carryover (AdStock):</strong> Controls how much of this week's spend still influences next week — higher values keep the impact around longer.</li>
-        <li><strong>Saturation (Diminishing Returns):</strong> Sets how quickly a channel's effect flattens out as spend increases — higher values mean it takes more spend before the curve bends down.</li>
-        <li>Channels are taken from what you saved in Configure. Carryover must be 0–1; saturation must be 0 or above.</li>
+        <li><strong>Alpha (Diminishing Returns):</strong> Controls how much spend is needed before a channel starts saturating — higher values delay saturation. Shapes the preview chart only.</li>
+        <li><strong>Gamma (Diminishing Returns):</strong> Shapes the curve of diminishing returns — a lower gamma means performance flattens sooner as spend increases. This is the real "saturation" value that gets saved.</li>
+        <li>Channels are taken from what you saved in Configure. Carryover must be 0–1; gamma must be 0 or above.</li>
       </ul>
     </div>
   }
@@ -113,8 +114,10 @@
 
               @if (row.saturationOpen) {
                 <p class="muted field-hint">
-                  See how results change as spend increases. Computed directly from the saturation
-                  value below, over an illustrative spend range — not this channel's real spend numbers.
+                  <strong>Alpha</strong> controls how much spend is needed before this channel starts
+                  saturating — higher values delay saturation. <strong>Gamma</strong> defines how sharply
+                  performance flattens after saturation — lower values mean a faster drop-off. The curve
+                  is computed over an illustrative spend range, not this channel's real spend numbers.
                 </p>
 
                 <div class="param-grid">
@@ -128,9 +131,22 @@
                   </div>
 
                   <div class="param-controls">
-                    <label class="label" for="cal-sat-{{ i }}">Saturation: {{ row.saturationDraft }}</label>
+                    <label class="label" for="cal-alpha-{{ i }}">Alpha: {{ row.alpha }}</label>
                     <input
-                      id="cal-sat-{{ i }}"
+                      id="cal-alpha-{{ i }}"
+                      class="range"
+                      type="range"
+                      min="0.05"
+                      max="1"
+                      step="0.01"
+                      [ngModel]="row.alpha"
+                      (ngModelChange)="setAlpha(i, $event)"
+                    />
+                    <p class="muted param-subnote">Illustrative only — not sent to the backend, only shapes this preview.</p>
+
+                    <label class="label param-spaced" for="cal-gamma-{{ i }}">Gamma: {{ row.saturationDraft }}</label>
+                    <input
+                      id="cal-gamma-{{ i }}"
                       class="range"
                       type="range"
                       min="0"
@@ -156,11 +172,11 @@
                     </div>
 
                     @if (row.saturation !== row.saturationDraft) {
-                      <p class="unsaved-note">Not applied yet — saved value is {{ row.saturation }}.</p>
+                      <p class="unsaved-note">Gamma not applied yet — saved value is {{ row.saturation }}.</p>
                     }
 
                     <button class="btn btn-primary param-action" type="button" (click)="applySaturation(i)">Apply</button>
-                    <button class="btn btn-secondary param-action" type="button" (click)="randomizeSaturation(i)" title="Draws a random value within your % variance range, in-browser — there's no backend auto-tuner to call yet">
+                    <button class="btn btn-secondary param-action" type="button" (click)="randomizeSaturation(i)" title="Draws a random Gamma value within your % variance range, in-browser — there's no backend auto-tuner to call yet">
                       Automatic Optimization
                     </button>
                   </div>

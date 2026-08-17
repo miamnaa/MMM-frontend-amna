@@ -24,6 +24,14 @@ interface ChannelRow {
   saturationOpen: boolean;
   adstockVariance: number;
   saturationVariance: number;
+  /**
+   * Alpha - the illustrative curve's half-saturation spend point (as a
+   * fraction of the illustrative max spend axis). There's no second
+   * backend field to store this in - only `saturation` (shown as Gamma) is
+   * ever sent to PATCH /datasets/:id/hyperparameters - so Alpha only shapes
+   * the local preview chart, same honesty rule as the illustrative spend axis.
+   */
+  alpha: number;
 }
 
 function validRow(row: ChannelRow): boolean {
@@ -38,6 +46,7 @@ function validRow(row: ChannelRow): boolean {
 
 const DEFAULT_CARRYOVER = 0.4;
 const DEFAULT_SATURATION = 1;
+const DEFAULT_ALPHA = 0.5;
 const DEFAULT_VARIANCE = 20;
 const MAX_SATURATION = 3;
 
@@ -72,11 +81,19 @@ function adstockPoints(theta: number): string {
   return toPoints(values);
 }
 
-/** (spend/max)^saturation * 100 - shows how the real saturation exponent shapes diminishing returns. */
-function saturationPoints(saturation: number): string {
+/**
+ * Hill-type saturation curve: spend^gamma / (halfPoint^gamma + spend^gamma).
+ * Gamma (the real, saved `saturation` field) controls how sharply the curve
+ * bends; alpha (illustrative-only, see ChannelRow) sets where the half-max
+ * point sits along the illustrative spend axis.
+ */
+function saturationPoints(alpha: number, gamma: number): string {
+  const halfPoint = Math.max(0.01, alpha) * SATURATION_MAX_SPEND;
+  const g = gamma || 0.01;
   const values = Array.from({ length: SATURATION_STEPS }, (_, i) => {
     const spend = (SATURATION_MAX_SPEND / (SATURATION_STEPS - 1)) * i;
-    return 100 * Math.pow(spend / SATURATION_MAX_SPEND, saturation || 0.01);
+    const spendG = Math.pow(spend, g);
+    return (100 * spendG) / (Math.pow(halfPoint, g) + spendG);
   });
   return toPoints(values);
 }
@@ -142,6 +159,7 @@ export class Hyperparameters implements OnInit {
         saturationOpen: true,
         adstockVariance: DEFAULT_VARIANCE,
         saturationVariance: DEFAULT_VARIANCE,
+        alpha: DEFAULT_ALPHA,
       })),
     );
     if (mediaColumns.length > 0) this.expandedIndex.set(0);
@@ -181,6 +199,10 @@ export class Hyperparameters implements OnInit {
 
   setSaturationDraft(index: number, value: number): void {
     this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, saturationDraft: value } : r)));
+  }
+
+  setAlpha(index: number, value: number): void {
+    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, alpha: value } : r)));
   }
 
   setAdstockVariance(index: number, value: number): void {
@@ -229,7 +251,7 @@ export class Hyperparameters implements OnInit {
   }
 
   saturationChartPoints(row: ChannelRow): string {
-    return saturationPoints(row.saturationDraft);
+    return saturationPoints(row.alpha, row.saturationDraft);
   }
 
   readonly chartViewBox = `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`;
