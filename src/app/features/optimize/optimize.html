@@ -148,6 +148,38 @@
             <p class="muted">No variables left to review.</p>
           }
         </section>
+
+        @if (hasControlColumns()) {
+          <section class="card">
+            <div class="example-head">
+              <h2 class="section-title">Exposure metrics</h2>
+              <span class="example-badge">Example data — not from your uploaded file</span>
+            </div>
+            <p class="muted field-hint">
+              Control columns like promotions or holidays can push your outcome up or down. This
+              is what setting that direction will look like, shown with your real control columns.
+            </p>
+
+            <div class="exposure-list">
+              @for (col of controlColumnsList(); track col) {
+                <div class="exposure-row">
+                  <span class="column-chip static">{{ col }}</span>
+                  <div class="exposure-modes">
+                    <button type="button" class="pill-toggle sm" [class.active]="exposureMode(col) === 'auto'" (click)="setExposureMode(col, 'auto')">Auto</button>
+                    <button type="button" class="pill-toggle sm" [class.active]="exposureMode(col) === 'positive'" (click)="setExposureMode(col, 'positive')">Positive</button>
+                    <button type="button" class="pill-toggle sm" [class.active]="exposureMode(col) === 'negative'" (click)="setExposureMode(col, 'negative')">Negative</button>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <div class="exposure-bulk">
+              <button type="button" class="link-btn-inline" (click)="setAllExposure('auto')">Set ALL variables on Auto</button>
+              <button type="button" class="link-btn-inline" (click)="setAllExposure('positive')">Set ALL variables on Positive</button>
+              <button type="button" class="link-btn-inline" (click)="setAllExposure('negative')">Set ALL variables on Negative</button>
+            </div>
+          </section>
+        }
       </div>
 
       <div class="review-side">
@@ -245,7 +277,7 @@
     </div>
   }
 
-  @if (hasControlColumns()) {
+  @if (hasControlColumns() && !hasMediaChannels()) {
     <section class="card">
       <div class="example-head">
         <h2 class="section-title">Exposure metrics</h2>
