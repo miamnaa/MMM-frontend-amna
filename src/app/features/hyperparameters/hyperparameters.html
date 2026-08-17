@@ -95,8 +95,8 @@
                     }
 
                     <button class="btn btn-primary param-action" type="button" (click)="applyCarryover(i)">Apply</button>
-                    <button class="btn btn-secondary param-action" type="button" (click)="randomizeCarryover(i)">
-                      Randomize within variance
+                    <button class="btn btn-secondary param-action" type="button" (click)="randomizeCarryover(i)" title="Draws a random value within your % variance range, in-browser — there's no backend auto-tuner to call yet">
+                      Automatic Optimization
                     </button>
                   </div>
                 </div>
@@ -160,8 +160,8 @@
                     }
 
                     <button class="btn btn-primary param-action" type="button" (click)="applySaturation(i)">Apply</button>
-                    <button class="btn btn-secondary param-action" type="button" (click)="randomizeSaturation(i)">
-                      Randomize within variance
+                    <button class="btn btn-secondary param-action" type="button" (click)="randomizeSaturation(i)" title="Draws a random value within your % variance range, in-browser — there's no backend auto-tuner to call yet">
+                      Automatic Optimization
                     </button>
                   </div>
                 </div>
