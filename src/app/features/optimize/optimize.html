@@ -168,22 +168,6 @@
         } @else {
           <p class="muted">Need at least 2 channels left to combine.</p>
         }
-
-        @if (visibleCorrelationRows().length > 0) {
-          <div class="side-panel-divider"></div>
-          <div class="field">
-            <label class="label" for="o-pair-select">Or dismiss a pair</label>
-            <select id="o-pair-select" class="select" [ngModel]="selectedPairKey()" (ngModelChange)="selectedPairKey.set($event)">
-              <option value="" disabled>Choose a pair…</option>
-              @for (row of visibleCorrelationRows(); track pairKey(row)) {
-                <option [value]="pairKey(row)">{{ row.a }} – {{ row.b }} ({{ row.pct }}%)</option>
-              }
-            </select>
-          </div>
-          <button class="btn btn-secondary btn-sm side-panel-action" type="button" [disabled]="!selectedPairKey()" (click)="removeSelectedPair()">
-            Remove selected pair
-          </button>
-        }
       </aside>
     </div>
 

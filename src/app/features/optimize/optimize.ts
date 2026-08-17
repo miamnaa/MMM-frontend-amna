@@ -185,15 +185,6 @@ export class Optimize implements OnInit {
     return pct >= 80 ? 'high' : 'medium';
   }
 
-  readonly selectedPairKey = signal('');
-
-  removeSelectedPair(): void {
-    const row = this.visibleCorrelationRows().find((r) => this.pairKey(r) === this.selectedPairKey());
-    if (!row) return;
-    this.removePair(row);
-    this.selectedPairKey.set('');
-  }
-
   /** Variable Selection Review: example share-of-spend per media channel. */
   private readonly removedVariables = signal<Set<string>>(new Set());
 

@@ -454,15 +454,11 @@
   margin-top: 4px;
 }
 
-.side-panel-divider {
-  margin: 18px 0;
-  border-top: 1px solid var(--border);
-}
-
 .combine-multiselect {
   height: auto;
-  min-height: 84px;
-  padding: 6px;
+  min-height: 56px;
+  max-height: 90px;
+  padding: 4px;
 }
 
 .combine-multiselect option {
