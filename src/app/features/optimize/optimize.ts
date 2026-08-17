@@ -30,6 +30,12 @@ export class Optimize implements OnInit {
   readonly saving = signal(false);
   readonly saveError = signal<string | null>(null);
 
+  readonly infoOpen = signal(false);
+
+  toggleInfo(): void {
+    this.infoOpen.update((open) => !open);
+  }
+
   /** Mirrors the backend's own 400 rule - caught here before round-tripping. */
   readonly rangeInvalid = computed(
     () => this.startDate().length > 0 && this.endDate().length > 0 && this.startDate() >= this.endDate(),

@@ -64,6 +64,12 @@ export class Configure implements OnInit {
   readonly saving = signal(false);
   readonly saveError = signal<string | null>(null);
 
+  readonly infoOpen = signal(false);
+
+  toggleInfo(): void {
+    this.infoOpen.update((open) => !open);
+  }
+
   readonly canSave = computed(
     () =>
       !this.isLocalDataset() &&

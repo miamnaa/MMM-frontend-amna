@@ -42,6 +42,76 @@
   }
 }
 
+/* ---- Info accordion - same pattern as Upload Data's ---- */
+
+.info-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  border-left: 3px solid var(--brand-500);
+  border-radius: var(--r-md);
+  background: var(--brand-50);
+  text-align: left;
+}
+
+.info-icon {
+  color: var(--brand-700);
+}
+
+.info-title {
+  flex: 1;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--brand-700);
+}
+
+.chevron {
+  transition: transform 0.15s;
+  color: var(--brand-700);
+}
+
+.chevron.open {
+  transform: rotate(180deg);
+}
+
+.info-body {
+  margin: -10px 0 18px;
+  padding: 14px 18px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 12.5px;
+}
+
+.info-body ul {
+  margin: 0;
+  padding-left: 4px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.info-body ul li {
+  position: relative;
+  padding-left: 16px;
+  line-height: 1.55;
+}
+
+.info-body ul li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 7px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--brand-500);
+}
+
 .drop-error {
   margin-top: 4px;
   margin-bottom: 8px;

@@ -12,6 +12,23 @@
     subtitle="Which weeks of your data should the model learn from?"
   />
 
+  <button class="info-toggle" type="button" (click)="toggleInfo()" [attr.aria-expanded]="infoOpen()">
+    <span class="info-icon" aria-hidden="true">ⓘ</span>
+    <span class="info-title">About model optimization</span>
+    <span class="chevron" [class.open]="infoOpen()" aria-hidden="true">⌄</span>
+  </button>
+
+  @if (infoOpen()) {
+    <div class="info-body">
+      <ul>
+        <li>By default, the model learns from every week already in your uploaded file.</li>
+        <li>Narrowing the range excludes periods that don't reflect your current strategy — an early ramp-up phase, or a stretch with missing/unreliable data.</li>
+        <li>A shorter, cleaner range often produces a more accurate model than a longer one with noisy edges.</li>
+        <li>You can always come back and adjust this later — it's saved per model, not locked in.</li>
+      </ul>
+    </div>
+  }
+
   <section class="card">
     <h2 class="section-title">Training date range</h2>
 

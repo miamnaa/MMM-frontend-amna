@@ -12,6 +12,24 @@
     subtitle="Map your file's columns so the model knows what each one means."
   />
 
+  <button class="info-toggle" type="button" (click)="toggleInfo()" [attr.aria-expanded]="infoOpen()">
+    <span class="info-icon" aria-hidden="true">ⓘ</span>
+    <span class="info-title">How to configure your model?</span>
+    <span class="chevron" [class.open]="infoOpen()" aria-hidden="true">⌄</span>
+  </button>
+
+  @if (infoOpen()) {
+    <div class="info-body">
+      <ul>
+        <li>Pick which column is the date, and which one is the target you're trying to explain (revenue, conversions, sign-ups, etc.).</li>
+        <li>Say whether that target is already revenue, or a non-revenue KPI — if it's a KPI, you'll also give its real dollar value per unit.</li>
+        <li>Map every ad-spend column to Media columns — at least one is required.</li>
+        <li>Add anything else that affects the outcome but isn't spend (holidays, promotions, competitor activity) to Control columns.</li>
+        <li>Organic and geo breakdown columns are optional — add them only if your file actually has them.</li>
+      </ul>
+    </div>
+  }
+
   @if (dataset(); as ds) {
     @if (ds.local) {
       <div class="notice notice-blocking">
