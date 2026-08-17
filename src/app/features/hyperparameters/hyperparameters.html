@@ -149,12 +149,7 @@
                     />
                     <p class="muted param-subnote">Illustrative only — not sent to the backend, only shapes this preview.</p>
 
-                    <label class="label param-spaced" for="cal-gamma-{{ i }}">
-                      Gamma: {{ row.saturationDraft }}
-                      @if (row.saturationEstimated) {
-                        <span class="estimated-badge" title="Set by Automatic Optimization's in-browser search - real training may pick a different value once that's connected for real">Estimated</span>
-                      }
-                    </label>
+                    <label class="label param-spaced" for="cal-gamma-{{ i }}">Gamma: {{ row.saturationDraft }}</label>
                     <input
                       id="cal-gamma-{{ i }}"
                       class="range"
@@ -166,29 +161,11 @@
                       (ngModelChange)="setSaturationDraft(i, $event)"
                     />
 
-                    <div class="variance-row">
-                      <div>
-                        <label class="label" for="cal-sat-variance-{{ i }}">% variance (+/-)</label>
-                        <input
-                          id="cal-sat-variance-{{ i }}"
-                          class="input param-number"
-                          type="number"
-                          min="0"
-                          max="100"
-                          [ngModel]="row.saturationVariance"
-                          (ngModelChange)="setSaturationVariance(i, $event)"
-                        />
-                      </div>
-                    </div>
-
                     @if (row.saturation !== row.saturationDraft) {
                       <p class="unsaved-note">Gamma not applied yet — saved value is {{ row.saturation }}.</p>
                     }
 
                     <button class="btn btn-primary param-action" type="button" (click)="applySaturation(i)">Apply</button>
-                    <button class="btn btn-secondary param-action" type="button" (click)="randomizeSaturation(i)" title="Draws a random Gamma value within your % variance range, in-browser — there's no backend auto-tuner to call yet">
-                      Automatic Optimization
-                    </button>
                   </div>
                 </div>
               }

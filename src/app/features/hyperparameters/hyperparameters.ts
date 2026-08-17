@@ -22,8 +22,8 @@ interface ChannelRow {
   saturationDraft: number;
   adstockOpen: boolean;
   saturationOpen: boolean;
+  /** Automatic Optimization's search range - AdStock only, see below. */
   adstockVariance: number;
-  saturationVariance: number;
   /**
    * Alpha - the illustrative curve's half-saturation spend point (as a
    * fraction of the illustrative max spend axis). There's no second
@@ -37,10 +37,10 @@ interface ChannelRow {
    * soon as the user touches the slider or Applies a manual edit. Drives
    * the "Estimated" label: real training may pick a different value once
    * that's connected for real, same honesty rule as the mock training
-   * results elsewhere in this app.
+   * results elsewhere in this app. AdStock only - Diminishing Returns has
+   * no Automatic Optimization button.
    */
   carryoverEstimated: boolean;
-  saturationEstimated: boolean;
 }
 
 function validRow(row: ChannelRow): boolean {
@@ -57,7 +57,6 @@ const DEFAULT_CARRYOVER = 0.4;
 const DEFAULT_SATURATION = 1;
 const DEFAULT_ALPHA = 0.5;
 const DEFAULT_VARIANCE = 20;
-const MAX_SATURATION = 3;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -167,10 +166,8 @@ export class Hyperparameters implements OnInit {
         adstockOpen: true,
         saturationOpen: true,
         adstockVariance: DEFAULT_VARIANCE,
-        saturationVariance: DEFAULT_VARIANCE,
         alpha: DEFAULT_ALPHA,
         carryoverEstimated: false,
-        saturationEstimated: false,
       })),
     );
     if (mediaColumns.length > 0) this.expandedIndex.set(0);
@@ -194,7 +191,6 @@ export class Hyperparameters implements OnInit {
                   carryoverDraft: match.carryover,
                   saturationDraft: match.saturation,
                   carryoverEstimated: false,
-                  saturationEstimated: false,
                 }
               : row;
           }),
@@ -219,9 +215,7 @@ export class Hyperparameters implements OnInit {
   }
 
   setSaturationDraft(index: number, value: number): void {
-    this.rows.update((rows) =>
-      rows.map((r, i) => (i === index ? { ...r, saturationDraft: value, saturationEstimated: false } : r)),
-    );
+    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, saturationDraft: value } : r)));
   }
 
   setAlpha(index: number, value: number): void {
@@ -230,10 +224,6 @@ export class Hyperparameters implements OnInit {
 
   setAdstockVariance(index: number, value: number): void {
     this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, adstockVariance: value } : r)));
-  }
-
-  setSaturationVariance(index: number, value: number): void {
-    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, saturationVariance: value } : r)));
   }
 
   /** Commits the current slider position as the real value that gets saved. */
@@ -259,17 +249,6 @@ export class Hyperparameters implements OnInit {
     const next = round2(clamp(base + (Math.random() * 2 - 1) * delta, 0, 1));
     this.rows.update((rows) =>
       rows.map((r, i) => (i === index ? { ...r, carryover: next, carryoverDraft: next, carryoverEstimated: true } : r)),
-    );
-  }
-
-  randomizeSaturation(index: number): void {
-    const row = this.rows()[index];
-    if (!row) return;
-    const base = row.saturation ?? DEFAULT_SATURATION;
-    const delta = (row.saturationVariance / 100) * (base || DEFAULT_SATURATION);
-    const next = round2(clamp(base + (Math.random() * 2 - 1) * delta, 0, MAX_SATURATION));
-    this.rows.update((rows) =>
-      rows.map((r, i) => (i === index ? { ...r, saturation: next, saturationDraft: next, saturationEstimated: true } : r)),
     );
   }
 
