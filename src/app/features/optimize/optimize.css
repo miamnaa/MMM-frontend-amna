@@ -418,43 +418,23 @@
   flex: none;
 }
 
-/* Channels review / Variable selection review - main content + "why remove" side panel */
+/* Channels review / Variable selection review - each paired with its own side panel */
 
-.review-columns {
-  display: flex;
-  align-items: flex-start;
+.review-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
   gap: 18px;
+  align-items: start;
   margin-bottom: 18px;
 }
 
-.review-main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.review-side {
-  flex: none;
-  width: 280px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.review-main .card,
-.review-side .card {
+.review-grid .card {
   margin-bottom: 0;
 }
 
 @media (max-width: 900px) {
-  .review-columns {
-    flex-direction: column;
-  }
-
-  .review-side {
-    width: 100%;
+  .review-grid {
+    grid-template-columns: 1fr;
   }
 }
 
