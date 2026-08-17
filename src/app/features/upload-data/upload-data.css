@@ -133,6 +133,34 @@
   margin-top: 0;
 }
 
+/* The global reset strips list-style from every <ul> - this list wants real, visible markers. */
+.help-body > ul {
+  margin: 0 0 4px;
+  padding-left: 4px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.help-body > ul li {
+  position: relative;
+  padding-left: 16px;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.help-body > ul li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 7px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--brand-500);
+}
+
 .help-category {
   margin-top: 14px;
   padding-top: 14px;
@@ -399,6 +427,7 @@
   display: flex;
   justify-content: flex-end;
   margin-top: 8px;
+  margin-bottom: 28px;
 }
 
 @media (max-width: 720px) {
