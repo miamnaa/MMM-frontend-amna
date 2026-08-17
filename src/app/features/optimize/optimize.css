@@ -359,21 +359,63 @@
 
 .exposure-bulk {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px 16px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid var(--border);
 }
 
 .link-btn-inline {
-  font-size: 12px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 12.5px;
   font-weight: 700;
   color: var(--brand-700);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .link-btn-inline:hover {
-  text-decoration: underline;
+  color: var(--brand-500);
+}
+
+/* Toast */
+
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.toast-success {
+  border-color: var(--brand-500);
+}
+
+.toast-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--brand-500);
+  color: #fff;
+  font-size: 12px;
+  flex: none;
 }
 
 /* Shared chip / pill styles - same visual language as Configure's */

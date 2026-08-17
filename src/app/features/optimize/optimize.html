@@ -173,11 +173,18 @@
       </div>
 
       <div class="exposure-bulk">
-        <button type="button" class="link-btn-inline" (click)="setAllExposure('auto')">Set all on Auto</button>
-        <button type="button" class="link-btn-inline" (click)="setAllExposure('positive')">Set all on Positive</button>
-        <button type="button" class="link-btn-inline" (click)="setAllExposure('negative')">Set all on Negative</button>
+        <button type="button" class="link-btn-inline" (click)="setAllExposure('auto')">Set ALL variables on Auto</button>
+        <button type="button" class="link-btn-inline" (click)="setAllExposure('positive')">Set ALL variables on Positive</button>
+        <button type="button" class="link-btn-inline" (click)="setAllExposure('negative')">Set ALL variables on Negative</button>
       </div>
     </section>
+  }
+
+  @if (exposureToast()) {
+    <div class="toast toast-success" role="status">
+      <span class="toast-icon" aria-hidden="true">✓</span>
+      Exposure metrics updated successfully!
+    </div>
   }
 
   @if (saveError(); as err) {

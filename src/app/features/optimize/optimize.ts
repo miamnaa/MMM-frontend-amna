@@ -171,19 +171,29 @@ export class Optimize implements OnInit {
 
   /** Exposure Metrics: per-control-column impact direction - illustrative, not saved anywhere real yet. */
   readonly exposureModes = signal<Record<string, ExposureMode>>({});
+  readonly exposureToast = signal(false);
+  private exposureToastTimer?: ReturnType<typeof setTimeout>;
 
   exposureMode(col: string): ExposureMode {
     return this.exposureModes()[col] ?? 'auto';
   }
 
+  private flashExposureToast(): void {
+    this.exposureToast.set(true);
+    clearTimeout(this.exposureToastTimer);
+    this.exposureToastTimer = setTimeout(() => this.exposureToast.set(false), 3000);
+  }
+
   setExposureMode(col: string, mode: ExposureMode): void {
     this.exposureModes.update((modes) => ({ ...modes, [col]: mode }));
+    this.flashExposureToast();
   }
 
   setAllExposure(mode: ExposureMode): void {
     const next: Record<string, ExposureMode> = {};
     for (const col of this.controlColumnsList()) next[col] = mode;
     this.exposureModes.set(next);
+    this.flashExposureToast();
   }
 
   ngOnInit(): void {
