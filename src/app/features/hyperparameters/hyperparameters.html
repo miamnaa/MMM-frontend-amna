@@ -57,6 +57,15 @@
                   <div>
                     <div class="chart-wrap">
                       <svg class="line-chart" [attr.viewBox]="chartViewBox" preserveAspectRatio="none">
+                        @for (tick of yAxisTicks; track tick.value) {
+                          <line [attr.x1]="chartPlotLeft" [attr.x2]="chartPlotRight" [attr.y1]="tick.y" [attr.y2]="tick.y" class="chart-gridline" />
+                          <text [attr.x]="chartPlotLeft - 6" [attr.y]="tick.y + 3" class="chart-axis-text" text-anchor="end">{{ tick.value }}</text>
+                        }
+                        <line [attr.x1]="chartPlotLeft" [attr.x2]="chartPlotLeft" [attr.y1]="chartPlotTop" [attr.y2]="chartPlotBottom" class="chart-axis-line" />
+                        <line [attr.x1]="chartPlotLeft" [attr.x2]="chartPlotRight" [attr.y1]="chartPlotBottom" [attr.y2]="chartPlotBottom" class="chart-axis-line" />
+                        @for (tick of adstockXTicks; track tick.label) {
+                          <text [attr.x]="tick.x" [attr.y]="chartPlotBottom + 14" class="chart-axis-text" text-anchor="middle">{{ tick.label }}</text>
+                        }
                         <polyline [attr.points]="adstockChartPoints(row)" fill="none" stroke="var(--brand-500)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
                       </svg>
                     </div>
@@ -129,6 +138,15 @@
                   <div>
                     <div class="chart-wrap">
                       <svg class="line-chart" [attr.viewBox]="chartViewBox" preserveAspectRatio="none">
+                        @for (tick of yAxisTicks; track tick.value) {
+                          <line [attr.x1]="chartPlotLeft" [attr.x2]="chartPlotRight" [attr.y1]="tick.y" [attr.y2]="tick.y" class="chart-gridline" />
+                          <text [attr.x]="chartPlotLeft - 6" [attr.y]="tick.y + 3" class="chart-axis-text" text-anchor="end">{{ tick.value }}</text>
+                        }
+                        <line [attr.x1]="chartPlotLeft" [attr.x2]="chartPlotLeft" [attr.y1]="chartPlotTop" [attr.y2]="chartPlotBottom" class="chart-axis-line" />
+                        <line [attr.x1]="chartPlotLeft" [attr.x2]="chartPlotRight" [attr.y1]="chartPlotBottom" [attr.y2]="chartPlotBottom" class="chart-axis-line" />
+                        @for (tick of saturationXTicks; track tick.label) {
+                          <text [attr.x]="tick.x" [attr.y]="chartPlotBottom + 14" class="chart-axis-text" text-anchor="middle">{{ tick.label }}</text>
+                        }
                         <polyline [attr.points]="saturationChartPoints(row)" fill="none" stroke="var(--brand-500)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
                       </svg>
                     </div>

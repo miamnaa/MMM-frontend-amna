@@ -68,18 +68,30 @@ function round2(value: number): number {
 
 const CHART_WIDTH = 560;
 const CHART_HEIGHT = 160;
-const CHART_PAD = 8;
+// Extra left/bottom room for axis tick labels - top/right stay tight.
+const CHART_PAD_TOP = 10;
+const CHART_PAD_RIGHT = 10;
+const CHART_PAD_LEFT = 34;
+const CHART_PAD_BOTTOM = 22;
 const ADSTOCK_WEEKS = 15;
 const SATURATION_STEPS = 16;
 const SATURATION_MAX_SPEND = 5500;
 
+function plotX(fraction: number): number {
+  return CHART_PAD_LEFT + fraction * (CHART_WIDTH - CHART_PAD_LEFT - CHART_PAD_RIGHT);
+}
+
+function plotY(value: number): number {
+  return (
+    CHART_HEIGHT -
+    CHART_PAD_BOTTOM -
+    (Math.min(100, Math.max(0, value)) / 100) * (CHART_HEIGHT - CHART_PAD_TOP - CHART_PAD_BOTTOM)
+  );
+}
+
 function toPoints(values: number[]): string {
   return values
-    .map((v, i) => {
-      const x = CHART_PAD + (i / (values.length - 1)) * (CHART_WIDTH - CHART_PAD * 2);
-      const y = CHART_HEIGHT - CHART_PAD - (Math.min(100, Math.max(0, v)) / 100) * (CHART_HEIGHT - CHART_PAD * 2);
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
+    .map((v, i) => `${plotX(i / (values.length - 1)).toFixed(1)},${plotY(v).toFixed(1)}`)
     .join(' ');
 }
 
@@ -261,6 +273,24 @@ export class Hyperparameters implements OnInit {
   }
 
   readonly chartViewBox = `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`;
+  readonly chartPlotLeft = CHART_PAD_LEFT;
+  readonly chartPlotRight = CHART_WIDTH - CHART_PAD_RIGHT;
+  readonly chartPlotBottom = CHART_HEIGHT - CHART_PAD_BOTTOM;
+  readonly chartPlotTop = CHART_PAD_TOP;
+
+  /** 0/25/50/75/100 gridlines - both charts plot on a 0-100 "Effect (%)" scale. */
+  readonly yAxisTicks = [0, 25, 50, 75, 100].map((value) => ({ value, y: plotY(value) }));
+
+  readonly adstockXTicks = Array.from({ length: ADSTOCK_WEEKS }, (_, w) => ({
+    x: plotX(w / (ADSTOCK_WEEKS - 1)),
+    label: String(w + 1),
+  }));
+
+  private static readonly SATURATION_X_LABEL_COUNT = 6;
+  readonly saturationXTicks = Array.from({ length: Hyperparameters.SATURATION_X_LABEL_COUNT }, (_, i) => {
+    const fraction = i / (Hyperparameters.SATURATION_X_LABEL_COUNT - 1);
+    return { x: plotX(fraction), label: Math.round(fraction * SATURATION_MAX_SPEND).toLocaleString() };
+  });
 
   save(): void {
     if (!this.canSave() || this.saving()) return;
