@@ -245,13 +245,8 @@
             } @else {
               <div class="auto-combine-note auto-combine-note-success">
                 <strong>Combined:</strong>
-                @for (group of groups; track $index) {
-                  <div>
-                    {{ group.sources.join(' + ') }}
-                    @if (group.resultName) {
-                      → {{ group.resultName }}
-                    }
-                  </div>
+                @for (group of groups; track group.newColumnName) {
+                  <div>{{ group.sourceColumns.join(' + ') }} → {{ group.newColumnName }}</div>
                 }
               </div>
             }

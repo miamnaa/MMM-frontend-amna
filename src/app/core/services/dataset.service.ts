@@ -71,6 +71,12 @@ export interface CombineChannelsResponse {
   channelHyperparameters: null;
 }
 
+/** One combined group in AutoCombineChannelsResponse - both fields explicit as of 2026-08-18, nothing to infer. */
+export interface AutoCombinedGroup {
+  sourceColumns: string[];
+  newColumnName: string;
+}
+
 /**
  * Real endpoint: POST /datasets/:id/auto-combine-channels, added 2026-08-18.
  * Closes the gap where a real training failure (multicollinearity) only got
@@ -83,7 +89,7 @@ export interface CombineChannelsResponse {
  */
 export interface AutoCombineChannelsResponse {
   dataset: CombineChannelsResponse;
-  combined: string[][];
+  combined: AutoCombinedGroup[];
 }
 
 /** Real endpoint: GET /datasets/:id/date-range - the real min/max date found in the uploaded file. */

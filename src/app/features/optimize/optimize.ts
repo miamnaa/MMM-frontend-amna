@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
-import { DatasetService, HyperparameterChannel, SavedColumnMapping } from '../../core/services/dataset.service';
+import { AutoCombinedGroup, DatasetService, HyperparameterChannel, SavedColumnMapping } from '../../core/services/dataset.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
@@ -308,7 +308,7 @@ export class Optimize implements OnInit {
   readonly autoCombining = signal(false);
   readonly autoCombineError = signal<string | null>(null);
   /** null = never run yet; [] = ran, found nothing to combine; non-empty = ran, these groups got combined. */
-  readonly autoCombineGroups = signal<{ sources: string[]; resultName: string | null }[] | null>(null);
+  readonly autoCombineGroups = signal<AutoCombinedGroup[] | null>(null);
 
   /**
    * Finds and combines every real 90%+ correlated channel group in one
@@ -320,7 +320,6 @@ export class Optimize implements OnInit {
    */
   autoCombineChannels(): void {
     if (this.autoCombining()) return;
-    const prevMediaColumns = new Set(this.mediaChannels());
 
     this.autoCombining.set(true);
     this.autoCombineError.set(null);
@@ -328,12 +327,7 @@ export class Optimize implements OnInit {
 
     this.datasetService.autoCombineChannels(this.datasetId()).subscribe({
       next: ({ dataset, combined }) => {
-        // The endpoint doesn't return each group's chosen new column name
-        // directly - it's derivable from what's new in mediaColumns that
-        // wasn't there before, in the same order the groups were combined.
-        const addedNames = dataset.columnMapping.mediaColumns.filter((c) => !prevMediaColumns.has(c));
-        const groups = combined.map((sources, i) => ({ sources, resultName: addedNames[i] ?? null }));
-        this.autoCombineGroups.set(groups);
+        this.autoCombineGroups.set(combined);
 
         if (combined.length === 0) {
           this.autoCombining.set(false);
@@ -345,21 +339,15 @@ export class Optimize implements OnInit {
           this.hyperparametersNeedRedo.set(true);
         }
 
-        const groupsWithName = groups.filter((g): g is { sources: string[]; resultName: string } => g.resultName !== null);
-        if (groupsWithName.length === 0) {
-          this.autoCombining.set(false);
-          return;
-        }
-
         forkJoin(
-          groupsWithName.map((g) => this.datasetService.combineColumns(this.datasetId(), g.sources)),
+          combined.map((g) => this.datasetService.combineColumns(this.datasetId(), g.sourceColumns)),
         ).subscribe({
           next: (previews) => {
             this.autoCombining.set(false);
             previews.forEach((preview, i) => {
-              const group = groupsWithName[i];
-              this.mergeSeriesIntoRows(group.resultName, preview.dateColumn, preview.series);
-              this.combinedGroups.update((gs) => [...gs, { name: group.resultName, members: group.sources }]);
+              const group = combined[i];
+              this.mergeSeriesIntoRows(group.newColumnName, preview.dateColumn, preview.series);
+              this.combinedGroups.update((gs) => [...gs, { name: group.newColumnName, members: group.sourceColumns }]);
             });
           },
           error: (err: unknown) => {
