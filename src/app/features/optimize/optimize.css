@@ -153,6 +153,26 @@
   font-size: 12.5px;
 }
 
+.channels-changed-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  border: 1px solid color-mix(in srgb, #f5b942 45%, transparent);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, #f5b942 12%, var(--surface));
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.channels-changed-icon {
+  flex: none;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
 .tunnel-actions {
   display: flex;
   justify-content: flex-end;

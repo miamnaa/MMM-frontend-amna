@@ -57,6 +57,20 @@ export interface CombineColumnsResponse {
   series: { date: string; value: number }[];
 }
 
+/**
+ * Real endpoint: PATCH /datasets/:id/combine-channels, added 2026-08-18.
+ * Unlike combine-columns above (chart-preview only, never touches saved
+ * config), this one actually updates columnMapping.mediaColumns for real -
+ * removes sourceColumns, adds newColumnName - so Assembly sums them into
+ * every real row before training, not just the chart. Always clears
+ * channelHyperparameters (comes back null): the old per-channel values no
+ * longer match the new channel list, so Hyperparameterization needs a redo.
+ */
+export interface CombineChannelsResponse {
+  columnMapping: SavedColumnMapping;
+  channelHyperparameters: null;
+}
+
 /** Real endpoint: GET /datasets/:id/date-range - the real min/max date found in the uploaded file. */
 export interface DateRangeResponse {
   minDate: string;
@@ -125,12 +139,16 @@ export interface TrainModelResponse {
  * documented - 'pending'/'running'/'completed'/'failed' is a reasonable
  * guess at the real enum, not a verified one. isTerminalTrainingStatus()
  * below is the one place that assumption is used, so it's easy to correct
- * once a real response is seen.
+ * once a real response is seen. `errorMessage` is the confirmed real field
+ * on a `failed` status (seen 2026-08-18, a real Meridian multicollinearity
+ * rejection) - `message` is kept too since it's what's used for in-progress
+ * status text, a different real field for a different purpose.
  */
 export interface TrainingStatusResponse {
   status: string;
   progress?: number;
   message?: string;
+  errorMessage?: string;
 }
 
 const TERMINAL_TRAINING_STATUSES = ['completed', 'success', 'succeeded', 'failed', 'error'];
@@ -265,6 +283,18 @@ export class DatasetService {
   combineColumns(datasetId: string, columns: string[]): Observable<CombineColumnsResponse> {
     return this.http.post<CombineColumnsResponse>(`${environment.apiBaseUrl}/datasets/${datasetId}/combine-columns`, {
       columns,
+    });
+  }
+
+  /**
+   * Real endpoint - the one that actually changes what trains, not just
+   * what the chart previews. See CombineChannelsResponse for the real side
+   * effect (clears channelHyperparameters) callers must surface.
+   */
+  combineChannels(datasetId: string, sourceColumns: string[], newColumnName: string): Observable<CombineChannelsResponse> {
+    return this.http.patch<CombineChannelsResponse>(`${environment.apiBaseUrl}/datasets/${datasetId}/combine-channels`, {
+      sourceColumns,
+      newColumnName,
     });
   }
 

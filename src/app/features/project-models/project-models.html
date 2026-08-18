@@ -87,7 +87,15 @@
           </div>
 
           @if (row.training.phase === 'failed') {
-            <p class="field-error">{{ row.training.error }}</p>
+            <div class="field-error">
+              <p class="error-summary">Training failed.</p>
+              @if (row.training.error && row.training.error !== 'Training failed.') {
+                <details class="error-details">
+                  <summary>Show details</summary>
+                  <pre class="error-text">{{ row.training.error }}</pre>
+                </details>
+              }
+            </div>
           }
 
           @if (row.training.phase === 'completed') {

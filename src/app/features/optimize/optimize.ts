@@ -2,6 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 
 import { DatasetService, HyperparameterChannel } from '../../core/services/dataset.service';
 import { TunnelService } from '../../core/services/tunnel.service';
@@ -201,6 +202,8 @@ export class Optimize implements OnInit {
   readonly combinedGroups = signal<{ name: string; members: string[] }[]>([]);
   readonly aggregating = signal(false);
   readonly aggregateError = signal<string | null>(null);
+  /** True once combineChannels() reports channelHyperparameters was cleared - the old per-channel values no longer match the new combined channel list. */
+  readonly hyperparametersNeedRedo = signal(false);
 
   readonly effectiveChannels = computed<string[]>(() => {
     const memberToGroup = new Map<string, string>();
@@ -240,6 +243,13 @@ export class Optimize implements OnInit {
     () => this.selectedCombineChannels().length >= 2 && this.newFieldName().trim().length > 0 && !this.aggregating(),
   );
 
+  /**
+   * Runs the chart-preview call (combineColumns, real per-date series for
+   * the immediate visual below) and the real config-changing call
+   * (combineChannels, updates columnMapping.mediaColumns for what actually
+   * trains) together - both have to succeed, since a preview-only success
+   * would leave the raw uncombined columns still going to training.
+   */
   aggregateChannels(): void {
     if (!this.canAggregate()) return;
     const members = this.selectedCombineChannels();
@@ -248,17 +258,38 @@ export class Optimize implements OnInit {
     this.aggregating.set(true);
     this.aggregateError.set(null);
 
-    this.datasetService.combineColumns(this.datasetId(), members).subscribe({
-      next: ({ dateColumn, series }) => {
+    forkJoin({
+      preview: this.datasetService.combineColumns(this.datasetId(), members),
+      real: this.datasetService.combineChannels(this.datasetId(), members, name),
+    }).subscribe({
+      next: ({ preview, real }) => {
         this.aggregating.set(false);
-        const valueByDate = new Map(series.map((s) => [s.date, s.value]));
+
+        const valueByDate = new Map(preview.series.map((s) => [s.date, s.value]));
         this.rows.update((rows) =>
-          rows.map((r) => ({ ...r, [name]: valueByDate.get(String(r[dateColumn])) ?? 0 })),
+          rows.map((r) => ({ ...r, [name]: valueByDate.get(String(r[preview.dateColumn])) ?? 0 })),
         );
         this.combinedGroups.update((groups) => [...groups, { name, members }]);
         this.combineDropdownOpen.set(false);
         this.selectedCombineChannels.set([]);
         this.newFieldName.set('');
+
+        const currentConfig = this.tunnelService.configuration();
+        if (currentConfig) {
+          this.tunnelService.setConfiguration({
+            ...currentConfig,
+            dateColumn: real.columnMapping.dateColumn,
+            targetColumn: real.columnMapping.targetColumn,
+            mediaColumns: real.columnMapping.mediaColumns,
+            controlColumns: real.columnMapping.controlColumns,
+            organicColumns: real.columnMapping.organicColumns,
+            geoColumns: real.columnMapping.geoColumns,
+          });
+        }
+
+        if (real.channelHyperparameters === null) {
+          this.hyperparametersNeedRedo.set(true);
+        }
       },
       error: (err: unknown) => {
         this.aggregating.set(false);

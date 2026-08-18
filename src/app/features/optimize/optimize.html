@@ -29,6 +29,17 @@
     </div>
   }
 
+  @if (hyperparametersNeedRedo()) {
+    <div class="channels-changed-warning">
+      <span class="channels-changed-icon" aria-hidden="true">⚠</span>
+      <span>
+        Media channels changed — Hyperparameterization needs a quick redo before training. Combining
+        channels cleared the old per-channel carryover/saturation values since they no longer match
+        the new channel list.
+      </span>
+    </div>
+  }
+
   <section class="card">
     <h2 class="section-title">Training date range</h2>
 

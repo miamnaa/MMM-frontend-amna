@@ -158,7 +158,7 @@ export class ProjectModels implements OnInit, OnDestroy {
             return;
           }
           if (isFailedTrainingStatus(res.status)) {
-            this.updateTraining(id, { phase: 'failed', error: res.message ?? 'Training failed.' });
+            this.updateTraining(id, { phase: 'failed', error: res.errorMessage ?? res.message ?? 'Training failed.' });
             return;
           }
           this.datasetService.getResults(id).subscribe({
