@@ -20,6 +20,11 @@ const PAD = { top: 16, right: 116, bottom: 34, left: 58 };
 @Component({
   selector: 'app-line-chart',
   template: `
+    <div class="legend">
+      @for (s of series(); track s.name; let i = $index) {
+        <span class="legend-item"><span class="swatch" [style.background]="seriesColorOf(i)"></span>{{ s.name }}</span>
+      }
+    </div>
     <div class="wrap">
       <svg
         [attr.viewBox]="'0 0 ' + W + ' ' + H"
@@ -124,6 +129,24 @@ const PAD = { top: 16, right: 116, bottom: 34, left: 58 };
     </div>
   `,
   styles: `
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 16px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legend-item .swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+    }
     .wrap {
       position: relative;
     }
@@ -200,6 +223,10 @@ export class LineChart {
   protected readonly H = H;
   protected readonly PAD = PAD;
   protected readonly hoverX = signal<number | null>(null);
+
+  protected seriesColorOf(index: number): string {
+    return seriesColor(index);
+  }
 
   private readonly bounds = computed(() => {
     const all = this.series().flatMap((s) => s.points);
