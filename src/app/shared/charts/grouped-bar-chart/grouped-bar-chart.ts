@@ -52,9 +52,13 @@ const V_TICKS = 5;
         <line [attr.x1]="VPAD.left" [attr.x2]="VW - VPAD.right" [attr.y1]="vPlotBottom()" [attr.y2]="vPlotBottom()" class="axis-line" />
 
         @for (col of columns(); track col.label) {
-          <rect [attr.x]="col.aX" [attr.y]="col.aY" [attr.width]="col.barWidth" [attr.height]="col.aH" [attr.fill]="colorA" rx="2" />
+          <rect [attr.x]="col.aX" [attr.y]="col.aY" [attr.width]="col.barWidth" [attr.height]="col.aH" [attr.fill]="colorA" rx="2">
+            <title>{{ col.label }} — {{ aLabel() }}: {{ col.aDisplay }}</title>
+          </rect>
           <text [attr.x]="col.aX + col.barWidth / 2" [attr.y]="col.aY - 4" text-anchor="middle" class="value-label">{{ col.aDisplay }}</text>
-          <rect [attr.x]="col.bX" [attr.y]="col.bY" [attr.width]="col.barWidth" [attr.height]="col.bH" [attr.fill]="colorB" rx="2" />
+          <rect [attr.x]="col.bX" [attr.y]="col.bY" [attr.width]="col.barWidth" [attr.height]="col.bH" [attr.fill]="colorB" rx="2">
+            <title>{{ col.label }} — {{ bLabel() }}: {{ col.bDisplay }}</title>
+          </rect>
           <text [attr.x]="col.bX + col.barWidth / 2" [attr.y]="col.bY - 4" text-anchor="middle" class="value-label">{{ col.bDisplay }}</text>
           <text [attr.x]="col.centerX" [attr.y]="vPlotBottom() + 16" text-anchor="middle" class="row-label">{{ col.label }}</text>
         }
@@ -70,9 +74,13 @@ const V_TICKS = 5;
 
         @for (row of rows(); track row.label) {
           <text [attr.x]="HPAD.left - 10" [attr.y]="row.centerY + 4" text-anchor="end" class="row-label">{{ row.label }}</text>
-          <rect [attr.x]="HPAD.left" [attr.y]="row.aY" [attr.width]="row.aW" [attr.height]="barHeight" [attr.fill]="colorA" rx="2" />
+          <rect [attr.x]="HPAD.left" [attr.y]="row.aY" [attr.width]="row.aW" [attr.height]="barHeight" [attr.fill]="colorA" rx="2">
+            <title>{{ row.label }} — {{ aLabel() }}: {{ row.aDisplay }}</title>
+          </rect>
           <text [attr.x]="HPAD.left + row.aW + 6" [attr.y]="row.aY + barHeight - 3" class="value-label">{{ row.aDisplay }}</text>
-          <rect [attr.x]="HPAD.left" [attr.y]="row.bY" [attr.width]="row.bW" [attr.height]="barHeight" [attr.fill]="colorB" rx="2" />
+          <rect [attr.x]="HPAD.left" [attr.y]="row.bY" [attr.width]="row.bW" [attr.height]="barHeight" [attr.fill]="colorB" rx="2">
+            <title>{{ row.label }} — {{ bLabel() }}: {{ row.bDisplay }}</title>
+          </rect>
           <text [attr.x]="HPAD.left + row.bW + 6" [attr.y]="row.bY + barHeight - 3" class="value-label">{{ row.bDisplay }}</text>
         }
       </svg>

@@ -50,8 +50,10 @@ import { Component, input } from '@angular/core';
        a small supporting number among many. */
     .tile.large {
       gap: 6px;
-      padding: 22px 24px;
-      border-left: 3px solid var(--brand-500);
+      padding: 22px 24px 22px 21px;
+      /* inset shadow instead of border-left - a real border ignores
+         border-radius on that edge and pokes out past the rounded corners */
+      box-shadow: var(--shadow-sm), inset 3px 0 0 0 var(--brand-500);
     }
     .tile.large .label {
       font-size: 12.5px;
