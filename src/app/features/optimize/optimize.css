@@ -619,6 +619,24 @@
   margin-top: 4px;
 }
 
+.auto-combine-note {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.auto-combine-note-success {
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  background: var(--brand-50);
+  color: var(--brand-700);
+}
+
+.auto-combine-note-success strong {
+  display: block;
+  margin-bottom: 2px;
+}
+
 .required {
   color: var(--red-500, #e0554f);
 }

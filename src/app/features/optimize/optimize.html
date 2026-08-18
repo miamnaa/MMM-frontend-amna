@@ -226,6 +226,41 @@
         </p>
 
         @if (effectiveChannels().length >= 2) {
+          <button
+            class="btn btn-secondary btn-sm side-panel-action"
+            type="button"
+            [disabled]="autoCombining()"
+            (click)="autoCombineChannels()"
+          >
+            {{ autoCombining() ? 'Checking…' : "Combine what's flagged" }}
+          </button>
+
+          @if (autoCombineError(); as err) {
+            <p class="drop-error">{{ err }}</p>
+          }
+
+          @if (autoCombineGroups(); as groups) {
+            @if (groups.length === 0) {
+              <p class="muted auto-combine-note">Nothing's correlated enough to need combining.</p>
+            } @else {
+              <div class="auto-combine-note auto-combine-note-success">
+                <strong>Combined:</strong>
+                @for (group of groups; track $index) {
+                  <div>
+                    {{ group.sources.join(' + ') }}
+                    @if (group.resultName) {
+                      → {{ group.resultName }}
+                    }
+                  </div>
+                }
+              </div>
+            }
+          }
+
+          <p class="muted correlation-note">Or pick a specific pair yourself:</p>
+        }
+
+        @if (effectiveChannels().length >= 2) {
           <div class="field">
             <label class="label" for="o-column-type">Column type</label>
             <select id="o-column-type" class="select" disabled>

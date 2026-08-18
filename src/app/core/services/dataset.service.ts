@@ -71,6 +71,21 @@ export interface CombineChannelsResponse {
   channelHyperparameters: null;
 }
 
+/**
+ * Real endpoint: POST /datasets/:id/auto-combine-channels, added 2026-08-18.
+ * Closes the gap where a real training failure (multicollinearity) only got
+ * fixed because someone manually noticed the correlation table and combined
+ * the pair by hand. Finds every real group of media columns correlated 90%+
+ * (chained - A+B 90%+ and B+C 90%+ groups all three, not just isolated
+ * pairs) and combines each group for real, same effect as calling
+ * combine-channels once per group. `combined` is `[]` when nothing was
+ * correlated enough - a real, valid outcome, not an error.
+ */
+export interface AutoCombineChannelsResponse {
+  dataset: CombineChannelsResponse;
+  combined: string[][];
+}
+
 /** Real endpoint: GET /datasets/:id/date-range - the real min/max date found in the uploaded file. */
 export interface DateRangeResponse {
   minDate: string;
@@ -296,6 +311,11 @@ export class DatasetService {
       sourceColumns,
       newColumnName,
     });
+  }
+
+  /** Real endpoint - finds and combines every real 90%+ correlated group of media columns in one call. No body needed. */
+  autoCombineChannels(datasetId: string): Observable<AutoCombineChannelsResponse> {
+    return this.http.post<AutoCombineChannelsResponse>(`${environment.apiBaseUrl}/datasets/${datasetId}/auto-combine-channels`, {});
   }
 
   /**

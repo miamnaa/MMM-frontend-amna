@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
-import { DatasetService, HyperparameterChannel } from '../../core/services/dataset.service';
+import { DatasetService, HyperparameterChannel, SavedColumnMapping } from '../../core/services/dataset.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
@@ -243,6 +243,27 @@ export class Optimize implements OnInit {
     () => this.selectedCombineChannels().length >= 2 && this.newFieldName().trim().length > 0 && !this.aggregating(),
   );
 
+/** Pushes a real updated columnMapping into TunnelService so the rest of the tunnel (Hyperparameters' channel list, etc.) reflects the real combined state, not the pre-combine one. */
+  private applyRealColumnMapping(mapping: SavedColumnMapping): void {
+    const currentConfig = this.tunnelService.configuration();
+    if (!currentConfig) return;
+    this.tunnelService.setConfiguration({
+      ...currentConfig,
+      dateColumn: mapping.dateColumn,
+      targetColumn: mapping.targetColumn,
+      mediaColumns: mapping.mediaColumns,
+      controlColumns: mapping.controlColumns,
+      organicColumns: mapping.organicColumns,
+      geoColumns: mapping.geoColumns,
+    });
+  }
+
+  /** Merges a real per-date series (from combineColumns' chart-preview call) into `rows` under the given field name, same as any other real column. */
+  private mergeSeriesIntoRows(name: string, dateColumn: string, series: { date: string; value: number }[]): void {
+    const valueByDate = new Map(series.map((s) => [s.date, s.value]));
+    this.rows.update((rows) => rows.map((r) => ({ ...r, [name]: valueByDate.get(String(r[dateColumn])) ?? 0 })));
+  }
+
   /**
    * Runs the chart-preview call (combineColumns, real per-date series for
    * the immediate visual below) and the real config-changing call
@@ -265,27 +286,13 @@ export class Optimize implements OnInit {
       next: ({ preview, real }) => {
         this.aggregating.set(false);
 
-        const valueByDate = new Map(preview.series.map((s) => [s.date, s.value]));
-        this.rows.update((rows) =>
-          rows.map((r) => ({ ...r, [name]: valueByDate.get(String(r[preview.dateColumn])) ?? 0 })),
-        );
+        this.mergeSeriesIntoRows(name, preview.dateColumn, preview.series);
         this.combinedGroups.update((groups) => [...groups, { name, members }]);
         this.combineDropdownOpen.set(false);
         this.selectedCombineChannels.set([]);
         this.newFieldName.set('');
 
-        const currentConfig = this.tunnelService.configuration();
-        if (currentConfig) {
-          this.tunnelService.setConfiguration({
-            ...currentConfig,
-            dateColumn: real.columnMapping.dateColumn,
-            targetColumn: real.columnMapping.targetColumn,
-            mediaColumns: real.columnMapping.mediaColumns,
-            controlColumns: real.columnMapping.controlColumns,
-            organicColumns: real.columnMapping.organicColumns,
-            geoColumns: real.columnMapping.geoColumns,
-          });
-        }
+        this.applyRealColumnMapping(real.columnMapping);
 
         if (real.channelHyperparameters === null) {
           this.hyperparametersNeedRedo.set(true);
@@ -294,6 +301,78 @@ export class Optimize implements OnInit {
       error: (err: unknown) => {
         this.aggregating.set(false);
         this.aggregateError.set(backendErrorMessage(err, 'Could not combine these channels. Try again.'));
+      },
+    });
+  }
+
+  readonly autoCombining = signal(false);
+  readonly autoCombineError = signal<string | null>(null);
+  /** null = never run yet; [] = ran, found nothing to combine; non-empty = ran, these groups got combined. */
+  readonly autoCombineGroups = signal<{ sources: string[]; resultName: string | null }[] | null>(null);
+
+  /**
+   * Finds and combines every real 90%+ correlated channel group in one
+   * call - the auto version of the manual picker above, for whichever
+   * pairs a person might not have manually noticed in the correlation
+   * table (real cause of the paid_social_spend training failure). The
+   * manual picker stays exactly as it is; this is an addition, not a
+   * replacement, for combining a specific pair the auto version didn't flag.
+   */
+  autoCombineChannels(): void {
+    if (this.autoCombining()) return;
+    const prevMediaColumns = new Set(this.mediaChannels());
+
+    this.autoCombining.set(true);
+    this.autoCombineError.set(null);
+    this.autoCombineGroups.set(null);
+
+    this.datasetService.autoCombineChannels(this.datasetId()).subscribe({
+      next: ({ dataset, combined }) => {
+        // The endpoint doesn't return each group's chosen new column name
+        // directly - it's derivable from what's new in mediaColumns that
+        // wasn't there before, in the same order the groups were combined.
+        const addedNames = dataset.columnMapping.mediaColumns.filter((c) => !prevMediaColumns.has(c));
+        const groups = combined.map((sources, i) => ({ sources, resultName: addedNames[i] ?? null }));
+        this.autoCombineGroups.set(groups);
+
+        if (combined.length === 0) {
+          this.autoCombining.set(false);
+          return;
+        }
+
+        this.applyRealColumnMapping(dataset.columnMapping);
+        if (dataset.channelHyperparameters === null) {
+          this.hyperparametersNeedRedo.set(true);
+        }
+
+        const groupsWithName = groups.filter((g): g is { sources: string[]; resultName: string } => g.resultName !== null);
+        if (groupsWithName.length === 0) {
+          this.autoCombining.set(false);
+          return;
+        }
+
+        forkJoin(
+          groupsWithName.map((g) => this.datasetService.combineColumns(this.datasetId(), g.sources)),
+        ).subscribe({
+          next: (previews) => {
+            this.autoCombining.set(false);
+            previews.forEach((preview, i) => {
+              const group = groupsWithName[i];
+              this.mergeSeriesIntoRows(group.resultName, preview.dateColumn, preview.series);
+              this.combinedGroups.update((gs) => [...gs, { name: group.resultName, members: group.sources }]);
+            });
+          },
+          error: (err: unknown) => {
+            this.autoCombining.set(false);
+            this.autoCombineError.set(
+              backendErrorMessage(err, 'Channels were combined for real, but the chart preview could not be refreshed. Reload to see it.'),
+            );
+          },
+        });
+      },
+      error: (err: unknown) => {
+        this.autoCombining.set(false);
+        this.autoCombineError.set(backendErrorMessage(err, "Could not check for correlated channels. Try again."));
       },
     });
   }
