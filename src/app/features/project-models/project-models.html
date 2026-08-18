@@ -66,8 +66,10 @@
                   <button class="btn btn-primary btn-sm" type="button" disabled>
                     Training…{{ row.training.progress != null ? ' ' + row.training.progress + '%' : '' }}
                   </button>
+                } @else if (row.training.phase === 'checking') {
+                  <button class="btn btn-secondary btn-sm" type="button" disabled>Checking…</button>
                 } @else if (row.training.phase === 'completed') {
-                  <span class="trained-note">Trained</span>
+                  <a class="btn btn-primary btn-sm" [routerLink]="['/results', projectId(), row.dataset.id]">View Model</a>
                 }
               } @else {
                 <button class="btn btn-secondary btn-sm" type="button" (click)="resume(row)">
@@ -98,85 +100,6 @@
             </div>
           }
 
-          @if (row.training.phase === 'completed') {
-            <div class="results-panel">
-              @if (isMockResult(row.training.results)) {
-                <div class="results-banner">Simulated results — not from a real trained model run yet.</div>
-              } @else {
-                <div class="results-banner results-banner-real">Real model results</div>
-              }
-
-              @if (row.training.results.model_confidence; as confidence) {
-                <div class="confidence-card">
-                  <div class="confidence-stat">
-                    <span class="confidence-label">Overall accuracy</span>
-                    <span class="confidence-value">{{ formatPercent(confidence.overall_accuracy_percent) }}</span>
-                  </div>
-                  <div class="confidence-stat">
-                    <span class="confidence-label">R²</span>
-                    <span class="confidence-value">{{ formatDecimal(confidence.r_squared) }}</span>
-                  </div>
-                </div>
-              }
-
-              @if (channelContributionRows(row.training.results).length > 0) {
-                <div class="results-section">
-                  <h3 class="results-section-title">Channel contribution</h3>
-                  <div class="contribution-bars">
-                    @for (ch of channelContributionRows(row.training.results); track $index) {
-                      <div class="contribution-row">
-                        <span class="contribution-name">{{ channelLabel(ch, $index) }}</span>
-                        <div class="contribution-track">
-                          <div class="contribution-fill" [style.width.%]="ch.pct_of_contribution ?? 0"></div>
-                        </div>
-                        <span class="contribution-pct">{{ formatPercent(ch.pct_of_contribution) }}</span>
-                        <span class="contribution-outcome">{{ formatCurrency(ch.incremental_outcome) }}</span>
-                      </div>
-                    }
-                  </div>
-                </div>
-              }
-
-              @if (channelEfficiencyRows(row.training.results).length > 0) {
-                <div class="results-section">
-                  <h3 class="results-section-title">Channel efficiency (ROI)</h3>
-                  <div class="efficiency-list">
-                    @for (ch of channelEfficiencyRows(row.training.results); track $index) {
-                      <div class="efficiency-row">
-                        <span class="efficiency-name">{{ channelLabel(ch, $index) }}</span>
-                        <div class="efficiency-metrics">
-                          @for (entry of rowMetrics(ch); track entry.label) {
-                            <span class="efficiency-metric"><strong>{{ entry.label }}:</strong> {{ entry.value }}</span>
-                          }
-                        </div>
-                      </div>
-                    }
-                  </div>
-                </div>
-              }
-
-              @if (budgetEntries(row.training.results).length > 0) {
-                <div class="results-section">
-                  <h3 class="results-section-title">Budget recommendation</h3>
-                  <dl class="results-grid">
-                    @for (entry of budgetEntries(row.training.results); track entry.label) {
-                      <dt>{{ entry.label }}</dt>
-                      <dd>{{ entry.value }}</dd>
-                    }
-                  </dl>
-                </div>
-              }
-
-              @if (otherResultEntries(row.training.results).length > 0) {
-                <dl class="results-grid">
-                  @for (entry of otherResultEntries(row.training.results); track entry.label) {
-                    <dt>{{ entry.label }}</dt>
-                    <dd>{{ entry.value }}</dd>
-                  }
-                </dl>
-              }
-            </div>
-          }
         </article>
       }
     </div>

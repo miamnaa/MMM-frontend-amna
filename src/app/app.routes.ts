@@ -140,13 +140,21 @@ export const routes: Routes = [
         path: 'results',
         title: 'Results & Insights · ROIVIO',
         loadComponent: () =>
-          import('./features/results-dashboard/results-dashboard').then((m) => m.ResultsDashboard),
+          import('./features/results-projects/results-projects').then((m) => m.ResultsProjects),
       },
       {
-        path: 'results/:experimentId',
+        path: 'results/:projectId',
         title: 'Results & Insights · ROIVIO',
+        canActivate: [projectContextGuard],
         loadComponent: () =>
-          import('./features/results-dashboard/results-dashboard').then((m) => m.ResultsDashboard),
+          import('./features/results-projects/results-projects').then((m) => m.ResultsProjects),
+      },
+      {
+        path: 'results/:projectId/:datasetId',
+        title: 'Model results · ROIVIO',
+        canActivate: [projectContextGuard],
+        loadComponent: () =>
+          import('./features/model-results/model-results').then((m) => m.ModelResults),
       },
       {
         path: 'scenarios',

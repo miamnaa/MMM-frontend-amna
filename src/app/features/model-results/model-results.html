@@ -1,0 +1,126 @@
+<app-page-header
+  [title]="dataset()?.name ?? 'Model results'"
+  subtitle="Real results from this model's training run."
+>
+  <a class="btn btn-secondary btn-sm" [routerLink]="['/results', projectId()]">← Back to models</a>
+</app-page-header>
+
+@if (loading()) {
+  <div class="skeleton-list">
+    <div class="skeleton"></div>
+    <div class="skeleton"></div>
+    <div class="skeleton"></div>
+  </div>
+} @else if (notTrained()) {
+  <app-empty-state
+    title="Not trained yet"
+    message="This model hasn't completed a real training run - go to its Models page to start one."
+  >
+    <a class="btn btn-primary btn-sm" [routerLink]="['/models', projectId()]">Go to Models</a>
+  </app-empty-state>
+} @else if (results(); as r) {
+  @if (isMockResult()) {
+    <div class="results-banner">Simulated results — not from a real trained model run yet.</div>
+  } @else {
+    <div class="results-banner results-banner-real">Real model results</div>
+  }
+
+  @if (confidenceTiles(); as c) {
+    <div class="tile-row">
+      <app-stat-tile label="Overall accuracy" [value]="c.accuracy" />
+      <app-stat-tile label="R²" [value]="c.rSquared" />
+    </div>
+  }
+
+  @if (contributionBars().length > 0) {
+    <section class="card results-section">
+      <h2 class="section-title">Channel contribution</h2>
+      <app-bar-chart [data]="contributionBars()" />
+      <div class="outcome-list">
+        @for (entry of contributionOutcomes(); track entry.label) {
+          <span class="outcome-chip"><strong>{{ entry.label }}:</strong> {{ entry.value }} incremental</span>
+        }
+      </div>
+    </section>
+  }
+
+  @if (hasEfficiencyCharts()) {
+    <section class="card results-section">
+      <h2 class="section-title">Channel efficiency (ROI)</h2>
+      <div class="chart-pair">
+        @if (roiBars().length > 0) {
+          <div>
+            <h3 class="chart-pair-title">ROI</h3>
+            <app-bar-chart [data]="roiBars()" />
+          </div>
+        }
+        @if (marginalRoiBars().length > 0) {
+          <div>
+            <h3 class="chart-pair-title">Marginal ROI</h3>
+            <app-bar-chart [data]="marginalRoiBars()" />
+          </div>
+        }
+      </div>
+    </section>
+  } @else if (efficiencyFallback().length > 0) {
+    <section class="card results-section">
+      <h2 class="section-title">Channel efficiency</h2>
+      <div class="efficiency-list">
+        @for (row of efficiencyFallback(); track row.name) {
+          <div class="efficiency-row">
+            <span class="efficiency-name">{{ row.name }}</span>
+            <div class="efficiency-metrics">
+              @for (entry of row.entries; track entry.label) {
+                <span class="efficiency-metric"><strong>{{ entry.label }}:</strong> {{ entry.value }}</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  @if (hasBudgetCharts()) {
+    <section class="card results-section">
+      <h2 class="section-title">Budget recommendation</h2>
+      <div class="chart-pair">
+        @if (currentSpendBars().length > 0) {
+          <div>
+            <h3 class="chart-pair-title">Current spend</h3>
+            <app-bar-chart [data]="currentSpendBars()" />
+          </div>
+        }
+        @if (recommendedSpendBars().length > 0) {
+          <div>
+            <h3 class="chart-pair-title">Recommended spend</h3>
+            <app-bar-chart [data]="recommendedSpendBars()" />
+          </div>
+        }
+      </div>
+    </section>
+  } @else if (budgetFallback().length > 0) {
+    <section class="card results-section">
+      <h2 class="section-title">Budget recommendation</h2>
+      <dl class="results-grid">
+        @for (entry of budgetFallback(); track entry.label) {
+          <dt>{{ entry.label }}</dt>
+          <dd>{{ entry.value }}</dd>
+        }
+      </dl>
+    </section>
+  }
+
+  @if (hasCurves()) {
+    <section class="card results-section">
+      <h2 class="section-title">Carryover / decay curve</h2>
+      <p class="muted field-hint">Illustrative — computed from this model's saved carryover values, not a real curve the backend returned.</p>
+      <app-line-chart [series]="carryoverCurves()" xLabel="Week" [formatX]="formatX" [formatY]="formatYPercent" />
+    </section>
+
+    <section class="card results-section">
+      <h2 class="section-title">Saturation curve</h2>
+      <p class="muted field-hint">Illustrative — computed from this model's saved saturation (gamma) values over an illustrative spend range, not this channel's real spend numbers.</p>
+      <app-line-chart [series]="saturationCurves()" xLabel="Spend" [formatX]="formatXSpend" [formatY]="formatYPercent" />
+    </section>
+  }
+}

@@ -1,0 +1,67 @@
+@if (projectId() === null) {
+  <app-page-header title="Results & Insights" subtitle="Pick a project to see its trained models and results." />
+
+  @if (loadingProjects()) {
+    <div class="skeleton-list">
+      <div class="skeleton"></div>
+      <div class="skeleton"></div>
+      <div class="skeleton"></div>
+    </div>
+  } @else if (projects().length === 0) {
+    <app-empty-state title="No projects yet" message="Create a project and train a model to see results here." />
+  } @else {
+    <div class="project-list">
+      @for (p of projects(); track p.id) {
+        <a class="card project-row" [routerLink]="['/results', p.id]">
+          <div>
+            <h2>{{ p.name }}</h2>
+            <span class="muted">{{ p.datasetCount }} model{{ p.datasetCount === 1 ? '' : 's' }}</span>
+          </div>
+          <span class="chevron" aria-hidden="true">→</span>
+        </a>
+      }
+    </div>
+  }
+} @else {
+  <app-page-header
+    [title]="project()?.name ?? 'Results & Insights'"
+    subtitle="Every model trained for this project, with real results once training completes."
+  >
+    <a class="btn btn-secondary btn-sm" routerLink="/results">All projects</a>
+  </app-page-header>
+
+  @if (loadError(); as err) {
+    <div class="error-banner">{{ err }}</div>
+  }
+
+  @if (loadingModels()) {
+    <div class="skeleton-list">
+      <div class="skeleton"></div>
+      <div class="skeleton"></div>
+      <div class="skeleton"></div>
+    </div>
+  } @else if (rows().length === 0) {
+    <app-empty-state title="No models yet" message="Upload a dataset and finish setup to train your first model." />
+  } @else {
+    <div class="model-list">
+      @for (row of rows(); track row.dataset.id) {
+        <div class="card model-row">
+          <div>
+            <h2>{{ row.dataset.name }}</h2>
+            <span class="muted">{{ row.label }}</span>
+          </div>
+
+          @if (row.status !== 'ready') {
+            <span class="muted">Finish setup to train this model</span>
+          } @else if (row.trained === 'checking') {
+            <button class="btn btn-secondary btn-sm" type="button" disabled>Checking…</button>
+          } @else if (row.trained === 'trained') {
+            <a class="btn btn-primary btn-sm" [routerLink]="['/results', projectId(), row.dataset.id]">View Model</a>
+          } @else {
+            <span class="muted">Not trained yet — <a [routerLink]="['/models', projectId()]">go to Models</a></span>
+          }
+        </div>
+      }
+    </div>
+  }
+}
