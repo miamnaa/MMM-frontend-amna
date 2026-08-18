@@ -60,9 +60,10 @@ import { Component, input } from '@angular/core';
        among many. Square (equal width/height) so a row of these reads as
        a matched set of cards rather than plain wide rectangles. */
     .tile.large {
+      flex: 0 0 190px;
       gap: 14px;
-      width: 160px;
-      height: 160px;
+      width: 190px;
+      height: 190px;
       padding: 20px 22px;
       box-sizing: border-box;
     }
@@ -75,6 +76,9 @@ import { Component, input } from '@angular/core';
       font-size: 13px;
       font-weight: 600;
       color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .icon-badge {
       display: inline-flex;
@@ -89,8 +93,8 @@ import { Component, input } from '@angular/core';
       line-height: 1;
     }
     .tile.large .value {
-      font-size: 36px;
-      font-weight: 800;
+      font-size: 32px;
+      font-weight: 700;
       letter-spacing: -0.01em;
       color: var(--text);
     }
