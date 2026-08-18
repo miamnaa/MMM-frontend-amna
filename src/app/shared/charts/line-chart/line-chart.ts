@@ -10,7 +10,9 @@ export interface LineSeries {
 
 const W = 720;
 const H = 300;
-const PAD = { top: 16, right: 116, bottom: 34, left: 58 };
+const PAD = { top: 16, right: 150, bottom: 34, left: 58 };
+/** Long combined-channel names (e.g. "paid_tv_paid_combined") were overflowing past the chart's right edge - truncated with an ellipsis so the end-of-line label always fits the reserved margin regardless of name length. */
+const MAX_LABEL_CHARS = 20;
 
 /**
  * Multi-series line chart on a single y axis (never two scales).
@@ -109,7 +111,8 @@ const PAD = { top: 16, right: 116, bottom: 34, left: 58 };
             font-size="11.5"
             font-weight="600"
           >
-            {{ s.name }}
+            {{ s.shortName }}
+            <title>{{ s.name }}</title>
           </text>
         }
       </svg>
@@ -262,7 +265,8 @@ export class LineChart {
             cy: this.sy(this.interpolate(s, s.marker.x)),
           }
         : null;
-      return { name: s.name, d, color: seriesColor(i), endY: this.sy(last.y), marker };
+      const shortName = s.name.length > MAX_LABEL_CHARS ? `${s.name.slice(0, MAX_LABEL_CHARS - 1)}…` : s.name;
+      return { name: s.name, shortName, d, color: seriesColor(i), endY: this.sy(last.y), marker };
     });
 
     // De-collide the end-of-line name labels - series that converge toward
