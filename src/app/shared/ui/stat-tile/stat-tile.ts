@@ -63,22 +63,25 @@ import { Component, input } from '@angular/core';
       flex: 0 0 210px;
       gap: 14px;
       width: 210px;
-      height: 190px;
+      height: 210px;
       padding: 20px 22px;
       box-sizing: border-box;
     }
     .tile-head {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 10px;
+      /* Fixed for two lines' worth of label, so a short one-line label
+         (e.g. "R Squared") and a long two-line one (e.g. "Average Error
+         Percent") both leave the value starting at the same y position -
+         otherwise cards in the same row visually mis-align by label length. */
+      min-height: 36px;
     }
     .tile.large .label {
       font-size: 13px;
       font-weight: 600;
+      line-height: 1.35;
       color: var(--text-muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
     .icon-badge {
       display: inline-flex;
