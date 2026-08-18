@@ -54,7 +54,7 @@
 
 .model-row-main {
   display: grid;
-  grid-template-columns: 1fr 180px 50px auto;
+  grid-template-columns: 1fr 220px auto;
   align-items: center;
   gap: 16px;
 }
@@ -62,15 +62,33 @@
 .progress-col {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 
 .progress-caption {
-  font-size: 10.5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
   font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  color: var(--text);
+}
+
+.progress-caption strong {
+  font-weight: 700;
+}
+
+.progress-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--brand-500);
+  color: #fff;
+  font-size: 10px;
+  line-height: 1;
 }
 
 .row-actions {
@@ -114,13 +132,6 @@
   border-radius: var(--r-full);
   background: var(--brand-500);
   transition: width 0.2s;
-}
-
-.percent-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-align: right;
 }
 
 .trained-note {
@@ -167,10 +178,6 @@
   .model-row-main {
     grid-template-columns: 1fr;
     gap: 8px;
-  }
-
-  .percent-label {
-    text-align: left;
   }
 }
 
