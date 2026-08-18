@@ -28,7 +28,6 @@ export class Sidebar {
 
   readonly analysis: NavItem[] = [
     { label: 'Results & Insights', path: '/results', icon: '◨' },
-    { label: 'Scenario Planner', path: '/scenarios', icon: '◈' },
   ];
 
   readonly system: NavItem[] = [{ label: 'Settings', path: '/settings', icon: '⚒' }];
