@@ -10,6 +10,14 @@ import {
   isFailedTrainingStatus,
   isTerminalTrainingStatus,
 } from '../../core/services/dataset.service';
+
+/** Common field names the real backend might use for a channel's display name - checked in order, first match wins. */
+const CHANNEL_NAME_KEYS = ['channel', 'channel_name', 'name', 'variable', 'media_channel'];
+
+interface DisplayEntry {
+  label: string;
+  value: string;
+}
 import { Project } from '../../core/models/domain.models';
 import { MODEL_STATUS_META, ModelStatus, computeModelStatus, resumeDatasetRoute } from '../../core/services/model-status';
 import { ProjectService } from '../../core/services/project.service';
@@ -167,9 +175,93 @@ export class ProjectModels implements OnInit, OnDestroy {
     this.pollSubs.set(id, sub);
   }
 
-  /** For display - Object.entries() so the results panel renders whatever real keys came back instead of assuming a specific shape. */
-  resultEntries(results: TrainingResults): [string, unknown][] {
-    return Object.entries(results);
+  /** `mock === true` -> simulated; `false` or absent -> a real trained model. Not fixed per-dataset - depends on whether the real engine was reachable when /train was called. */
+  isMockResult(results: TrainingResults): boolean {
+    return results.mock === true;
+  }
+
+  channelContributionRows(results: TrainingResults) {
+    return results.channel_contribution ?? [];
+  }
+
+  channelEfficiencyRows(results: TrainingResults) {
+    return results.channel_efficiency ?? [];
+  }
+
+  /** First matching name-like field on a channel row, falling back to a positional label if the real field name doesn't match any of the guesses. */
+  channelLabel(row: Record<string, unknown>, index: number): string {
+    for (const key of CHANNEL_NAME_KEYS) {
+      const value = row[key];
+      if (typeof value === 'string' && value.length > 0) return value;
+    }
+    return `Channel ${index + 1}`;
+  }
+
+  formatPercent(value: unknown): string {
+    return typeof value === 'number' ? `${Math.round(value * 10) / 10}%` : '—';
+  }
+
+  formatDecimal(value: unknown): string {
+    return typeof value === 'number' ? value.toFixed(3) : '—';
+  }
+
+  formatCurrency(value: unknown): string {
+    return typeof value === 'number' ? `$${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value)}` : '—';
+  }
+
+  private humanizeKey(key: string): string {
+    return key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+
+  private formatPrimitive(value: unknown): string {
+    if (value === null || value === undefined) return '—';
+    if (typeof value === 'number') return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(value);
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    return String(value);
+  }
+
+  /**
+   * Turns any unknown value (object, array, or primitive) into simple
+   * label/value rows for display - the fix for results fields rendering as
+   * literal "[object Object]" text. Recurses into nested objects/arrays so
+   * nothing gets silently dropped or shown as a raw object.
+   */
+  flattenForDisplay(value: unknown, prefix = ''): DisplayEntry[] {
+    if (Array.isArray(value)) {
+      return value.flatMap((item, i) => this.flattenForDisplay(item, prefix ? `${prefix} ${i + 1}` : `Item ${i + 1}`));
+    }
+    if (value !== null && typeof value === 'object') {
+      return Object.entries(value as Record<string, unknown>).flatMap(([key, v]) =>
+        this.flattenForDisplay(v, prefix ? `${prefix} — ${this.humanizeKey(key)}` : this.humanizeKey(key)),
+      );
+    }
+    return [{ label: prefix || 'Value', value: this.formatPrimitive(value) }];
+  }
+
+  /** A channel efficiency row's metrics, excluding whichever field was used as its display name so it isn't shown twice. */
+  rowMetrics(row: Record<string, unknown>): DisplayEntry[] {
+    const withoutName = { ...row };
+    for (const key of CHANNEL_NAME_KEYS) delete withoutName[key];
+    return this.flattenForDisplay(withoutName);
+  }
+
+  budgetEntries(results: TrainingResults): DisplayEntry[] {
+    return results.budget_recommendation !== undefined ? this.flattenForDisplay(results.budget_recommendation) : [];
+  }
+
+  private static readonly KNOWN_RESULT_KEYS = new Set([
+    'mock',
+    'model_confidence',
+    'channel_contribution',
+    'channel_efficiency',
+    'budget_recommendation',
+  ]);
+
+  /** Any result field not already covered by a dedicated section above - keeps this forward-compatible with fields not yet documented. */
+  otherResultEntries(results: TrainingResults): DisplayEntry[] {
+    return Object.entries(results)
+      .filter(([key]) => !ProjectModels.KNOWN_RESULT_KEYS.has(key))
+      .flatMap(([key, value]) => this.flattenForDisplay(value, this.humanizeKey(key)));
   }
 
   confirmDelete(row: ModelRow): void {

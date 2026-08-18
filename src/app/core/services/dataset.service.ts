@@ -146,15 +146,36 @@ export function isFailedTrainingStatus(status: string): boolean {
 }
 
 /**
- * Real endpoint, confirmed working 2026-08-13. Anas's own description of
- * this endpoint says results are currently simulated on the backend, not
- * from a real trained model run - the UI surfacing these must say so
- * clearly, not present them as real output. Shape is intentionally loose
- * (`Record<string, unknown>`) since nothing beyond "it's real JSON" is
- * documented - the results panel renders whatever keys are actually there
- * rather than assuming a specific shape that might not match.
+ * Real endpoint, confirmed working 2026-08-13. As of 2026-08-18, Anas
+ * confirmed real Meridian training runs on a Colab GPU when it's reachable
+ * (Colab's own log proved a real end-to-end run), same shape as the mock -
+ * `results.mock` is the real boolean that tells you which one you got.
+ * `mock === true` -> simulated; `false` or absent -> a real trained model.
+ * Which one you get isn't fixed - it depends on whether the real engine was
+ * reachable at the moment /train was called, so both are expected, not a
+ * bug either way. The four named fields below are the confirmed real shape;
+ * `[key: string]: unknown` keeps this forward-compatible with any field not
+ * yet documented, same honesty rule as before.
  */
-export type TrainingResults = Record<string, unknown>;
+export interface ModelConfidence extends Record<string, unknown> {
+  overall_accuracy_percent?: number;
+  r_squared?: number;
+}
+
+export interface ChannelContributionRow extends Record<string, unknown> {
+  pct_of_contribution?: number;
+  incremental_outcome?: number;
+}
+
+export type ChannelEfficiencyRow = Record<string, unknown>;
+
+export interface TrainingResults extends Record<string, unknown> {
+  mock?: boolean;
+  model_confidence?: ModelConfidence;
+  channel_contribution?: ChannelContributionRow[];
+  channel_efficiency?: ChannelEfficiencyRow[];
+  budget_recommendation?: unknown;
+}
 
 /**
  * `list`/`upload` still have no real backend (API-REFERENCE.md, "What is
@@ -297,7 +318,7 @@ export class DatasetService {
     return this.http.get<TrainingStatusResponse>(`${environment.apiBaseUrl}/datasets/${datasetId}/status`);
   }
 
-  /** Real endpoint, confirmed working 2026-08-13 - results are currently simulated on the backend, not a real trained model's output. */
+  /** Real endpoint, confirmed working 2026-08-13 - real trained-model output when the Meridian engine was reachable, simulated otherwise. Check `results.mock` to tell which one came back, not the endpoint used. */
   getResults(datasetId: string): Observable<TrainingResults> {
     return this.http.get<TrainingResults>(`${environment.apiBaseUrl}/datasets/${datasetId}/results`);
   }
