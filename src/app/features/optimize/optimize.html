@@ -45,6 +45,8 @@
         class="input"
         type="date"
         [ngModel]="startDate()"
+        [attr.min]="datasetMinDate() || null"
+        [attr.max]="datasetMaxDate() || null"
         (ngModelChange)="startDate.set($event); dateRangeAutoFilled.set(false)"
       />
     </div>
@@ -56,9 +58,16 @@
         class="input"
         type="date"
         [ngModel]="endDate()"
+        [attr.min]="datasetMinDate() || null"
+        [attr.max]="datasetMaxDate() || null"
         (ngModelChange)="endDate.set($event); dateRangeAutoFilled.set(false)"
       />
     </div>
+    @if (datasetMinDate() && datasetMaxDate()) {
+      <p class="muted field-hint">
+        Your uploaded file only has data between {{ datasetMinDateLabel() }} and {{ datasetMaxDateLabel() }} - dates outside that range are disabled.
+      </p>
+    }
 
     @if (rangeInvalid()) {
       <p class="drop-error">Start date must be before end date.</p>

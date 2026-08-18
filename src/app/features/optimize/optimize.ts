@@ -102,6 +102,11 @@ export class Optimize implements OnInit {
   /** True once GET /datasets/:id confirmed a real saved date range exists - guards the auto-fill below from ever overwriting it. */
   private hasSavedDateRange = false;
   readonly dateRangeAutoFilled = signal(false);
+  /** Real earliest/latest date found in the uploaded file - used as the date inputs' min/max so only dates that actually exist in the data can be picked. */
+  readonly datasetMinDate = signal('');
+  readonly datasetMaxDate = signal('');
+  readonly datasetMinDateLabel = computed(() => formatAxisDate(this.datasetMinDate()));
+  readonly datasetMaxDateLabel = computed(() => formatAxisDate(this.datasetMaxDate()));
 
   readonly saving = signal(false);
   readonly saveError = signal<string | null>(null);
@@ -164,11 +169,26 @@ export class Optimize implements OnInit {
   readonly rowsLoading = signal(false);
   readonly rowsError = signal<string | null>(null);
 
+  /**
+   * The Custom Timeframe chart's data - sorted by real date, then narrowed
+   * to whatever Start/End date is currently selected above it, so changing
+   * either field visibly updates the chart instead of always showing every
+   * row in the file.
+   */
   private readonly sortedRows = computed(() => {
     const dateCol = this.config()?.dateColumn;
     const list = this.rows();
     if (!dateCol) return list;
-    return [...list].sort((a, b) => String(a[dateCol] ?? '').localeCompare(String(b[dateCol] ?? '')));
+    const sorted = [...list].sort((a, b) => String(a[dateCol] ?? '').localeCompare(String(b[dateCol] ?? '')));
+
+    const startTime = new Date(this.startDate()).getTime();
+    const endTime = new Date(this.endDate()).getTime();
+    if (Number.isNaN(startTime) || Number.isNaN(endTime)) return sorted;
+
+    return sorted.filter((row) => {
+      const t = new Date(String(row[dateCol] ?? '')).getTime();
+      return Number.isNaN(t) ? true : t >= startTime && t <= endTime;
+    });
   });
 
   /**
@@ -505,19 +525,24 @@ export class Optimize implements OnInit {
   }
 
   /**
-   * First-visit convenience only: if this dataset has never had an Optimize
-   * date range saved, prefill Start/End with the real min/max date the
-   * backend found in the uploaded file (GET /datasets/:id/date-range) -
-   * still fully editable. Requires Configuration to already be saved; the
-   * 400 that comes back otherwise is expected (this screen is unreachable
-   * before Configure anyway) and just leaves the fields blank, same as
-   * before this existed. Called only after getDataset() confirms there's no
-   * real saved range to protect - never overwrites one.
+   * Always fetches the real min/max date the backend found in the uploaded
+   * file (GET /datasets/:id/date-range), so the Start/End inputs' min/max
+   * attributes only allow picking dates that actually exist in this
+   * dataset. On top of that, first-visit convenience: if this dataset has
+   * never had an Optimize date range saved, also prefill Start/End with
+   * those same real bounds - still fully editable. Requires Configuration
+   * to already be saved; the 400 that comes back otherwise is expected
+   * (this screen is unreachable before Configure anyway) and just leaves
+   * everything blank, same as before this existed. The prefill only ever
+   * runs if getDataset() already confirmed there's no real saved range to
+   * protect - it never overwrites one.
    */
   private maybeSuggestDateRange(): void {
-    if (this.hasSavedDateRange) return;
     this.datasetService.getDateRange(this.datasetId()).subscribe({
       next: ({ minDate, maxDate }) => {
+        this.datasetMinDate.set(minDate);
+        this.datasetMaxDate.set(maxDate);
+        if (this.hasSavedDateRange) return;
         this.startDate.set(minDate);
         this.endDate.set(maxDate);
         this.dateRangeAutoFilled.set(true);
