@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { ApiDatasetDetail, DatasetService, TrainingResults } from '../../core/services/dataset.service';
 import { BarChart, BarDatum } from '../../shared/charts/bar-chart/bar-chart';
+import { GroupedBarChart, GroupedBarDatum } from '../../shared/charts/grouped-bar-chart/grouped-bar-chart';
 import { LineChart, LineSeries } from '../../shared/charts/line-chart/line-chart';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
@@ -30,7 +31,7 @@ const SATURATION_MAX_SPEND = 100;
  */
 @Component({
   selector: 'app-model-results',
-  imports: [RouterLink, PageHeader, EmptyState, StatTile, BarChart, LineChart],
+  imports: [RouterLink, PageHeader, EmptyState, StatTile, BarChart, GroupedBarChart, LineChart],
   templateUrl: './model-results.html',
   styleUrl: './model-results.css',
 })
@@ -75,16 +76,15 @@ export class ModelResults implements OnInit {
 
   private readonly efficiencyRows = computed(() => this.results()?.channel_efficiency ?? []);
 
-  /** Best-effort field detection - channel_efficiency's exact field names aren't documented, only "map into an ROI view." Falls back to a flattened list per channel if nothing recognizable is found. */
-  readonly roiBars = computed<BarDatum[]>(() => this.detectMetricBars(this.efficiencyRows(), ['roi']));
-  readonly marginalRoiBars = computed<BarDatum[]>(() =>
-    this.detectMetricBars(this.efficiencyRows(), ['marginal_roi', 'marginalroi']),
+  /** Best-effort field detection - channel_efficiency's exact field names aren't documented, only "map into an ROI view." Falls back to a flattened list per channel if a real roi + marginal roi pair isn't found. */
+  readonly roiGroupedBars = computed<GroupedBarDatum[]>(() =>
+    this.detectGroupedBars(this.efficiencyRows(), ['roi'], ['marginal_roi', 'marginalroi']),
   );
 
-  readonly hasEfficiencyCharts = computed(() => this.roiBars().length > 0 || this.marginalRoiBars().length > 0);
+  readonly hasEfficiencyChart = computed(() => this.roiGroupedBars().length > 0);
 
   readonly efficiencyFallback = computed<{ name: string; entries: DisplayEntry[] }[]>(() => {
-    if (this.hasEfficiencyCharts()) return [];
+    if (this.hasEfficiencyChart()) return [];
     return this.efficiencyRows().map((row, i) => ({ name: this.channelLabel(row, i), entries: this.rowMetrics(row) }));
   });
 
@@ -93,18 +93,21 @@ export class ModelResults implements OnInit {
     return Array.isArray(b) ? (b as Record<string, unknown>[]) : [];
   });
 
-  readonly currentSpendBars = computed<BarDatum[]>(() =>
-    this.detectMetricBars(this.budgetRows(), ['current_spend', 'currentspend', 'current'], currency),
-  );
-  readonly recommendedSpendBars = computed<BarDatum[]>(() =>
-    this.detectMetricBars(this.budgetRows(), ['recommended_spend', 'recommendedspend', 'recommended'], currency),
+  /** Same best-effort pattern as ROI - budget_recommendation's exact field names aren't documented either. */
+  readonly budgetGroupedBars = computed<GroupedBarDatum[]>(() =>
+    this.detectGroupedBars(
+      this.budgetRows(),
+      ['current_spend', 'currentspend', 'current'],
+      ['recommended_spend', 'recommendedspend', 'recommended'],
+      currency,
+    ),
   );
 
-  readonly hasBudgetCharts = computed(() => this.currentSpendBars().length > 0 || this.recommendedSpendBars().length > 0);
+  readonly hasBudgetChart = computed(() => this.budgetGroupedBars().length > 0);
 
   readonly budgetFallback = computed<DisplayEntry[]>(() => {
     const b = this.results()?.budget_recommendation;
-    if (b === undefined || this.hasBudgetCharts()) return [];
+    if (b === undefined || this.hasBudgetChart()) return [];
     return this.flattenForDisplay(b);
   });
 
@@ -176,19 +179,23 @@ export class ModelResults implements OnInit {
     return `Channel ${index + 1}`;
   }
 
-  private detectMetricBars(
+  /** Only pairs a row into the chart when BOTH fields are real numbers - a channel missing either metric drops to the fallback list instead of rendering a half-empty bar. */
+  private detectGroupedBars(
     rows: Record<string, unknown>[],
-    candidateKeys: string[],
+    keysA: string[],
+    keysB: string[],
     formatter: (v: number) => string = (v) => this.formatDecimal(v),
-  ): BarDatum[] {
-    const found = rows
+  ): GroupedBarDatum[] {
+    return rows
       .map((row, i) => {
-        const key = Object.keys(row).find((k) => candidateKeys.includes(k.toLowerCase()));
-        const value = key ? row[key] : undefined;
-        return typeof value === 'number' ? { label: this.channelLabel(row, i), value, display: formatter(value) } : null;
+        const keyA = Object.keys(row).find((k) => keysA.includes(k.toLowerCase()));
+        const keyB = Object.keys(row).find((k) => keysB.includes(k.toLowerCase()));
+        const a = keyA ? row[keyA] : undefined;
+        const b = keyB ? row[keyB] : undefined;
+        if (typeof a !== 'number' || typeof b !== 'number') return null;
+        return { label: this.channelLabel(row, i), a, aDisplay: formatter(a), b, bDisplay: formatter(b) };
       })
-      .filter((r): r is BarDatum => r !== null);
-    return found;
+      .filter((r): r is GroupedBarDatum => r !== null);
   }
 
   private formatPercent(value: unknown): string {

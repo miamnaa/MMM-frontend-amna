@@ -78,27 +78,6 @@
   font-weight: 600;
 }
 
-.chart-pair {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-}
-
-@media (max-width: 720px) {
-  .chart-pair {
-    grid-template-columns: 1fr;
-  }
-}
-
-.chart-pair-title {
-  margin: 0 0 10px;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
 .efficiency-list {
   display: flex;
   flex-direction: column;

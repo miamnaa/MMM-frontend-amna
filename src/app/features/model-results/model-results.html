@@ -44,23 +44,10 @@
     </section>
   }
 
-  @if (hasEfficiencyCharts()) {
+  @if (hasEfficiencyChart()) {
     <section class="card results-section">
-      <h2 class="section-title">Channel efficiency (ROI)</h2>
-      <div class="chart-pair">
-        @if (roiBars().length > 0) {
-          <div>
-            <h3 class="chart-pair-title">ROI</h3>
-            <app-bar-chart [data]="roiBars()" />
-          </div>
-        }
-        @if (marginalRoiBars().length > 0) {
-          <div>
-            <h3 class="chart-pair-title">Marginal ROI</h3>
-            <app-bar-chart [data]="marginalRoiBars()" />
-          </div>
-        }
-      </div>
+      <h2 class="section-title">ROI vs Marginal ROI</h2>
+      <app-grouped-bar-chart [data]="roiGroupedBars()" aLabel="ROI" bLabel="Marginal ROI" />
     </section>
   } @else if (efficiencyFallback().length > 0) {
     <section class="card results-section">
@@ -80,23 +67,10 @@
     </section>
   }
 
-  @if (hasBudgetCharts()) {
+  @if (hasBudgetChart()) {
     <section class="card results-section">
       <h2 class="section-title">Budget recommendation</h2>
-      <div class="chart-pair">
-        @if (currentSpendBars().length > 0) {
-          <div>
-            <h3 class="chart-pair-title">Current spend</h3>
-            <app-bar-chart [data]="currentSpendBars()" />
-          </div>
-        }
-        @if (recommendedSpendBars().length > 0) {
-          <div>
-            <h3 class="chart-pair-title">Recommended spend</h3>
-            <app-bar-chart [data]="recommendedSpendBars()" />
-          </div>
-        }
-      </div>
+      <app-grouped-bar-chart [data]="budgetGroupedBars()" aLabel="Current spend" bLabel="Recommended spend" />
     </section>
   } @else if (budgetFallback().length > 0) {
     <section class="card results-section">
