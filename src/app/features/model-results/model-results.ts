@@ -63,27 +63,30 @@ export class ModelResults implements OnInit {
   readonly isMockResult = computed(() => this.results()?.mock === true);
 
   /**
-   * Renders every real key model_confidence actually has, not just the two
-   * documented ones (overall_accuracy_percent, r_squared) - if the backend
-   * sends more real confidence metrics (e.g. an adjusted R² or an error
-   * rate), they show up here automatically instead of being silently
-   * dropped, and nothing gets invented if it doesn't.
+   * Renders every real NUMERIC key model_confidence actually has, not just
+   * the two documented ones (overall_accuracy_percent, r_squared) - if the
+   * backend sends more real confidence metrics (e.g. an adjusted R² or an
+   * error rate), they show up here automatically instead of being silently
+   * dropped. Non-numeric fields are skipped rather than rendered as a
+   * "value" - a real response includes overall_accuracy_description, a
+   * plain-text explanation of the accuracy metric, not a KPI itself.
    */
   private static readonly CONFIDENCE_ICONS = ['📈', '📊', '🎯', '📐', '⏱️', '🧮'];
 
   readonly confidenceTiles = computed(() => {
     const c = this.results()?.model_confidence;
     if (!c) return [];
-    return Object.entries(c).map(([key, value], i) => ({
-      key,
-      label: this.humanizeKey(key),
-      value: this.formatConfidenceValue(key, value),
-      icon: ModelResults.CONFIDENCE_ICONS[i % ModelResults.CONFIDENCE_ICONS.length],
-    }));
+    return Object.entries(c)
+      .filter((entry): entry is [string, number] => typeof entry[1] === 'number')
+      .map(([key, value], i) => ({
+        key,
+        label: this.humanizeKey(key),
+        value: this.formatConfidenceValue(key, value),
+        icon: ModelResults.CONFIDENCE_ICONS[i % ModelResults.CONFIDENCE_ICONS.length],
+      }));
   });
 
-  private formatConfidenceValue(key: string, value: unknown): string {
-    if (typeof value !== 'number') return this.formatPrimitive(value);
+  private formatConfidenceValue(key: string, value: number): string {
     return key.toLowerCase().includes('percent') ? this.formatPercent(value) : value.toFixed(3);
   }
 

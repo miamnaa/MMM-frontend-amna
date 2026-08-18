@@ -60,9 +60,9 @@ import { Component, input } from '@angular/core';
        among many. Square (equal width/height) so a row of these reads as
        a matched set of cards rather than plain wide rectangles. */
     .tile.large {
-      flex: 0 0 190px;
+      flex: 0 0 210px;
       gap: 14px;
-      width: 190px;
+      width: 210px;
       height: 190px;
       padding: 20px 22px;
       box-sizing: border-box;
