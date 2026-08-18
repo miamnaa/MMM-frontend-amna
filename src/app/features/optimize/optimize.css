@@ -684,53 +684,88 @@
   background: rgba(15, 23, 42, 0.5);
 }
 
-.modal-card {
+/* "What's next?" fork after Optimize is saved - two side-by-side choice
+   cards instead of a generic centered icon + paragraph + button-row modal. */
+
+.fork-card {
   width: 100%;
-  max-width: 480px;
+  max-width: 620px;
   padding: 32px;
   border-radius: var(--r-lg);
   background: var(--surface);
-  text-align: center;
 }
 
-.modal-info-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  margin-bottom: 16px;
-  border: 2px solid var(--brand-500);
-  border-radius: 50%;
-  color: var(--brand-500);
-  font-size: 18px;
-  font-style: italic;
-  font-weight: 700;
-}
-
-.modal-title {
-  margin: 0 0 14px;
-  font-size: 20px;
+.fork-title {
+  margin: 0 0 8px;
+  font-size: 19px;
   font-weight: 800;
 }
 
-.modal-body {
-  margin: 0 0 12px;
+.fork-subtitle {
+  margin: 0 0 22px;
   font-size: 13.5px;
   line-height: 1.6;
+  color: var(--text-muted);
 }
 
-.modal-actions {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 20px;
+.fork-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
 }
 
-@media (max-width: 480px) {
-  .modal-actions {
-    flex-direction: column;
+@media (max-width: 560px) {
+  .fork-options {
+    grid-template-columns: 1fr;
   }
+}
+
+.fork-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 18px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--r-md);
+  background: var(--gray-50);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.fork-option:hover:not(:disabled) {
+  border-color: var(--brand-500);
+  background: var(--brand-50);
+}
+
+.fork-option:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.fork-option-icon {
+  font-size: 22px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.fork-option-title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.fork-option-desc {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.fork-option-cta {
+  margin-top: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--brand-700);
 }
 
 /* Shared chip / pill styles - same visual language as Configure's */
