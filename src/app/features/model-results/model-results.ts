@@ -156,7 +156,23 @@ export class ModelResults implements OnInit {
 
   ngOnInit(): void {
     this.projectId.set(this.route.snapshot.paramMap.get('projectId') ?? '');
-    this.datasetId.set(this.route.snapshot.paramMap.get('datasetId') ?? '');
+    this.loadModelOptions();
+
+    // Switching models via the dropdown navigates within this same route
+    // (only :datasetId changes) - Angular reuses this component instance
+    // rather than re-running ngOnInit, so everything has to react to the
+    // route's real paramMap instead of only reading it once here.
+    this.route.paramMap.subscribe((params) => {
+      this.datasetId.set(params.get('datasetId') ?? '');
+      this.loadModel();
+    });
+  }
+
+  private loadModel(): void {
+    this.loading.set(true);
+    this.notTrained.set(false);
+    this.dataset.set(null);
+    this.results.set(null);
 
     this.datasetService.getDataset(this.datasetId()).subscribe({
       next: (detail) => {
@@ -183,8 +199,6 @@ export class ModelResults implements OnInit {
         this.loading.set(false);
       },
     });
-
-    this.loadModelOptions();
   }
 
   /** Real listForProject(), narrowed to models that have actually completed a real training run (checked the same way Results & Insights' list does - "Ready" alone doesn't mean trained). */

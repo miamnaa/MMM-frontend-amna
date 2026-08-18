@@ -79,7 +79,7 @@
   @if (hasBudgetChart()) {
     <section class="card results-section">
       <h2 class="section-title">Budget recommendation</h2>
-      <app-grouped-bar-chart [data]="budgetGroupedBars()" aLabel="Current spend" bLabel="Optimized spend" [tickFormat]="formatXSpend" />
+      <app-grouped-bar-chart [data]="budgetGroupedBars()" aLabel="Current spend" bLabel="Optimized spend" [tickFormat]="formatXSpend" [vertical]="true" />
     </section>
   } @else if (budgetFallback().length > 0) {
     <section class="card results-section">
