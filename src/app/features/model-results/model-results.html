@@ -36,8 +36,8 @@
 
   @if (confidenceTiles(); as c) {
     <div class="tile-row">
-      <app-stat-tile label="Overall accuracy" [value]="c.accuracy" />
-      <app-stat-tile label="R²" [value]="c.rSquared" />
+      <app-stat-tile label="Overall accuracy" [value]="c.accuracy" [large]="true" />
+      <app-stat-tile label="R²" [value]="c.rSquared" [large]="true" />
     </div>
   }
 

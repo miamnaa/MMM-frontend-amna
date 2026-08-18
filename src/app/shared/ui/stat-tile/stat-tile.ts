@@ -3,7 +3,7 @@ import { Component, input } from '@angular/core';
 @Component({
   selector: 'app-stat-tile',
   template: `
-    <div class="tile">
+    <div class="tile" [class.large]="large()">
       <span class="label">{{ label() }}</span>
       <span class="value">{{ value() }}</span>
       @if (caption(); as c) {
@@ -44,6 +44,25 @@ import { Component, input } from '@angular/core';
     }
     .caption.up { color: var(--brand-700); }
     .caption.down { color: var(--red-600); }
+
+    /* KPI-dashboard variant - bigger number, bolder label, a brand accent
+       edge, for pages where a stat tile is the headline figure rather than
+       a small supporting number among many. */
+    .tile.large {
+      gap: 6px;
+      padding: 22px 24px;
+      border-left: 3px solid var(--brand-500);
+    }
+    .tile.large .label {
+      font-size: 12.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .tile.large .value {
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--brand-700);
+    }
   `,
 })
 export class StatTile {
@@ -51,4 +70,5 @@ export class StatTile {
   readonly value = input.required<string>();
   readonly caption = input<string | null>(null);
   readonly trend = input<'up' | 'down' | 'flat'>('flat');
+  readonly large = input<boolean>(false);
 }
