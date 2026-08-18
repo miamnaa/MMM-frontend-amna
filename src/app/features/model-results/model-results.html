@@ -5,6 +5,15 @@
   <a class="btn btn-secondary btn-sm" [routerLink]="['/results', projectId()]">← Back to models</a>
 </app-page-header>
 
+<div class="model-select-row">
+  <label class="model-select-label" for="model-select">Select Model</label>
+  <select id="model-select" class="select" [ngModel]="datasetId()" (ngModelChange)="selectModel($event)">
+    @for (m of modelOptions(); track m.id) {
+      <option [value]="m.id">{{ m.name }}</option>
+    }
+  </select>
+</div>
+
 @if (loading()) {
   <div class="skeleton-list">
     <div class="skeleton"></div>
@@ -70,7 +79,7 @@
   @if (hasBudgetChart()) {
     <section class="card results-section">
       <h2 class="section-title">Budget recommendation</h2>
-      <app-grouped-bar-chart [data]="budgetGroupedBars()" aLabel="Current spend" bLabel="Recommended spend" />
+      <app-grouped-bar-chart [data]="budgetGroupedBars()" aLabel="Current spend" bLabel="Optimized spend" />
     </section>
   } @else if (budgetFallback().length > 0) {
     <section class="card results-section">

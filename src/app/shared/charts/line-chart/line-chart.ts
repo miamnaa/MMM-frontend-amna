@@ -99,7 +99,7 @@ const PAD = { top: 16, right: 116, bottom: 34, left: 58 };
           }
           <text
             [attr.x]="W - PAD.right + 10"
-            [attr.y]="s.endY + 4"
+            [attr.y]="s.labelY + 4"
             class="series-label"
             font-size="11.5"
             font-weight="600"
@@ -223,8 +223,8 @@ export class LineChart {
     return H - PAD.bottom - ((y - yMin) / span) * (H - PAD.top - PAD.bottom);
   }
 
-  readonly paths = computed(() =>
-    this.series().map((s, i) => {
+  readonly paths = computed(() => {
+    const raw = this.series().map((s, i) => {
       const d = s.points
         .map((p, idx) => `${idx === 0 ? 'M' : 'L'}${this.sx(p.x).toFixed(1)},${this.sy(p.y).toFixed(1)}`)
         .join(' ');
@@ -236,8 +236,23 @@ export class LineChart {
           }
         : null;
       return { name: s.name, d, color: seriesColor(i), endY: this.sy(last.y), marker };
-    }),
-  );
+    });
+
+    // De-collide the end-of-line name labels - series that converge toward
+    // the same value (e.g. several decay curves all trending to ~0) would
+    // otherwise render as illegible stacked/overlapping text.
+    const MIN_LABEL_GAP = 14;
+    const order = raw.map((_, i) => i).sort((a, b) => raw[a].endY - raw[b].endY);
+    const labelY: number[] = new Array(raw.length);
+    let prevY = -Infinity;
+    for (const i of order) {
+      const y = Math.max(raw[i].endY, prevY + MIN_LABEL_GAP);
+      labelY[i] = y;
+      prevY = y;
+    }
+
+    return raw.map((r, i) => ({ ...r, labelY: labelY[i] }));
+  });
 
   readonly yTicks = computed(() => {
     const { yMax } = this.bounds();

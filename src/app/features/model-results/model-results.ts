@@ -1,7 +1,15 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
-import { ApiDatasetDetail, DatasetService, TrainingResults } from '../../core/services/dataset.service';
+import {
+  ApiDatasetDetail,
+  DatasetService,
+  TrainingResults,
+  isFailedTrainingStatus,
+  isTerminalTrainingStatus,
+} from '../../core/services/dataset.service';
+import { computeModelStatus } from '../../core/services/model-status';
 import { BarChart, BarDatum } from '../../shared/charts/bar-chart/bar-chart';
 import { GroupedBarChart, GroupedBarDatum } from '../../shared/charts/grouped-bar-chart/grouped-bar-chart';
 import { LineChart, LineSeries } from '../../shared/charts/line-chart/line-chart';
@@ -31,16 +39,20 @@ const SATURATION_MAX_SPEND = 100;
  */
 @Component({
   selector: 'app-model-results',
-  imports: [RouterLink, PageHeader, EmptyState, StatTile, BarChart, GroupedBarChart, LineChart],
+  imports: [FormsModule, RouterLink, PageHeader, EmptyState, StatTile, BarChart, GroupedBarChart, LineChart],
   templateUrl: './model-results.html',
   styleUrl: './model-results.css',
 })
 export class ModelResults implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly datasetService = inject(DatasetService);
 
   readonly projectId = signal('');
   readonly datasetId = signal('');
+
+  /** Every other real trained model in this project, for the "Select Model" dropdown - lets you switch without going back to the Models list. Starts with just this model so the dropdown isn't empty while the rest are still being checked. */
+  readonly modelOptions = signal<{ id: string; name: string }[]>([]);
 
   readonly dataset = signal<ApiDatasetDetail | null>(null);
   readonly results = signal<TrainingResults | null>(null);
@@ -93,14 +105,9 @@ export class ModelResults implements OnInit {
     return Array.isArray(b) ? (b as Record<string, unknown>[]) : [];
   });
 
-  /** Same best-effort pattern as ROI - budget_recommendation's exact field names aren't documented either. */
+  /** Real fields confirmed 2026-08-18 from an actual response: channel, current_spend, optimized_spend, current_roi, optimized_roi, spend_change_dollars/percent, current/optimized_pct_of_budget. */
   readonly budgetGroupedBars = computed<GroupedBarDatum[]>(() =>
-    this.detectGroupedBars(
-      this.budgetRows(),
-      ['current_spend', 'currentspend', 'current'],
-      ['recommended_spend', 'recommendedspend', 'recommended'],
-      currency,
-    ),
+    this.detectGroupedBars(this.budgetRows(), ['current_spend', 'currentspend'], ['optimized_spend', 'optimizedspend'], currency),
   );
 
   readonly hasBudgetChart = computed(() => this.budgetGroupedBars().length > 0);
@@ -152,7 +159,14 @@ export class ModelResults implements OnInit {
     this.datasetId.set(this.route.snapshot.paramMap.get('datasetId') ?? '');
 
     this.datasetService.getDataset(this.datasetId()).subscribe({
-      next: (detail) => this.dataset.set(detail),
+      next: (detail) => {
+        this.dataset.set(detail);
+        this.modelOptions.update((list) =>
+          list.some((m) => m.id === this.datasetId())
+            ? list
+            : [...list, { id: this.datasetId(), name: detail.name }],
+        );
+      },
       error: () => {},
     });
 
@@ -169,6 +183,36 @@ export class ModelResults implements OnInit {
         this.loading.set(false);
       },
     });
+
+    this.loadModelOptions();
+  }
+
+  /** Real listForProject(), narrowed to models that have actually completed a real training run (checked the same way Results & Insights' list does - "Ready" alone doesn't mean trained). */
+  private loadModelOptions(): void {
+    this.datasetService.listForProject(this.projectId()).subscribe({
+      next: (datasets) => {
+        datasets
+          .filter((d) => d.id !== this.datasetId() && computeModelStatus(d) === 'ready')
+          .forEach((d) => {
+            this.datasetService.getTrainingStatus(d.id).subscribe({
+              next: (res) => {
+                if (isTerminalTrainingStatus(res.status) && !isFailedTrainingStatus(res.status)) {
+                  this.modelOptions.update((list) =>
+                    [...list, { id: d.id, name: d.name }].sort((a, b) => a.name.localeCompare(b.name)),
+                  );
+                }
+              },
+              error: () => {},
+            });
+          });
+      },
+      error: () => {},
+    });
+  }
+
+  selectModel(id: string): void {
+    if (!id || id === this.datasetId()) return;
+    this.router.navigate(['/results', this.projectId(), id]);
   }
 
   private channelLabel(row: Record<string, unknown>, index: number): string {
