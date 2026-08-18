@@ -44,7 +44,10 @@
             <div class="progress-track" [attr.aria-label]="row.label + ', ' + row.percent + '% complete '">
               <div class="progress-fill" [style.width.%]="row.percent"></div>
             </div>
-            <span class="percent-label">Configuration {{ row.percent }}%</span>
+            <span class="percent-label">
+              <span class="percent-label-caption">Configuration</span>
+              <span class="percent-label-value">{{ row.percent }}%</span>
+            </span>
 
             <div class="row-actions">
               @if (row.status === 'ready') {
