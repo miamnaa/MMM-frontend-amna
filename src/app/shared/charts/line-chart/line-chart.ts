@@ -152,8 +152,16 @@ const MAX_LABEL_CHARS = 20;
     }
     .wrap {
       position: relative;
+      overflow: hidden;
     }
     svg {
+      /* SVG doesn't clip to its viewBox by default - anything drawn even
+         slightly past the edge (e.g. a label a few px wider than expected)
+         renders outside it instead of being cut off, bleeding onto the
+         page. overflow:hidden on both the SVG and its wrapper is a hard
+         guarantee nothing escapes the chart's box regardless of exact text
+         metrics. */
+      overflow: hidden;
       width: 100%;
       height: auto;
       display: block;
