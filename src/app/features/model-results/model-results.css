@@ -51,6 +51,7 @@
 
 .tile-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 14px;
   margin-bottom: 20px;
 }

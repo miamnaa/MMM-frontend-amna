@@ -34,10 +34,11 @@
     <div class="results-banner results-banner-real">Real model results</div>
   }
 
-  @if (confidenceTiles(); as c) {
+  @if (confidenceTiles().length > 0) {
     <div class="tile-row">
-      <app-stat-tile label="Overall accuracy" [value]="c.accuracy" [large]="true" icon="📈" />
-      <app-stat-tile label="R²" [value]="c.rSquared" [large]="true" icon="📊" />
+      @for (tile of confidenceTiles(); track tile.key) {
+        <app-stat-tile [label]="tile.label" [value]="tile.value" [large]="true" [icon]="tile.icon" />
+      }
     </div>
   }
 

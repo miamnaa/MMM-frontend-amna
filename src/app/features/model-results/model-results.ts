@@ -62,14 +62,30 @@ export class ModelResults implements OnInit {
 
   readonly isMockResult = computed(() => this.results()?.mock === true);
 
+  /**
+   * Renders every real key model_confidence actually has, not just the two
+   * documented ones (overall_accuracy_percent, r_squared) - if the backend
+   * sends more real confidence metrics (e.g. an adjusted R² or an error
+   * rate), they show up here automatically instead of being silently
+   * dropped, and nothing gets invented if it doesn't.
+   */
+  private static readonly CONFIDENCE_ICONS = ['📈', '📊', '🎯', '📐', '⏱️', '🧮'];
+
   readonly confidenceTiles = computed(() => {
     const c = this.results()?.model_confidence;
-    if (!c) return null;
-    return {
-      accuracy: this.formatPercent(c.overall_accuracy_percent),
-      rSquared: typeof c.r_squared === 'number' ? c.r_squared.toFixed(3) : '—',
-    };
+    if (!c) return [];
+    return Object.entries(c).map(([key, value], i) => ({
+      key,
+      label: this.humanizeKey(key),
+      value: this.formatConfidenceValue(key, value),
+      icon: ModelResults.CONFIDENCE_ICONS[i % ModelResults.CONFIDENCE_ICONS.length],
+    }));
   });
+
+  private formatConfidenceValue(key: string, value: unknown): string {
+    if (typeof value !== 'number') return this.formatPrimitive(value);
+    return key.toLowerCase().includes('percent') ? this.formatPercent(value) : value.toFixed(3);
+  }
 
   readonly contributionBars = computed<BarDatum[]>(() =>
     (this.results()?.channel_contribution ?? []).map((row, i) => ({
