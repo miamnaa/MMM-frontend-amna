@@ -44,7 +44,7 @@
   @if (contributionBars().length > 0) {
     <section class="card results-section">
       <h2 class="section-title">Channel contribution</h2>
-      <app-bar-chart [data]="contributionBars()" />
+      <app-bar-chart [data]="contributionBars()" [uniform]="true" />
       <div class="outcome-list">
         @for (entry of contributionOutcomes(); track entry.label) {
           <span class="outcome-chip"><strong>{{ entry.label }}:</strong> {{ entry.value }} incremental</span>

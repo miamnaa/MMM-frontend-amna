@@ -69,14 +69,17 @@ export interface BarDatum {
 })
 export class BarChart {
   readonly data = input.required<BarDatum[]>();
+  /** True for a single-metric chart (e.g. "share of X per category") where every bar is the same thing measured, so one consistent color reads correctly - false (default) keeps the per-row rainbow for charts where color is doing real category-identity work. */
+  readonly uniform = input<boolean>(false);
 
   readonly rows = computed(() => {
     const items = this.data();
     const max = Math.max(...items.map((d) => d.value), 0.0001);
+    const uniform = this.uniform();
     return items.map((d, i) => ({
       ...d,
       pct: (d.value / max) * 100,
-      color: seriesColor(i),
+      color: uniform ? seriesColor(0) : seriesColor(i),
     }));
   });
 }
