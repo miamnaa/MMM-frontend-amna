@@ -10,9 +10,6 @@ import { Component, input } from '@angular/core';
             <span class="icon-badge" aria-hidden="true">{{ i }}</span>
           }
           <span class="label">{{ label() }}</span>
-          @if (hint(); as h) {
-            <span class="hint" [title]="h" aria-hidden="true">?</span>
-          }
         </div>
       } @else {
         <span class="label">{{ label() }}</span>
@@ -57,13 +54,17 @@ import { Component, input } from '@angular/core';
     .caption.up { color: var(--brand-700); }
     .caption.down { color: var(--red-600); }
 
-    /* KPI-dashboard variant - icon + label row with an optional "?" hint,
-       a plain bold headline number, and a colored trend line underneath -
-       for pages where a stat tile is a real dashboard card, not a small
-       supporting number among many. */
+    /* KPI-dashboard variant - icon + label row, a plain bold headline
+       number, and a colored trend line underneath - for pages where a
+       stat tile is a real dashboard card, not a small supporting number
+       among many. Square (equal width/height) so a row of these reads as
+       a matched set of cards rather than plain wide rectangles. */
     .tile.large {
-      gap: 10px;
-      padding: 18px 20px;
+      gap: 14px;
+      width: 160px;
+      height: 160px;
+      padding: 20px 22px;
+      box-sizing: border-box;
     }
     .tile-head {
       display: flex;
@@ -87,23 +88,8 @@ import { Component, input } from '@angular/core';
       font-size: 14px;
       line-height: 1;
     }
-    .hint {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex: none;
-      width: 17px;
-      height: 17px;
-      margin-left: auto;
-      border: 1.5px solid var(--border-strong);
-      border-radius: 50%;
-      color: var(--text-muted);
-      font-size: 10px;
-      font-weight: 700;
-      cursor: default;
-    }
     .tile.large .value {
-      font-size: 28px;
+      font-size: 36px;
       font-weight: 800;
       letter-spacing: -0.01em;
       color: var(--text);
@@ -118,6 +104,4 @@ export class StatTile {
   readonly large = input<boolean>(false);
   /** Small emoji/symbol shown in a rounded-square badge next to the label - only rendered when `large` is also set. */
   readonly icon = input<string | null>(null);
-  /** Plain-text explanation shown as a native tooltip behind a small "?" icon, top-right - only rendered when `large` is also set. */
-  readonly hint = input<string | null>(null);
 }
