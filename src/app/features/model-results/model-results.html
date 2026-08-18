@@ -36,8 +36,20 @@
 
   @if (confidenceTiles(); as c) {
     <div class="tile-row">
-      <app-stat-tile label="Overall accuracy" [value]="c.accuracy" [large]="true" icon="📈" />
-      <app-stat-tile label="R²" [value]="c.rSquared" [large]="true" icon="📊" />
+      <app-stat-tile
+        label="Overall accuracy"
+        [value]="c.accuracy"
+        [large]="true"
+        icon="📈"
+        hint="How closely this model's predictions matched the real outcome over its training data."
+      />
+      <app-stat-tile
+        label="R²"
+        [value]="c.rSquared"
+        [large]="true"
+        icon="📊"
+        hint="Share of the outcome's variation this model explains - 1.0 is a perfect fit."
+      />
     </div>
   }
 
