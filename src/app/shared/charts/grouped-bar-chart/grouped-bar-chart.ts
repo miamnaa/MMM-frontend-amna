@@ -120,7 +120,7 @@ const V_TICKS = 5;
     }
     .value-label {
       fill: var(--chart-text);
-      font-size: 10.5px;
+      font-size: 10px;
       font-weight: 600;
       font-variant-numeric: tabular-nums;
     }
@@ -192,8 +192,12 @@ export class GroupedBarChart {
     const items = this.data();
     const plotWidth = VW - VPAD.left - VPAD.right;
     const groupWidth = plotWidth / Math.max(1, items.length);
-    const barWidth = Math.min(28, groupWidth * 0.32);
-    const gap = 4;
+    const barWidth = Math.min(28, groupWidth * 0.28);
+    // Wide enough that the $-value labels above each bar don't collide when
+    // the two bars are close in height (a fixed small gap made the labels
+    // overlap whenever a pair's values were similar) - scales down for many
+    // categories instead of a flat pixel value that stops fitting.
+    const gap = Math.min(16, Math.max(6, groupWidth * 0.1));
 
     return items.map((d, i) => {
       const groupStart = VPAD.left + i * groupWidth;
