@@ -229,6 +229,8 @@ export class LineChart {
   readonly xLabel = input<string>('Spend');
   readonly formatX = input<(v: number) => string>((v) => String(v));
   readonly formatY = input<(v: number) => string>((v) => String(v));
+  /** Optional override for the default accessibility-validated categorical palette - e.g. a brand color set for a specific page. Falls back to the default palette when not provided, so every other chart using this component is unaffected. */
+  readonly colors = input<string[] | null>(null);
 
   protected readonly W = W;
   protected readonly H = H;
@@ -236,7 +238,8 @@ export class LineChart {
   protected readonly hoverX = signal<number | null>(null);
 
   protected seriesColorOf(index: number): string {
-    return seriesColor(index);
+    const custom = this.colors();
+    return custom && custom.length > 0 ? custom[index % custom.length] : seriesColor(index);
   }
 
   private readonly bounds = computed(() => {
@@ -274,7 +277,7 @@ export class LineChart {
           }
         : null;
       const shortName = s.name.length > MAX_LABEL_CHARS ? `${s.name.slice(0, MAX_LABEL_CHARS - 1)}…` : s.name;
-      return { name: s.name, shortName, d, color: seriesColor(i), endY: this.sy(last.y), marker };
+      return { name: s.name, shortName, d, color: this.seriesColorOf(i), endY: this.sy(last.y), marker };
     });
 
     // De-collide the end-of-line name labels - series that converge toward
@@ -320,7 +323,7 @@ export class LineChart {
       leftPct: ((hx / W) * 100),
       rows: this.series().map((s, i) => ({
         name: s.name,
-        color: seriesColor(i),
+        color: this.seriesColorOf(i),
         y: this.formatY()(this.interpolate(s, xValue)),
       })),
     };

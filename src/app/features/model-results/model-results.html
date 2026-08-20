@@ -45,7 +45,7 @@
   @if (contributionBars().length > 0) {
     <section class="card results-section">
       <h2 class="section-title">Channel contribution</h2>
-      <app-bar-chart [data]="contributionBars()" [uniform]="true" />
+      <app-bar-chart [data]="contributionBars()" [uniform]="true" [colors]="brandChartColors" />
       <div class="outcome-list">
         @for (entry of contributionOutcomes(); track entry.label) {
           <span class="outcome-chip"><strong>{{ entry.label }}:</strong> {{ entry.value }} incremental</span>
@@ -57,7 +57,7 @@
   @if (hasEfficiencyChart()) {
     <section class="card results-section">
       <h2 class="section-title">ROI vs Marginal ROI</h2>
-      <app-grouped-bar-chart [data]="roiGroupedBars()" aLabel="ROI" bLabel="Marginal ROI" />
+      <app-grouped-bar-chart [data]="roiGroupedBars()" aLabel="ROI" bLabel="Marginal ROI" [colors]="brandGroupedColors" />
     </section>
   } @else if (efficiencyFallback().length > 0) {
     <section class="card results-section">
@@ -80,7 +80,7 @@
   @if (hasBudgetChart()) {
     <section class="card results-section">
       <h2 class="section-title">Budget recommendation</h2>
-      <app-grouped-bar-chart [data]="budgetGroupedBars()" aLabel="Current spend" bLabel="Optimized spend" [tickFormat]="formatXSpend" [vertical]="true" />
+      <app-grouped-bar-chart [data]="budgetGroupedBars()" aLabel="Current spend" bLabel="Optimized spend" [tickFormat]="formatXSpend" [vertical]="true" [colors]="brandGroupedColors" />
     </section>
   } @else if (budgetFallback().length > 0) {
     <section class="card results-section">
@@ -98,13 +98,13 @@
     <section class="card results-section">
       <h2 class="section-title">Carryover / decay curve</h2>
       <p class="muted field-hint">Illustrative — computed from this model's saved carryover values, not a real curve the backend returned.</p>
-      <app-line-chart [series]="carryoverCurves()" xLabel="Week" [formatX]="formatX" [formatY]="formatYPercent" />
+      <app-line-chart [series]="carryoverCurves()" xLabel="Week" [formatX]="formatX" [formatY]="formatYPercent" [colors]="brandChartColors" />
     </section>
 
     <section class="card results-section">
       <h2 class="section-title">Saturation curve</h2>
       <p class="muted field-hint">Illustrative — computed from this model's saved saturation (gamma) values over an illustrative spend range, not this channel's real spend numbers.</p>
-      <app-line-chart [series]="saturationCurves()" xLabel="Spend" [formatX]="formatXSpend" [formatY]="formatYPercent" />
+      <app-line-chart [series]="saturationCurves()" xLabel="Spend" [formatX]="formatXSpend" [formatY]="formatYPercent" [colors]="brandChartColors" />
     </section>
   }
 }

@@ -71,6 +71,13 @@ export class BarChart {
   readonly data = input.required<BarDatum[]>();
   /** True for a single-metric chart (e.g. "share of X per category") where every bar is the same thing measured, so one consistent color reads correctly - false (default) keeps the per-row rainbow for charts where color is doing real category-identity work. */
   readonly uniform = input<boolean>(false);
+  /** Optional override for the default accessibility-validated categorical palette - e.g. a brand color set for a specific page. Falls back to the default palette when not provided, so every other chart using this component is unaffected. */
+  readonly colors = input<string[] | null>(null);
+
+  private colorAt(index: number): string {
+    const custom = this.colors();
+    return custom && custom.length > 0 ? custom[index % custom.length] : seriesColor(index);
+  }
 
   readonly rows = computed(() => {
     const items = this.data();
@@ -79,7 +86,7 @@ export class BarChart {
     return items.map((d, i) => ({
       ...d,
       pct: (d.value / max) * 100,
-      color: uniform ? seriesColor(0) : seriesColor(i),
+      color: uniform ? this.colorAt(0) : this.colorAt(i),
     }));
   });
 }
