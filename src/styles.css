@@ -3,39 +3,45 @@
    ============================================================ */
 
 :root {
-  /* Brand */
-  --brand-50: #ecfdf5;
-  --brand-100: #d1fae5;
-  --brand-200: #a7f3d0;
-  --brand-400: #34d399;
-  --brand-500: #10b981;
-  --brand-600: #059669;
-  --brand-700: #047857;
-  --brand-900: #064e3b;
+  /* Brand — CBT Botanical Green (brand-kit/tokens/tokens.css --cbt-primary
+     family). The kit only defines 4 green steps (muted/light/primary/dark);
+     50/100/200/600/900 below are interpolated to fill out our existing
+     9-step ramp, not values the brand kit itself specifies. */
+  --brand-50: #e6f5ed;   /* = --cbt-primary-muted */
+  --brand-100: #c3e9d3;
+  --brand-200: #8fd3ac;
+  --brand-400: #00c060;  /* = --cbt-primary-light */
+  --brand-500: #00994d;  /* = --cbt-primary */
+  --brand-600: #00873f;
+  --brand-700: #007a3d;  /* = --cbt-primary-dark */
+  --brand-900: #00301a;
 
-  /* Accents used by status and charts */
+  /* Accents used by status and charts - CBT's status colors already match
+     these almost exactly, so this is close to a no-op. */
   --blue-50: #eff6ff;
-  --blue-500: #3b82f6;
+  --blue-500: #3b82f6;   /* = --cbt-info */
   --blue-600: #2563eb;
   --amber-50: #fffbeb;
-  --amber-500: #f59e0b;
+  --amber-500: #f59e0b;  /* = --cbt-warning */
   --amber-700: #b45309;
   --red-50: #fef2f2;
-  --red-500: #ef4444;
+  --red-500: #ef4444;    /* = --cbt-error */
   --red-600: #dc2626;
   --violet-500: #8b5cf6;
 
-  /* Neutrals */
-  --gray-50: #f8fafc;
-  --gray-100: #f1f5f9;
-  --gray-200: #e2e8f0;
-  --gray-300: #cbd5e1;
-  --gray-400: #94a3b8;
-  --gray-500: #64748b;
-  --gray-600: #475569;
-  --gray-700: #334155;
-  --gray-800: #1e293b;
-  --gray-900: #0f172a;
+  /* Neutrals - anchored on CBT's Bone/Border/Steel/Graphite/Ink scale
+     (brand-kit/03-color-palette.md); the in-between steps (100/300/400/600/800)
+     are interpolated to keep our existing 9-step ramp. */
+  --gray-50: #f7f8f7;    /* = --cbt-surface ("Bone") */
+  --gray-100: #eef0ee;
+  --gray-200: #e2e8e4;   /* = --cbt-border */
+  --gray-300: #c7cfc9;
+  --gray-400: #9ba79e;
+  --gray-500: #6b7280;   /* = --cbt-muted ("Steel") */
+  --gray-600: #4b5563;
+  --gray-700: #374151;   /* = --cbt-body ("Graphite") */
+  --gray-800: #1f2a22;
+  --gray-900: #0c1a10;   /* = --cbt-heading ("Ink") */
 
   /* Semantic */
   --surface: #ffffff;
@@ -46,20 +52,21 @@
   --text-muted: var(--gray-500);
   --text-subtle: var(--gray-400);
 
-  /* Radius */
+  /* Radius - matches --cbt-radius-sm/md/lg */
   --r-sm: 6px;
-  --r-md: 10px;
-  --r-lg: 14px;
+  --r-md: 12px;
+  --r-lg: 16px;
   --r-full: 999px;
 
-  /* Elevation */
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
-  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.12);
+  /* Elevation - CBT deliberately tints shadows with the brand green rather
+     than neutral black (brand-kit/03-color-palette.md, "Shadows"). */
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.06);       /* = --cbt-shadow-soft */
+  --shadow-md: 0 12px 40px rgba(0, 153, 77, 0.09);  /* = --cbt-shadow-premium */
+  --shadow-lg: 0 12px 40px rgba(0, 153, 77, 0.12);  /* = --cbt-shadow-deep */
 
   /* Brand surface — the sidebar and other brand-filled chrome */
-  --sidebar-bg: #2ea96a;
-  --sidebar-bg-deep: #248a56;
+  --sidebar-bg: #00994d;
+  --sidebar-bg-deep: #007a3d;
 
   /* Chart chrome, so charts follow the theme */
   --chart-grid: var(--gray-200);
@@ -71,9 +78,11 @@
   --sidebar-w: 248px;
   --header-h: 64px;
 
-  /* Type */
-  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: 'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace;
+  /* Type - DM Sans (body) / Playfair Display (headings, applied below) /
+     JetBrains Mono, loaded via the Google Fonts link in index.html. */
+  --font: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace;
 }
 
 /* ------------------------------------------------------------
@@ -107,14 +116,17 @@
   --text-muted: var(--gray-500);
   --text-subtle: var(--gray-400);
 
-  /* Accent washes, re-stepped for a dark surface */
-  --brand-50: #102b21;
-  --brand-100: #17392c;
-  --brand-200: #1f4d3b;
-  --brand-500: #10b981;
-  --brand-600: #0d9c6c;
-  --brand-700: #4bd79b;
-  --brand-900: #a7f3d0;
+  /* Accent washes, re-stepped for a dark surface - shifted to CBT's green
+     hue. The brand kit documents no dark-mode variant of its own (see
+     brand-kit/README.md, "Known gaps"), so this ramp is my own derivation
+     from --cbt-primary's hue, not an official CBT value. */
+  --brand-50: #0d2118;
+  --brand-100: #123023;
+  --brand-200: #18402f;
+  --brand-500: #00994d;
+  --brand-600: #00b357;
+  --brand-700: #33d17a;
+  --brand-900: #b8f0d1;
 
   --blue-50: #132540;
   --blue-500: #60a5fa;
@@ -128,8 +140,8 @@
   --red-500: #ef4444;
   --red-600: #f79191;
 
-  --sidebar-bg: #24875a;
-  --sidebar-bg-deep: #1b6b46;
+  --sidebar-bg: #00b357;
+  --sidebar-bg-deep: #00994d;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
@@ -165,15 +177,23 @@ p {
   margin: 0;
 }
 
+h1,
+h2,
+h3 {
+  /* Playfair Display only ships weights 600/700 (see the Google Fonts link
+     in index.html) - the exact weights below are chosen to fall on those. */
+  font-family: var(--font-heading);
+}
+
 h1 {
   font-size: 22px;
-  font-weight: 650;
+  font-weight: 700;
   letter-spacing: -0.01em;
 }
 
 h2 {
   font-size: 17px;
-  font-weight: 620;
+  font-weight: 600;
   letter-spacing: -0.01em;
 }
 
