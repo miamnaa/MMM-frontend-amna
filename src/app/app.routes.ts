@@ -164,6 +164,9 @@ export const routes: Routes = [
       {
         path: 'settings',
         title: 'Settings · ROIVIO',
+        // Nothing on this page (tenant/members/notifications) is
+        // searchable via the shared top search bar - see MainLayout.
+        data: { hideSearch: true },
         loadComponent: () => import('./features/settings/settings').then((m) => m.Settings),
       },
     ],

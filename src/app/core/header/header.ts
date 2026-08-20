@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, inject, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, inject, input, signal } from '@angular/core';
 import { MsalService } from '@azure/msal-angular';
 
 import { localSignOut } from '../auth/local-sign-out';
@@ -16,6 +16,9 @@ export class Header {
   private readonly themeService = inject(ThemeService);
   private readonly msalService = inject(MsalService);
   private readonly host = inject(ElementRef<HTMLElement>);
+
+  /** Settings has nothing to search (no projects/datasets/experiments there) - set via route data, see MainLayout. */
+  readonly hideSearch = input(false);
 
   readonly user = this.session.user;
   readonly notifications = this.session.notifications;
