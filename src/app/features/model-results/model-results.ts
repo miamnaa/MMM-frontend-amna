@@ -63,6 +63,9 @@ export class ModelResults implements OnInit {
   readonly projectId = signal('');
   readonly datasetId = signal('');
 
+  /** 'performance' answers "can I trust this model" (the confidence KPIs); 'insights' answers "what should I do about it" (everything channel-level). Mirrors the Performances/Insights split from the Cassandra reference. */
+  readonly activeTab = signal<'performance' | 'insights'>('performance');
+
   protected readonly brandChartColors = BRAND_CHART_COLORS;
   protected readonly brandGroupedColors = BRAND_GROUPED_COLORS;
 
@@ -151,6 +154,124 @@ export class ModelResults implements OnInit {
     if (b === undefined || this.hasBudgetChart()) return [];
     return this.flattenForDisplay(b);
   });
+
+  /**
+   * One row per channel, joined by label across channel_contribution,
+   * channel_efficiency, and budget_recommendation - the three separate
+   * real arrays the API returns. A channel only gets the fields whichever
+   * of those three actually included it; nothing here is invented for a
+   * channel missing a given metric.
+   */
+  private readonly channelMap = computed(() => {
+    const map = new Map<
+      string,
+      { label: string; contributionPct?: number; roi?: number; currentSpend?: number; spendChangePercent?: number }
+    >();
+    const entryFor = (label: string) => {
+      let entry = map.get(label);
+      if (!entry) {
+        entry = { label };
+        map.set(label, entry);
+      }
+      return entry;
+    };
+
+    (this.results()?.channel_contribution ?? []).forEach((row, i) => {
+      const entry = entryFor(this.channelLabel(row, i));
+      if (typeof row.pct_of_contribution === 'number') entry.contributionPct = row.pct_of_contribution;
+    });
+
+    this.efficiencyRows().forEach((row, i) => {
+      const entry = entryFor(this.channelLabel(row, i));
+      const roiKey = Object.keys(row).find((k) => k.toLowerCase() === 'roi');
+      const roi = roiKey ? row[roiKey] : undefined;
+      if (typeof roi === 'number') entry.roi = roi;
+    });
+
+    this.budgetRows().forEach((row, i) => {
+      const entry = entryFor(this.channelLabel(row, i));
+      const spendKey = Object.keys(row).find((k) => ['current_spend', 'currentspend'].includes(k.toLowerCase()));
+      const spend = spendKey ? row[spendKey] : undefined;
+      if (typeof spend === 'number') entry.currentSpend = spend;
+
+      const changeKey = Object.keys(row).find((k) =>
+        ['spend_change_percent', 'spendchangepercent'].includes(k.toLowerCase()),
+      );
+      const change = changeKey ? row[changeKey] : undefined;
+      if (typeof change === 'number') entry.spendChangePercent = change;
+
+      if (entry.roi === undefined) {
+        const currentRoiKey = Object.keys(row).find((k) => ['current_roi', 'currentroi'].includes(k.toLowerCase()));
+        const currentRoi = currentRoiKey ? row[currentRoiKey] : undefined;
+        if (typeof currentRoi === 'number') entry.roi = currentRoi;
+      }
+    });
+
+    return Array.from(map.values());
+  });
+
+  /** Increase/Decrease at +/-5% spend-change - Maintain inside that band, "—" when no budget recommendation covers this channel at all. */
+  private recommendationFor(spendChangePercent: number | undefined): string {
+    if (spendChangePercent === undefined) return '—';
+    if (spendChangePercent >= 5) return 'Increase';
+    if (spendChangePercent <= -5) return 'Decrease';
+    return 'Maintain';
+  }
+
+  readonly scorecardRows = computed(() =>
+    this.channelMap().map((c) => ({
+      label: c.label,
+      spend: c.currentSpend !== undefined ? this.formatCurrency(c.currentSpend) : '—',
+      contribution: c.contributionPct !== undefined ? this.formatPercent(c.contributionPct) : '—',
+      roi: c.roi !== undefined ? c.roi.toFixed(2) : '—',
+      recommendation: this.recommendationFor(c.spendChangePercent),
+    })),
+  );
+
+  readonly hasScorecard = computed(() => this.scorecardRows().length > 0);
+
+  /**
+   * 3-4 short, auto-written takeaways from data already on this page - the
+   * answer someone would otherwise have to read every chart to piece
+   * together themselves. Nothing here is a guess: each line only appears
+   * when the real field it depends on is present.
+   */
+  readonly keyInsights = computed<string[]>(() => {
+    const insights: string[] = [];
+
+    const contributions = this.contributionBars();
+    if (contributions.length > 0) {
+      const top = contributions.reduce((a, b) => (b.value > a.value ? b : a));
+      insights.push(`${top.label} drives the most revenue, contributing ${top.display} of total incremental outcome.`);
+    }
+
+    const channels = this.channelMap();
+    const withRoi = channels.filter((c): c is typeof c & { roi: number } => c.roi !== undefined);
+    if (withRoi.length > 0) {
+      const best = withRoi.reduce((a, b) => (b.roi > a.roi ? b : a));
+      insights.push(`${best.label} has the strongest ROI at ${best.roi.toFixed(2)}.`);
+    }
+
+    const withChange = channels.filter(
+      (c): c is typeof c & { spendChangePercent: number } => c.spendChangePercent !== undefined,
+    );
+    if (withChange.length > 0) {
+      const increase = withChange.filter((c) => c.spendChangePercent > 0).sort((a, b) => b.spendChangePercent - a.spendChangePercent)[0];
+      const decrease = withChange.filter((c) => c.spendChangePercent < 0).sort((a, b) => a.spendChangePercent - b.spendChangePercent)[0];
+      if (increase) {
+        insights.push(`Consider increasing spend on ${increase.label} by ${Math.round(increase.spendChangePercent)}% for a better return.`);
+      }
+      if (decrease) {
+        insights.push(
+          `${decrease.label} looks over-invested relative to its return - consider decreasing spend by ${Math.abs(Math.round(decrease.spendChangePercent))}%.`,
+        );
+      }
+    }
+
+    return insights;
+  });
+
+  readonly hasKeyInsights = computed(() => this.keyInsights().length > 0);
 
   /**
    * Illustrative only, same honesty rule as Hyperparameters' own charts -
@@ -256,6 +377,10 @@ export class ModelResults implements OnInit {
       },
       error: () => {},
     });
+  }
+
+  setTab(tab: 'performance' | 'insights'): void {
+    this.activeTab.set(tab);
   }
 
   selectModel(id: string): void {

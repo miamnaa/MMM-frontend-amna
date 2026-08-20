@@ -34,77 +34,154 @@
     <div class="results-banner results-banner-real">Real model results</div>
   }
 
-  @if (confidenceTiles().length > 0) {
-    <div class="tile-row">
-      @for (tile of confidenceTiles(); track tile.key) {
-        <app-stat-tile [label]="tile.label" [value]="tile.value" [large]="true" [icon]="tile.icon" />
-      }
-    </div>
-  }
+  <div class="tabs" role="tablist">
+    <button
+      type="button"
+      role="tab"
+      class="tab"
+      [class.active]="activeTab() === 'performance'"
+      [attr.aria-selected]="activeTab() === 'performance'"
+      (click)="setTab('performance')"
+    >
+      Model Performance
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="tab"
+      [class.active]="activeTab() === 'insights'"
+      [attr.aria-selected]="activeTab() === 'insights'"
+      (click)="setTab('insights')"
+    >
+      Insights
+    </button>
+  </div>
 
-  @if (contributionBars().length > 0) {
-    <section class="card results-section">
-      <h2 class="section-title">Channel contribution</h2>
-      <app-bar-chart [data]="contributionBars()" [uniform]="true" [colors]="brandChartColors" />
-      <div class="outcome-list">
-        @for (entry of contributionOutcomes(); track entry.label) {
-          <span class="outcome-chip"><strong>{{ entry.label }}:</strong> {{ entry.value }} incremental</span>
+  @if (activeTab() === 'performance') {
+    @if (confidenceTiles().length > 0) {
+      <div class="tile-row">
+        @for (tile of confidenceTiles(); track tile.key) {
+          <app-stat-tile [label]="tile.label" [value]="tile.value" [large]="true" [icon]="tile.icon" />
         }
       </div>
-    </section>
-  }
+    } @else {
+      <app-empty-state title="No model performance metrics" message="This model's results didn't include confidence metrics." />
+    }
+  } @else {
+    @if (hasKeyInsights()) {
+      <section class="card results-section">
+        <h2 class="section-title">Key insights</h2>
+        <ul class="insights-list">
+          @for (line of keyInsights(); track line) {
+            <li>{{ line }}</li>
+          }
+        </ul>
+      </section>
+    }
 
-  @if (hasEfficiencyChart()) {
-    <section class="card results-section">
-      <h2 class="section-title">ROI vs Marginal ROI</h2>
-      <app-grouped-bar-chart [data]="roiGroupedBars()" aLabel="ROI" bLabel="Marginal ROI" [colors]="brandGroupedColors" />
-    </section>
-  } @else if (efficiencyFallback().length > 0) {
-    <section class="card results-section">
-      <h2 class="section-title">Channel efficiency</h2>
-      <div class="efficiency-list">
-        @for (row of efficiencyFallback(); track row.name) {
-          <div class="efficiency-row">
-            <span class="efficiency-name">{{ row.name }}</span>
-            <div class="efficiency-metrics">
-              @for (entry of row.entries; track entry.label) {
-                <span class="efficiency-metric"><strong>{{ entry.label }}:</strong> {{ entry.value }}</span>
+    @if (hasScorecard()) {
+      <section class="card results-section">
+        <h2 class="section-title">Channel performance scorecard</h2>
+        <div class="scorecard-wrap">
+          <table class="scorecard">
+            <thead>
+              <tr>
+                <th>Channel</th>
+                <th>Spend</th>
+                <th>Contribution</th>
+                <th>ROI</th>
+                <th>Recommendation</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of scorecardRows(); track row.label) {
+                <tr>
+                  <td>{{ row.label }}</td>
+                  <td>{{ row.spend }}</td>
+                  <td>{{ row.contribution }}</td>
+                  <td>{{ row.roi }}</td>
+                  <td>
+                    <span
+                      class="rec-badge"
+                      [class.rec-increase]="row.recommendation === 'Increase'"
+                      [class.rec-decrease]="row.recommendation === 'Decrease'"
+                      [class.rec-maintain]="row.recommendation === 'Maintain'"
+                    >
+                      {{ row.recommendation }}
+                    </span>
+                  </td>
+                </tr>
               }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+
+    @if (contributionBars().length > 0) {
+      <section class="card results-section">
+        <h2 class="section-title">Channel contribution</h2>
+        <app-bar-chart [data]="contributionBars()" [uniform]="true" [colors]="brandChartColors" />
+        <div class="outcome-list">
+          @for (entry of contributionOutcomes(); track entry.label) {
+            <span class="outcome-chip"><strong>{{ entry.label }}:</strong> {{ entry.value }} incremental</span>
+          }
+        </div>
+      </section>
+    }
+
+    @if (hasEfficiencyChart()) {
+      <section class="card results-section">
+        <h2 class="section-title">ROI vs Marginal ROI</h2>
+        <app-grouped-bar-chart [data]="roiGroupedBars()" aLabel="ROI" bLabel="Marginal ROI" [colors]="brandGroupedColors" />
+      </section>
+    } @else if (efficiencyFallback().length > 0) {
+      <section class="card results-section">
+        <h2 class="section-title">Channel efficiency</h2>
+        <div class="efficiency-list">
+          @for (row of efficiencyFallback(); track row.name) {
+            <div class="efficiency-row">
+              <span class="efficiency-name">{{ row.name }}</span>
+              <div class="efficiency-metrics">
+                @for (entry of row.entries; track entry.label) {
+                  <span class="efficiency-metric"><strong>{{ entry.label }}:</strong> {{ entry.value }}</span>
+                }
+              </div>
             </div>
-          </div>
-        }
-      </div>
-    </section>
-  }
+          }
+        </div>
+      </section>
+    }
 
-  @if (hasBudgetChart()) {
-    <section class="card results-section">
-      <h2 class="section-title">Budget recommendation</h2>
-      <app-grouped-bar-chart [data]="budgetGroupedBars()" aLabel="Current spend" bLabel="Optimized spend" [tickFormat]="formatXSpend" [vertical]="true" [colors]="brandGroupedColors" />
-    </section>
-  } @else if (budgetFallback().length > 0) {
-    <section class="card results-section">
-      <h2 class="section-title">Budget recommendation</h2>
-      <dl class="results-grid">
-        @for (entry of budgetFallback(); track entry.label) {
-          <dt>{{ entry.label }}</dt>
-          <dd>{{ entry.value }}</dd>
-        }
-      </dl>
-    </section>
-  }
+    @if (hasBudgetChart()) {
+      <section class="card results-section">
+        <h2 class="section-title">Budget recommendation</h2>
+        <app-grouped-bar-chart [data]="budgetGroupedBars()" aLabel="Current spend" bLabel="Optimized spend" [tickFormat]="formatXSpend" [vertical]="true" [colors]="brandGroupedColors" />
+      </section>
+    } @else if (budgetFallback().length > 0) {
+      <section class="card results-section">
+        <h2 class="section-title">Budget recommendation</h2>
+        <dl class="results-grid">
+          @for (entry of budgetFallback(); track entry.label) {
+            <dt>{{ entry.label }}</dt>
+            <dd>{{ entry.value }}</dd>
+          }
+        </dl>
+      </section>
+    }
 
-  @if (hasCurves()) {
-    <section class="card results-section">
-      <h2 class="section-title">Carryover / decay curve</h2>
-      <p class="muted field-hint">Illustrative — computed from this model's saved carryover values, not a real curve the backend returned.</p>
-      <app-line-chart [series]="carryoverCurves()" xLabel="Week" [formatX]="formatX" [formatY]="formatYPercent" [colors]="brandChartColors" />
-    </section>
+    @if (hasCurves()) {
+      <section class="card results-section">
+        <h2 class="section-title">Carryover / decay curve</h2>
+        <p class="muted field-hint">Illustrative — computed from this model's saved carryover values, not a real curve the backend returned.</p>
+        <app-line-chart [series]="carryoverCurves()" xLabel="Week" [formatX]="formatX" [formatY]="formatYPercent" [colors]="brandChartColors" />
+      </section>
 
-    <section class="card results-section">
-      <h2 class="section-title">Saturation curve</h2>
-      <p class="muted field-hint">Illustrative — computed from this model's saved saturation (gamma) values over an illustrative spend range, not this channel's real spend numbers.</p>
-      <app-line-chart [series]="saturationCurves()" xLabel="Spend" [formatX]="formatXSpend" [formatY]="formatYPercent" [colors]="brandChartColors" />
-    </section>
+      <section class="card results-section">
+        <h2 class="section-title">Saturation curve</h2>
+        <p class="muted field-hint">Illustrative — computed from this model's saved saturation (gamma) values over an illustrative spend range, not this channel's real spend numbers.</p>
+        <app-line-chart [series]="saturationCurves()" xLabel="Spend" [formatX]="formatXSpend" [formatY]="formatYPercent" [colors]="brandChartColors" />
+      </section>
+    }
   }
 }
