@@ -24,8 +24,9 @@
         <span class="pill">Active</span>
       </div>
       <p class="note muted">
-        Plan changes, suspension and cancellation are handled in Microsoft Marketplace. The
-        platform reacts to the lifecycle webhook — it does not manage billing itself.
+        Example data — not from a real Marketplace billing connection yet. Plan changes,
+        suspension and cancellation will be handled in Microsoft Marketplace once that's wired
+        up; this section doesn't manage real billing today.
       </p>
     </div>
   </section>
@@ -33,11 +34,15 @@
   <section class="card">
     <div class="card-header">
       <h2>Members</h2>
-      <button class="btn btn-secondary btn-sm" type="button" disabled>Invite member</button>
     </div>
-    @if (members().length === 0) {
+
+    @if (membersError(); as err) {
       <div class="card-body">
-        <p class="muted">Member management isn't connected to a backend yet.</p>
+        <p class="field-error">{{ err }}</p>
+      </div>
+    } @else if (loadingMembers()) {
+      <div class="card-body">
+        <p class="muted">Loading members…</p>
       </div>
     } @else {
       <div class="scroll-x">
@@ -47,67 +52,161 @@
               <th>Name</th>
               <th>Email</th>
               <th>Role</th>
-              <th>Status</th>
+              @if (isAdmin()) {
+                <th></th>
+              }
             </tr>
           </thead>
           <tbody>
-            @for (m of members(); track m.email) {
+            @for (m of members(); track m.id) {
               <tr>
-                <td class="strong">{{ m.name }}</td>
+                <td class="strong">{{ m.firstName }} {{ m.lastName }}</td>
                 <td class="muted">{{ m.email }}</td>
-                <td>{{ m.role }}</td>
                 <td>
-                  <span class="pill" [class.invited]="m.status === 'invited'">
-                    {{ m.status === 'invited' ? 'Invited' : 'Active' }}
-                  </span>
+                  @if (isAdmin()) {
+                    <select
+                      class="select role-select"
+                      [ngModel]="m.globalRole"
+                      [disabled]="savingRoleFor() === m.id"
+                      (ngModelChange)="changeRole(m, $event)"
+                    >
+                      @for (opt of roleOptions; track opt.value) {
+                        <option [value]="opt.value">{{ opt.label }}</option>
+                      }
+                    </select>
+                  } @else {
+                    {{ roleLabels[m.globalRole] }}
+                  }
                 </td>
+                @if (isAdmin()) {
+                  <td>
+                    <button
+                      class="btn btn-ghost btn-sm icon-btn"
+                      type="button"
+                      [disabled]="m.id === user().id"
+                      (click)="confirmRemove(m)"
+                      aria-label="Remove this member"
+                      title="Remove"
+                    >
+                      🗑
+                    </button>
+                  </td>
+                }
+              </tr>
+            }
+            @for (i of invites(); track i.id) {
+              <tr class="invite-row">
+                <td class="muted">—</td>
+                <td class="muted">{{ i.email }}</td>
+                <td>
+                  <span class="pill invited">Invited, not joined yet</span>
+                  <span class="muted role-hint">{{ roleLabels[i.role] }}</span>
+                </td>
+                @if (isAdmin()) {
+                  <td></td>
+                }
               </tr>
             }
           </tbody>
         </table>
       </div>
+
+      @if (roleChangeError(); as err) {
+        <div class="card-body">
+          <p class="field-error">{{ err }}</p>
+        </div>
+      }
+
+      @if (isAdmin()) {
+        <div class="card-body invite-form">
+          <div class="field">
+            <label class="label" for="invite-email">Invite by email</label>
+            <input
+              id="invite-email"
+              class="input"
+              type="email"
+              placeholder="name@company.com"
+              [ngModel]="inviteEmail()"
+              (ngModelChange)="inviteEmail.set($event)"
+            />
+          </div>
+          <div class="field">
+            <label class="label" for="invite-role">Role</label>
+            <select
+              id="invite-role"
+              class="select"
+              [ngModel]="inviteRole()"
+              (ngModelChange)="inviteRole.set($event)"
+            >
+              @for (opt of roleOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+          @if (inviteError(); as err) {
+            <p class="field-error">{{ err }}</p>
+          }
+          <button
+            class="btn btn-primary btn-sm"
+            type="button"
+            [disabled]="!inviteEmail().trim() || inviting()"
+            (click)="sendInvite()"
+          >
+            {{ inviting() ? 'Sending…' : 'Invite member' }}
+          </button>
+        </div>
+      }
     }
   </section>
 
   <section class="card">
     <div class="card-header"><h2>Notifications</h2></div>
-    <div class="card-body prefs">
-      <label class="pref">
-        <input
-          type="checkbox"
-          [checked]="preferences().emailOnRunComplete"
-          (change)="togglePreference('emailOnRunComplete')"
-        />
-        <div>
-          <strong>Email me when a run completes</strong>
-          <span class="muted">Sent once the worker writes results back.</span>
-        </div>
-      </label>
+    @if (preferences(); as prefs) {
+      <div class="card-body prefs">
+        <label class="pref">
+          <input
+            type="checkbox"
+            [checked]="prefs.runCompleted"
+            [disabled]="savingPreference() === 'runCompleted'"
+            (change)="togglePreference('runCompleted')"
+          />
+          <div>
+            <strong>Email me when a run completes</strong>
+            <span class="muted">Sent once the worker writes results back.</span>
+          </div>
+        </label>
 
-      <label class="pref">
-        <input
-          type="checkbox"
-          [checked]="preferences().emailOnRunFailed"
-          (change)="togglePreference('emailOnRunFailed')"
-        />
-        <div>
-          <strong>Email me when a run fails</strong>
-          <span class="muted">Includes the error message saved against the job.</span>
-        </div>
-      </label>
+        <label class="pref">
+          <input
+            type="checkbox"
+            [checked]="prefs.runFailed"
+            [disabled]="savingPreference() === 'runFailed'"
+            (change)="togglePreference('runFailed')"
+          />
+          <div>
+            <strong>Email me when a run fails</strong>
+            <span class="muted">Includes the error message saved against the job.</span>
+          </div>
+        </label>
 
-      <label class="pref">
-        <input
-          type="checkbox"
-          [checked]="preferences().weeklyDigest"
-          (change)="togglePreference('weeklyDigest')"
-        />
-        <div>
-          <strong>Weekly digest</strong>
-          <span class="muted">A Monday summary of runs and dataset changes.</span>
-        </div>
-      </label>
-    </div>
+        <label class="pref">
+          <input
+            type="checkbox"
+            [checked]="prefs.weeklyDigest"
+            [disabled]="savingPreference() === 'weeklyDigest'"
+            (change)="togglePreference('weeklyDigest')"
+          />
+          <div>
+            <strong>Weekly digest</strong>
+            <span class="muted">A Monday summary of runs and dataset changes.</span>
+          </div>
+        </label>
+      </div>
+    } @else {
+      <div class="card-body">
+        <p class="muted">Loading preferences…</p>
+      </div>
+    }
   </section>
 
   <section class="card">
@@ -122,3 +221,28 @@
     </div>
   </section>
 </div>
+
+@if (removeTarget(); as target) {
+  <div class="backdrop" (click)="cancelRemove()"></div>
+  <div class="dialog card" role="dialog" aria-modal="true" aria-label="Remove member">
+    <div class="card-header">
+      <h2>Remove member</h2>
+      <button class="btn btn-ghost btn-sm" type="button" (click)="cancelRemove()">Cancel</button>
+    </div>
+    <div class="card-body dialog-body">
+      @if (removeError(); as err) {
+        <p class="field-error">{{ err }}</p>
+      }
+      <p>
+        Remove <strong>{{ target.firstName }} {{ target.lastName }}</strong> ({{ target.email }})
+        from this tenant?
+      </p>
+    </div>
+    <div class="dialog-foot">
+      <button class="btn btn-secondary" type="button" (click)="cancelRemove()">Cancel</button>
+      <button class="btn btn-danger" type="button" [disabled]="removing()" (click)="removeMember()">
+        {{ removing() ? 'Removing…' : 'Remove member' }}
+      </button>
+    </div>
+  </div>
+}
