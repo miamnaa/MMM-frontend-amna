@@ -15,7 +15,6 @@ import { GroupedBarChart, GroupedBarDatum } from '../../shared/charts/grouped-ba
 import { LineChart, LineSeries } from '../../shared/charts/line-chart/line-chart';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
-import { StatTile } from '../../shared/ui/stat-tile/stat-tile';
 import { currency } from '../../shared/utils/format';
 
 /** Common field names the real backend might use for a channel's display name - checked in order, first match wins. */
@@ -51,7 +50,7 @@ const BRAND_GROUPED_COLORS: [string, string] = ['#00994D', '#F59E0B'];
  */
 @Component({
   selector: 'app-model-results',
-  imports: [FormsModule, RouterLink, PageHeader, EmptyState, StatTile, BarChart, GroupedBarChart, LineChart],
+  imports: [FormsModule, RouterLink, PageHeader, EmptyState, BarChart, GroupedBarChart, LineChart],
   templateUrl: './model-results.html',
   styleUrl: './model-results.css',
 })
@@ -81,28 +80,58 @@ export class ModelResults implements OnInit {
   readonly isMockResult = computed(() => this.results()?.mock === true);
 
   /**
-   * Renders every real NUMERIC key model_confidence actually has, not just
-   * the two documented ones (overall_accuracy_percent, r_squared) - if the
-   * backend sends more real confidence metrics (e.g. an adjusted R² or an
-   * error rate), they show up here automatically instead of being silently
+   * Every real NUMERIC key model_confidence actually has, not just the two
+   * documented ones (overall_accuracy_percent, r_squared) - if the backend
+   * sends more real confidence metrics (e.g. an adjusted R² or an error
+   * rate), they show up here automatically instead of being silently
    * dropped. Non-numeric fields are skipped rather than rendered as a
    * "value" - a real response includes overall_accuracy_description, a
    * plain-text explanation of the accuracy metric, not a KPI itself.
+   * Reshaped as a 0-100 bar per metric.
+   * a 0-100 bar per metric instead of a plain tile - a *_percent field is
+   * already 0-100; anything else (e.g. r_squared, a 0-1 field) is assumed
+   * to be on a 0-1 scale, same assumption formatConfidenceValue() already
+   * makes to decide how to print it. "Strong/Moderate/Needs review" is a
+   * plain threshold read on that number, not a separate metric the backend
+   * returns.
    */
-  private static readonly CONFIDENCE_ICONS = ['📈', '📊', '🎯', '📐', '⏱️', '🧮'];
-
-  readonly confidenceTiles = computed(() => {
+  readonly reliabilityRows = computed(() => {
     const c = this.results()?.model_confidence;
     if (!c) return [];
     return Object.entries(c)
       .filter((entry): entry is [string, number] => typeof entry[1] === 'number')
-      .map(([key, value], i) => ({
-        key,
-        label: this.humanizeKey(key),
-        value: this.formatConfidenceValue(key, value),
-        icon: ModelResults.CONFIDENCE_ICONS[i % ModelResults.CONFIDENCE_ICONS.length],
-      }));
+      .map(([key, value]) => {
+        const isPercent = key.toLowerCase().includes('percent');
+        const barPct = Math.max(0, Math.min(100, isPercent ? value : value * 100));
+        return {
+          key,
+          label: this.humanizeKey(key),
+          display: this.formatConfidenceValue(key, value),
+          barPct,
+          tier: this.reliabilityTier(barPct),
+        };
+      });
   });
+
+  /** Simple average of the bars above - a plain summary of what's already shown below it, not a separate metric the backend computes. */
+  readonly compositeScore = computed(() => {
+    const rows = this.reliabilityRows();
+    if (rows.length === 0) return null;
+    const avg = rows.reduce((sum, r) => sum + r.barPct, 0) / rows.length;
+    return { pct: Math.round(avg * 10) / 10, tier: this.reliabilityTier(avg) };
+  });
+
+  private reliabilityTier(pct: number): 'strong' | 'moderate' | 'weak' {
+    if (pct >= 85) return 'strong';
+    if (pct >= 70) return 'moderate';
+    return 'weak';
+  }
+
+  protected readonly TIER_LABELS: Record<'strong' | 'moderate' | 'weak', string> = {
+    strong: 'Strong',
+    moderate: 'Moderate',
+    weak: 'Needs review',
+  };
 
   private formatConfidenceValue(key: string, value: number): string {
     return key.toLowerCase().includes('percent') ? this.formatPercent(value) : value.toFixed(3);

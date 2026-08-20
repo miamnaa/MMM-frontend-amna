@@ -58,11 +58,36 @@
   </div>
 
   @if (activeTab() === 'performance') {
-    @if (confidenceTiles().length > 0) {
-      <div class="tile-row">
-        @for (tile of confidenceTiles(); track tile.key) {
-          <app-stat-tile [label]="tile.label" [value]="tile.value" [large]="true" [icon]="tile.icon" />
-        }
+    @if (compositeScore(); as score) {
+      <section class="card results-section reliability-card">
+        <h2 class="section-title">Does this model understand your business?</h2>
+        <div class="composite-score">
+          <span class="composite-pct">{{ score.pct }}%</span>
+          <span class="composite-label">composite score</span>
+          <span class="tier-badge" [class]="'tier-' + score.tier">{{ TIER_LABELS[score.tier] }}</span>
+        </div>
+
+        <div class="reliability-list">
+          @for (row of reliabilityRows(); track row.key) {
+            <div class="reliability-row">
+              <div class="reliability-row-head">
+                <span class="reliability-label">{{ row.label }}</span>
+                <span class="reliability-value">{{ row.display }}</span>
+              </div>
+              <div class="reliability-track">
+                <div class="reliability-fill" [class]="'tier-' + row.tier" [style.width.%]="row.barPct"></div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <p class="muted field-hint reliability-note">
+          Composite score is a plain average of the metrics above, not a separate figure the model returns.
+        </p>
+      </section>
+
+      <div class="card results-section backend-gap-note">
+        <strong>Not shown yet:</strong> an actual-vs-predicted trend chart and a per-channel confidence/stability score both need new fields the API doesn't return today — flagged to add once that data exists.
       </div>
     } @else {
       <app-empty-state title="No model performance metrics" message="This model's results didn't include confidence metrics." />
