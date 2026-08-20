@@ -7,6 +7,7 @@ import {
   ApiProjectDataset,
   DatasetService,
   isFailedTrainingStatus,
+  isNotStartedTrainingStatus,
   isTerminalTrainingStatus,
 } from '../../core/services/dataset.service';
 import { Project } from '../../core/models/domain.models';
@@ -132,6 +133,15 @@ export class ProjectModels implements OnInit, OnDestroy {
     this.updateTraining(id, { phase: 'checking' });
     this.datasetService.getTrainingStatus(id).subscribe({
       next: (res) => {
+        // Checked first, deliberately: "not_started" is the real, permanent
+        // resting status for a Ready dataset that's never been trained - it's
+        // not terminal, but treating it as "still running" is what produced
+        // the old bug (a fake "Training… 0%" pill, stuck forever, with no
+        // real Train Model button to click).
+        if (isNotStartedTrainingStatus(res.status)) {
+          this.updateTraining(id, { phase: 'idle' });
+          return;
+        }
         if (!isTerminalTrainingStatus(res.status)) {
           this.updateTraining(id, { phase: 'training', progress: res.progress, message: res.message });
           this.pollTraining(id);
@@ -143,8 +153,8 @@ export class ProjectModels implements OnInit, OnDestroy {
         }
         this.updateTraining(id, { phase: 'completed' });
       },
-      // No real training run started yet for this dataset - the normal,
-      // expected state for most Ready models, not an error to surface.
+      // No status row exists yet at all for this dataset - a separate case
+      // from the real "not_started" status above, but the same fallback.
       error: () => this.updateTraining(id, { phase: 'idle' }),
     });
   }

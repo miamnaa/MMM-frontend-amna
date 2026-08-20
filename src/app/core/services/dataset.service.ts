@@ -173,10 +173,24 @@ export interface TrainingStatusResponse {
 }
 
 const TERMINAL_TRAINING_STATUSES = ['completed', 'success', 'succeeded', 'failed', 'error'];
+/** Confirmed real value 2026-08-20 (GET /datasets/:id/status on a Ready, never-trained dataset returns exactly `{ status: "not_started", progress: 0, jobId: null }`). Not terminal, but must never be treated as "running" either - see isNotStartedTrainingStatus. */
+const NOT_STARTED_TRAINING_STATUSES = ['not_started'];
 
 /** True once training has reached any end state (success or failure) - see TrainingStatusResponse's caveat on the exact status names. */
 export function isTerminalTrainingStatus(status: string): boolean {
   return TERMINAL_TRAINING_STATUSES.includes(status.toLowerCase());
+}
+
+/**
+ * True when training has never been started for this dataset at all - the
+ * real, permanent resting state for every Ready dataset until someone
+ * clicks a real "Train Model" button. Not terminal (isTerminalTrainingStatus
+ * is false for it), so callers must check this FIRST: treating "not_started"
+ * as "non-terminal -> still running" was a real bug - it showed a fake,
+ * permanently-stuck "Training… 0%" pill with no way to ever start a real run.
+ */
+export function isNotStartedTrainingStatus(status: string): boolean {
+  return NOT_STARTED_TRAINING_STATUSES.includes(status.toLowerCase());
 }
 
 /** True for any status name that looks like a failure, so the UI can show an error state rather than treating it as a quiet success. */
