@@ -58,6 +58,14 @@
   </div>
 
   @if (activeTab() === 'performance') {
+    @if (confidenceTiles().length > 0) {
+      <div class="tile-row">
+        @for (tile of confidenceTiles(); track tile.key) {
+          <app-stat-tile [label]="tile.label" [value]="tile.value" [large]="true" [icon]="tile.icon" />
+        }
+      </div>
+    }
+
     @if (compositeScore(); as score) {
       <section class="card results-section reliability-card">
         <h2 class="section-title">Does this model understand your business?</h2>
@@ -87,10 +95,50 @@
       </section>
 
       <div class="card results-section backend-gap-note">
-        <strong>Not shown yet:</strong> an actual-vs-predicted trend chart and a per-channel confidence/stability score both need new fields the API doesn't return today — flagged to add once that data exists.
+        <strong>Not shown yet:</strong> an actual-vs-predicted trend chart needs a real prediction time series the API doesn't return today — flagged to add once that data exists.
       </div>
     } @else {
       <app-empty-state title="No model performance metrics" message="This model's results didn't include confidence metrics." />
+    }
+
+    @if (hasScorecard()) {
+      <section class="card results-section">
+        <h2 class="section-title">Which channels should you act on?</h2>
+        <p class="muted field-hint">Based on this model's real spend, contribution, and ROI per channel — not a separate stability score, which the API doesn't return.</p>
+        <div class="scorecard-wrap">
+          <table class="scorecard">
+            <thead>
+              <tr>
+                <th>Channel</th>
+                <th>Spend</th>
+                <th>Contribution</th>
+                <th>ROI</th>
+                <th>Recommendation</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of scorecardRows(); track row.label) {
+                <tr>
+                  <td>{{ row.label }}</td>
+                  <td>{{ row.spend }}</td>
+                  <td>{{ row.contribution }}</td>
+                  <td>{{ row.roi }}</td>
+                  <td>
+                    <span
+                      class="rec-badge"
+                      [class.rec-increase]="row.recommendation === 'Increase'"
+                      [class.rec-decrease]="row.recommendation === 'Decrease'"
+                      [class.rec-maintain]="row.recommendation === 'Maintain'"
+                    >
+                      {{ row.recommendation }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
     }
   } @else {
     @if (hasKeyInsights()) {

@@ -15,6 +15,7 @@ import { GroupedBarChart, GroupedBarDatum } from '../../shared/charts/grouped-ba
 import { LineChart, LineSeries } from '../../shared/charts/line-chart/line-chart';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
+import { StatTile } from '../../shared/ui/stat-tile/stat-tile';
 import { currency } from '../../shared/utils/format';
 
 /** Common field names the real backend might use for a channel's display name - checked in order, first match wins. */
@@ -50,7 +51,7 @@ const BRAND_GROUPED_COLORS: [string, string] = ['#00994D', '#F59E0B'];
  */
 @Component({
   selector: 'app-model-results',
-  imports: [FormsModule, RouterLink, PageHeader, EmptyState, BarChart, GroupedBarChart, LineChart],
+  imports: [FormsModule, RouterLink, PageHeader, EmptyState, StatTile, BarChart, GroupedBarChart, LineChart],
   templateUrl: './model-results.html',
   styleUrl: './model-results.css',
 })
@@ -79,6 +80,8 @@ export class ModelResults implements OnInit {
 
   readonly isMockResult = computed(() => this.results()?.mock === true);
 
+  private static readonly CONFIDENCE_ICONS = ['📈', '📊', '🎯', '📐', '⏱️', '🧮'];
+
   /**
    * Every real NUMERIC key model_confidence actually has, not just the two
    * documented ones (overall_accuracy_percent, r_squared) - if the backend
@@ -87,7 +90,23 @@ export class ModelResults implements OnInit {
    * dropped. Non-numeric fields are skipped rather than rendered as a
    * "value" - a real response includes overall_accuracy_description, a
    * plain-text explanation of the accuracy metric, not a KPI itself.
-   * Reshaped as a 0-100 bar per metric.
+   */
+  readonly confidenceTiles = computed(() => {
+    const c = this.results()?.model_confidence;
+    if (!c) return [];
+    return Object.entries(c)
+      .filter((entry): entry is [string, number] => typeof entry[1] === 'number')
+      .map(([key, value], i) => ({
+        key,
+        label: this.humanizeKey(key),
+        value: this.formatConfidenceValue(key, value),
+        icon: ModelResults.CONFIDENCE_ICONS[i % ModelResults.CONFIDENCE_ICONS.length],
+      }));
+  });
+
+  /**
+   * Same real model_confidence fields as confidenceTiles above, reshaped as
+   * a 0-100 bar per metric.
    * a 0-100 bar per metric instead of a plain tile - a *_percent field is
    * already 0-100; anything else (e.g. r_squared, a 0-1 field) is assumed
    * to be on a 0-1 scale, same assumption formatConfidenceValue() already
