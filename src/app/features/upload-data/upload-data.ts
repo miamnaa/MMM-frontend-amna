@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DatasetService } from '../../core/services/dataset.service';
+import { SessionService } from '../../core/services/notification.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { UploadDraftService } from '../../core/services/upload-draft.service';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
@@ -42,6 +43,10 @@ export class UploadData implements OnInit {
   private readonly datasetService = inject(DatasetService);
   private readonly tunnelService = inject(TunnelService);
   private readonly draft = inject(UploadDraftService);
+  private readonly session = inject(SessionService);
+
+  /** Real 'read' role can view this screen but the real create-dataset endpoint 403s for it - disables Continue. */
+  readonly isReadOnly = this.session.isReadOnly;
 
   readonly modelOptions = MODEL_OPTIONS;
   readonly accepted = ACCEPTED.join(',');
@@ -231,14 +236,16 @@ export class UploadData implements OnInit {
   }
 
   /**
-   * Tries the real endpoint first. It's expected to fail right now (the
-   * migration hasn't run and file storage isn't configured on Anas's
-   * backend, 2026-08-11) - on failure this still moves on with a local
-   * placeholder dataset (flagged `local: true`) so Configure stays reachable
-   * and testable before the backend is actually live, rather than
-   * dead-ending the whole tunnel. Configure shows the honest "using local
-   * data" notice itself, since we navigate away immediately either way and
-   * a notice here would just flash and vanish.
+   * Real endpoint (createForProject is a real POST /projects/:projectId/datasets,
+   * confirmed working since 2026-08-13). A failure here is a real failure -
+   * e.g. a real 403 for the 'read' role ("Your role only allows viewing...")
+   * - and is shown as the real backend message, not silently swallowed.
+   *
+   * This used to fall back to a local-only placeholder dataset on ANY
+   * error, from before real upload was wired up (2026-08-11) - that's a
+   * real bug now: it hid every real failure (including a real 403) behind
+   * a stale success-looking navigation into Configure with fabricated
+   * local data, never showing what the backend actually said.
    */
   continue(): void {
     const file = this.file();
@@ -261,17 +268,9 @@ export class UploadData implements OnInit {
         this.draft.clearAll();
         this.router.navigate(['/configure', projectId, dataset.id]);
       },
-      error: () => {
+      error: (err: unknown) => {
         this.uploading.set(false);
-        const localId = `local-${crypto.randomUUID()}`;
-        this.tunnelService.setDataset({
-          id: localId,
-          name,
-          modelType: this.modelType(),
-          local: true,
-        });
-        this.draft.clearAll();
-        this.router.navigate(['/configure', projectId, localId]);
+        this.error.set(backendErrorMessage(err, 'Could not create this model. Try again.'));
       },
     });
   }

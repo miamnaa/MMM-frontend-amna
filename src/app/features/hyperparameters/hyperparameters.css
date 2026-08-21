@@ -376,6 +376,11 @@
   margin-top: 8px;
 }
 
+.read-only-hint {
+  margin: 0;
+  font-size: 12.5px;
+}
+
 .saved-note {
   font-size: 13px;
   font-weight: 600;

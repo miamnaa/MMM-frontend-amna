@@ -3,7 +3,9 @@
     [title]="project()?.name || 'Models'"
     subtitle="Every model you've started for this project, and how far along each one is."
   >
-    <button class="btn btn-primary" type="button" (click)="newModel()">+ New model</button>
+    @if (!isReadOnly()) {
+      <button class="btn btn-primary" type="button" (click)="newModel()">+ New model</button>
+    }
   </app-page-header>
 
   <div class="project-select-row">
@@ -36,7 +38,9 @@
           title="No models yet"
           message="Upload a dataset to start your first model for this project."
         >
-          <button class="btn btn-primary" type="button" (click)="newModel()">+ New model</button>
+          @if (!isReadOnly()) {
+            <button class="btn btn-primary" type="button" (click)="newModel()">+ New model</button>
+          }
         </app-empty-state>
       </div>
     }
@@ -69,9 +73,11 @@
               @if (row.status === 'ready') {
                 <button class="btn btn-secondary btn-sm" type="button" (click)="resume(row)">Edit</button>
                 @if (row.training.phase === 'idle' || row.training.phase === 'failed') {
-                  <button class="btn btn-primary btn-sm" type="button" (click)="startTraining(row)">
-                    Train Model
-                  </button>
+                  @if (!isReadOnly()) {
+                    <button class="btn btn-primary btn-sm" type="button" (click)="startTraining(row)">
+                      Train Model
+                    </button>
+                  }
                 } @else if (row.training.phase === 'starting') {
                   <button class="btn btn-primary btn-sm" type="button" disabled>Starting…</button>
                 } @else if (row.training.phase === 'training') {
@@ -88,7 +94,9 @@
                   Continue Setup
                 </button>
               }
-              <button class="btn btn-danger btn-sm" type="button" (click)="confirmDelete(row)">Delete</button>
+              @if (!isReadOnly()) {
+                <button class="btn btn-danger btn-sm" type="button" (click)="confirmDelete(row)">Delete</button>
+              }
             </div>
           </div>
 

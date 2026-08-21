@@ -44,6 +44,9 @@ export class Projects {
   private readonly router = inject(Router);
   private readonly msalService = inject(MsalService);
 
+  /** Real 'read' role can view this whole page but every create/edit/delete endpoint here real-403s for it - gates New project, Edit, and Delete (View stays available - that's what 'read' actually means). */
+  readonly isReadOnly = this.session.isReadOnly;
+
   /** Whole-tenant members, loaded once - only used to answer "is the signed-in account a Master," same real check Settings' own isAdmin uses (a project-scoped member list wouldn't include a Master who hasn't been explicitly added to this particular project). */
   private readonly tenantMembers = signal<ApiMember[]>([]);
   readonly isMaster = computed(() =>

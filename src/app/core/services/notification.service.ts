@@ -4,6 +4,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { initials } from '../../shared/utils/format';
 import { AppNotification, User } from '../models/domain.models';
+import { GlobalRole, MembersService } from './members.service';
 
 /** The shape /auth/me actually returns (API-REFERENCE.md, "GET /auth/me"). */
 interface AuthMe {
@@ -22,6 +23,7 @@ const PENDING_USER: User = { id: '', name: '', email: '', role: 'analyst', initi
 @Injectable({ providedIn: 'root' })
 export class SessionService {
   private readonly http = inject(HttpClient);
+  private readonly membersService = inject(MembersService);
 
   readonly user = signal<User>(PENDING_USER);
   /** No /notifications route exists on the real API yet (API-REFERENCE.md). */
@@ -36,6 +38,22 @@ export class SessionService {
    */
   readonly userId = signal<string | null>(null);
 
+  /**
+   * /auth/me still doesn't return a role, so this is resolved the same real
+   * way Settings' own isAdmin check already does - looking the signed-in
+   * account up in the real tenant member list (GET /members), by id, once
+   * userId is known. Null until that resolves.
+   */
+  readonly globalRole = signal<GlobalRole | null>(null);
+
+  /**
+   * The real 'read' role can view everything but every create/edit/train/
+   * delete endpoint real-403s for it - every such control app-wide checks
+   * this single flag to hide/disable itself, rather than each screen
+   * re-deriving "am I read-only" its own way.
+   */
+  readonly isReadOnly = computed(() => this.globalRole() === 'read');
+
   constructor() {
     this.http.get<AuthMe>(`${environment.apiBaseUrl}/auth/me`).subscribe({
       next: (me) => {
@@ -49,6 +67,14 @@ export class SessionService {
           // just nowhere in this response for it to show up yet.
           role: 'analyst',
           initials: initials(me.name),
+        });
+
+        this.membersService.listMembers().subscribe({
+          next: (members) => {
+            const self = members.find((m) => m.id === me.userId);
+            if (self) this.globalRole.set(self.globalRole);
+          },
+          error: (err: unknown) => console.error("Failed to load the signed-in account's role", err),
         });
       },
       error: (err: unknown) => console.error('Failed to load the signed-in account', err),

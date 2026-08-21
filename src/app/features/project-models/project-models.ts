@@ -14,6 +14,7 @@ import {
 import { Project } from '../../core/models/domain.models';
 import { ApiMember } from '../../core/services/members.service';
 import { MODEL_STATUS_META, ModelStatus, computeModelStatus, resumeDatasetRoute } from '../../core/services/model-status';
+import { SessionService } from '../../core/services/notification.service';
 import { ProjectService } from '../../core/services/project.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { UploadDraftService } from '../../core/services/upload-draft.service';
@@ -70,6 +71,10 @@ export class ProjectModels implements OnInit, OnDestroy {
   private readonly datasetService = inject(DatasetService);
   private readonly tunnelService = inject(TunnelService);
   private readonly uploadDraft = inject(UploadDraftService);
+  private readonly session = inject(SessionService);
+
+  /** Real 'read' role can view this page but every create/train/delete endpoint here real-403s for it - gates + New model, Train Model, and Delete. */
+  readonly isReadOnly = this.session.isReadOnly;
 
   readonly projectId = signal('');
   readonly project = signal<Project | null>(null);

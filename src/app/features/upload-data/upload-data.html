@@ -193,10 +193,13 @@
   </section>
 
   <div class="tunnel-actions">
+    @if (isReadOnly()) {
+      <p class="muted read-only-hint">Your role only allows viewing. Ask a Master for Read/Write access to create a model.</p>
+    }
     <button
       class="btn btn-primary btn-lg"
       type="button"
-      [disabled]="!file() || !modelName().trim() || uploading()"
+      [disabled]="!file() || !modelName().trim() || uploading() || isReadOnly()"
       (click)="continue()"
     >
       {{ uploading() ? 'Uploading…' : 'Continue' }}

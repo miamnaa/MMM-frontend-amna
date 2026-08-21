@@ -229,7 +229,7 @@
           <button
             class="btn btn-secondary btn-sm side-panel-action"
             type="button"
-            [disabled]="autoCombining()"
+            [disabled]="autoCombining() || isReadOnly()"
             (click)="autoCombineChannels()"
           >
             {{ autoCombining() ? 'Checking…' : "Combine what's flagged" }}
@@ -307,7 +307,7 @@
             <p class="drop-error">{{ err }}</p>
           }
 
-          <button class="btn btn-primary btn-sm side-panel-action" type="button" [disabled]="!canAggregate()" (click)="aggregateChannels()">
+          <button class="btn btn-primary btn-sm side-panel-action" type="button" [disabled]="!canAggregate() || isReadOnly()" (click)="aggregateChannels()">
             {{ aggregating() ? 'Combining…' : 'Aggregate' }}
           </button>
         } @else {
@@ -468,7 +468,10 @@
   }
 
   <div class="tunnel-actions">
-    <button class="btn btn-primary btn-lg" type="button" [disabled]="!canSave() || saving()" (click)="save()">
+    @if (isReadOnly()) {
+      <p class="muted read-only-hint">Your role only allows viewing. Ask a Master for Read/Write access to save changes.</p>
+    }
+    <button class="btn btn-primary btn-lg" type="button" [disabled]="!canSave() || saving() || isReadOnly()" (click)="save()">
       {{ saving() ? 'Saving…' : 'Save and continue' }}
     </button>
   </div>

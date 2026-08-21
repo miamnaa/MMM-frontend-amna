@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DatasetService } from '../../core/services/dataset.service';
+import { SessionService } from '../../core/services/notification.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
@@ -31,6 +32,10 @@ export class Calibrate implements OnInit {
   private readonly router = inject(Router);
   private readonly datasetService = inject(DatasetService);
   private readonly tunnelService = inject(TunnelService);
+  private readonly session = inject(SessionService);
+
+  /** Real 'read' role can view this screen but the real save-calibration endpoint 403s for it - disables Save. */
+  readonly isReadOnly = this.session.isReadOnly;
 
   readonly projectId = signal('');
   readonly datasetId = signal('');

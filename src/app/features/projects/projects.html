@@ -20,7 +20,9 @@
   title="Projects"
   subtitle="A project groups the datasets, model configurations and runs for one business question."
 >
-  <button class="btn btn-primary" type="button" (click)="openDialog()">New project</button>
+  @if (!isReadOnly()) {
+    <button class="btn btn-primary" type="button" (click)="openDialog()">New project</button>
+  }
   <button class="btn btn-ghost" type="button" (click)="signOut()">Sign out</button>
 </app-page-header>
 
@@ -89,7 +91,9 @@
         title="No projects yet"
         message="Create a project to start uploading data and configuring a model."
       >
-        <button class="btn btn-primary" type="button" (click)="openDialog()">New project</button>
+        @if (!isReadOnly()) {
+          <button class="btn btn-primary" type="button" (click)="openDialog()">New project</button>
+        }
       </app-empty-state>
     </div>
   }
@@ -129,8 +133,10 @@
                 <circle cx="12" cy="8" r="3.4" fill="currentColor" />
               </svg>
             </button>
-            <button class="btn btn-ghost btn-sm" type="button" (click)="openEdit(p)">Edit</button>
-            <button class="btn btn-ghost btn-sm" type="button" (click)="confirmDelete(p)">Delete</button>
+            @if (!isReadOnly()) {
+              <button class="btn btn-ghost btn-sm" type="button" (click)="openEdit(p)">Edit</button>
+              <button class="btn btn-ghost btn-sm" type="button" (click)="confirmDelete(p)">Delete</button>
+            }
           </div>
         </div>
       </article>
