@@ -39,6 +39,8 @@ export interface Project {
   createdAt: string;
   updatedAt: string;
   ownerName: string;
+  /** Real comparison against the signed-in account's own id (ownerId === session userId), not a name-string guess - ownerName alone can't be trusted for this since "Team member" is a shared fallback label. */
+  isMine: boolean;
   experimentCount: number;
   datasetCount: number;
 }

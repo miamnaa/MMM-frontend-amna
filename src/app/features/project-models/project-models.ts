@@ -214,9 +214,10 @@ export class ProjectModels implements OnInit, OnDestroy {
     this.pollSubs.set(id, sub);
   }
 
+  /** Only this account's own projects - a shared/team project you don't own isn't yours to jump into from this picker. */
   private loadProjectOptions(): void {
     this.projectService.list().subscribe({
-      next: (projects) => this.projectOptions.set(projects),
+      next: (projects) => this.projectOptions.set(projects.filter((p) => p.isMine)),
       error: () => {},
     });
   }

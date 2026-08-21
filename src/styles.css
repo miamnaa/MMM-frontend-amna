@@ -341,6 +341,23 @@ button {
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
+.select {
+  /* Native <select> arrows vary wildly by browser/OS and look out of place
+     next to the rest of this app's styling - a single consistent SVG
+     chevron replaces it everywhere .select is used. */
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  background-size: 10px 6px;
+}
+
+:root[data-theme='dark'] .select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%2399a3af' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
 .textarea {
   height: auto;
   min-height: 76px;

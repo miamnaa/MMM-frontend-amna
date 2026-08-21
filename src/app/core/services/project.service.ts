@@ -85,6 +85,7 @@ export class ProjectService {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       ownerName: isMine ? this.session.user().name : 'Team member',
+      isMine,
       experimentCount: 0,
       datasetCount: row.datasetCount ?? 0,
     };
