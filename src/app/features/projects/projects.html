@@ -106,10 +106,7 @@
     @for (p of filteredProjects(); track p.id) {
       <article class="card project">
         <div class="project-top">
-          <div class="project-top-left">
-            <span class="avatar" [style.background]="avatarColor(p.name)">{{ initials(p.name) }}</span>
-            <app-status-badge [status]="p.status" />
-          </div>
+          <app-status-badge [status]="p.status" />
           <span class="muted updated">{{ relativeTime(p.updatedAt) }}</span>
         </div>
         <h2>{{ p.name }}</h2>

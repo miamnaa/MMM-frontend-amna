@@ -12,18 +12,9 @@ import { Project } from '../../core/models/domain.models';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
 import { StatusBadge } from '../../shared/ui/status-badge/status-badge';
-import { initials, relativeTime, shortDate } from '../../shared/utils/format';
+import { relativeTime, shortDate } from '../../shared/utils/format';
 
 type SortOption = 'recent' | 'az' | 'created';
-
-/** Rotates by name so the same project always lands on the same color. */
-const AVATAR_PALETTE = ['#d9f2e6', '#fde8d2', '#e6e6fb', '#fde2e2', '#fdf0c7', '#dbeafe'];
-
-function avatarColor(name: string): string {
-  let hash = 0;
-  for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) % AVATAR_PALETTE.length;
-  return AVATAR_PALETTE[hash];
-}
 
 /**
  * The backend's error body always has a `message` - a string for most
@@ -83,9 +74,6 @@ export class Projects {
 
   readonly searchQuery = signal('');
   readonly sortBy = signal<SortOption>('recent');
-
-  readonly initials = initials;
-  readonly avatarColor = avatarColor;
 
   readonly filteredProjects = computed(() => {
     const query = this.searchQuery().trim().toLowerCase();
