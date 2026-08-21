@@ -28,10 +28,27 @@ export class ProjectService {
   private readonly session = inject(SessionService);
   private readonly url = `${environment.apiBaseUrl}/projects`;
 
+  /**
+   * The real GET /projects returns every tenant-wide project (real ownerId
+   * can differ from the signed-in account - ownerName's "Team member"
+   * fallback exists for exactly that case). Every list-of-projects screen
+   * (Projects, the Models page's project picker, Results & Insights' picker,
+   * Datasets, Overview) should only ever show what this account actually
+   * owns, so that filter happens once here rather than being repeated (or
+   * forgotten) in each of them.
+   */
   list(): Observable<Project[]> {
-    return this.http.get<ApiProject[]>(this.url).pipe(map((rows) => rows.map((r) => this.toProject(r))));
+    return this.http
+      .get<ApiProject[]>(this.url)
+      .pipe(map((rows) => rows.map((r) => this.toProject(r)).filter((p) => p.isMine)));
   }
 
+  /**
+   * Deliberately NOT filtered by ownership like list() above - callers that
+   * fetch a single project by id (e.g. projectContextGuard, validating a
+   * direct URL hit) need the real isMine flag to check against, not a
+   * silent 404 for a project that does exist but isn't theirs.
+   */
   get(id: string): Observable<Project | undefined> {
     return this.http.get<ApiProject>(`${this.url}/${id}`).pipe(map((r) => this.toProject(r)));
   }
