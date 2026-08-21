@@ -10,14 +10,13 @@ import { ProjectService } from '../services/project.service';
  * /upload-data/:projectId (typed URL, bookmark, refresh) still gets
  * validated properly instead of trusting whatever's in the address bar.
  *
- * Also checks real ownership (isMine), not just existence - the backend
- * returns every tenant-wide project from GET /projects/:id (including ones
- * you don't own, which is why training itself real-403s with "Only the
- * project owner can do this."), so without this check a stale session, a
- * bookmark, or a shared link could land you on someone else's project's
- * Models page. Every screen behind this guard (Models, Upload Data,
- * Configure, Optimize, ...) should only ever show what the signed-in
- * account actually owns.
+ * As of the real "projects are invite-only" backend change (2026-08-21),
+ * GET /projects/:id itself already 404s for a project you have no access to
+ * (owner, an added member, or a Master) - so existence alone is now the
+ * right check here. This used to also require project.isMine, from when
+ * the backend returned every tenant-wide project regardless of access; that
+ * would now incorrectly block a project you were legitimately invited to
+ * but don't own.
  */
 export const projectContextGuard: CanActivateFn = (route) => {
   const projectService = inject(ProjectService);
@@ -27,7 +26,7 @@ export const projectContextGuard: CanActivateFn = (route) => {
   if (!projectId) return router.createUrlTree(['/projects']);
 
   return projectService.get(projectId).pipe(
-    map((project) => (project?.isMine ? true : router.createUrlTree(['/projects']))),
+    map((project) => (project ? true : router.createUrlTree(['/projects']))),
     catchError(() => of(router.createUrlTree(['/projects']))),
   );
 };

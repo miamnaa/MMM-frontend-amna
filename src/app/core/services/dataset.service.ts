@@ -123,6 +123,8 @@ export interface ApiDatasetDetail {
   dateRange: SavedOptimize | null;
   calibration: SavedCalibration | null;
   channelHyperparameters: HyperparameterChannel[] | null;
+  /** Real field, added 2026-08-21 alongside the invite-only projects change - the real user id of whoever uploaded this dataset. Existing datasets were backfilled with the project owner's id as the closest real fact available for data that predates this field. */
+  createdByUserId?: string;
 }
 
 /**
@@ -143,6 +145,8 @@ export interface ApiProjectDataset {
   dateRange: SavedOptimize | null;
   calibration: SavedCalibration | null;
   channelHyperparameters: HyperparameterChannel[] | null;
+  /** Real field, added 2026-08-21 - the real user id of whoever uploaded this dataset. Existing datasets were backfilled with the project owner's id. */
+  createdByUserId?: string;
 }
 
 /**

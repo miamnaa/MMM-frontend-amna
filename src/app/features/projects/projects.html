@@ -282,6 +282,65 @@
         <span class="label">Experiments</span>
         <span>{{ v.experimentCount }}</span>
       </div>
+
+      <div class="members-section">
+        <h3 class="members-title">Who has access</h3>
+
+        @if (membersError(); as err) {
+          <p class="field-error">{{ err }}</p>
+        }
+
+        @if (loadingMembers()) {
+          <p class="muted">Loading…</p>
+        } @else {
+          <ul class="members-list">
+            @for (m of viewMembers(); track m.id) {
+              <li class="member-row">
+                <span class="member-name">{{ m.firstName }} {{ m.lastName }}</span>
+                <span class="muted member-email">{{ m.email }}</span>
+                @if (canManageMembers()) {
+                  <button
+                    class="btn btn-ghost btn-sm"
+                    type="button"
+                    [disabled]="removingMemberId() === m.id"
+                    (click)="removeMember(m)"
+                  >
+                    {{ removingMemberId() === m.id ? 'Removing…' : 'Remove' }}
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+        }
+
+        @if (removeMemberError(); as err) {
+          <p class="field-error">{{ err }}</p>
+        }
+
+        @if (canManageMembers()) {
+          <div class="add-member-row">
+            @if (addMemberError(); as err) {
+              <p class="field-error">{{ err }}</p>
+            }
+            <input
+              class="input"
+              type="email"
+              [ngModel]="addMemberEmail()"
+              (ngModelChange)="addMemberEmail.set($event)"
+              placeholder="teammate@company.com"
+              aria-label="Email to add"
+            />
+            <button
+              class="btn btn-secondary btn-sm"
+              type="button"
+              [disabled]="!addMemberEmail().trim() || addingMember()"
+              (click)="addMember()"
+            >
+              {{ addingMember() ? 'Adding…' : 'Add' }}
+            </button>
+          </div>
+        }
+      </div>
     </div>
     <div class="dialog-foot">
       <button class="btn btn-secondary" type="button" (click)="closeView()">Close</button>

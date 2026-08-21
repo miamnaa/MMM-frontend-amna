@@ -12,6 +12,7 @@ import {
   isTerminalTrainingStatus,
 } from '../../core/services/dataset.service';
 import { Project } from '../../core/models/domain.models';
+import { ApiMember } from '../../core/services/members.service';
 import { MODEL_STATUS_META, ModelStatus, computeModelStatus, resumeDatasetRoute } from '../../core/services/model-status';
 import { ProjectService } from '../../core/services/project.service';
 import { TunnelService } from '../../core/services/tunnel.service';
@@ -79,6 +80,9 @@ export class ProjectModels implements OnInit, OnDestroy {
   /** Every real project, for the sidebar-adjacent "Select project" dropdown - lets you switch without going back through /projects. */
   readonly projectOptions = signal<Project[]>([]);
 
+  /** This project's real members, to resolve each dataset's real createdByUserId into a name for "Uploaded by" instead of a raw id. */
+  readonly members = signal<ApiMember[]>([]);
+
   readonly deleteTarget = signal<ModelRow | null>(null);
   readonly deleting = signal(false);
   readonly deleteError = signal<string | null>(null);
@@ -95,6 +99,7 @@ export class ProjectModels implements OnInit, OnDestroy {
     this.tunnelService.selectProject(this.projectId());
     this.load();
     this.loadProjectOptions();
+    this.loadMembers();
   }
 
   ngOnDestroy(): void {
@@ -237,6 +242,21 @@ export class ProjectModels implements OnInit, OnDestroy {
       next: (projects) => this.projectOptions.set(projects),
       error: () => {},
     });
+  }
+
+  private loadMembers(): void {
+    this.projectService.listMembers(this.projectId()).subscribe({
+      next: (members) => this.members.set(members),
+      error: () => {},
+    });
+  }
+
+  /** "Uploaded by [name]" per dataset, resolved against this project's real member list - falls back to nothing shown if the uploader isn't (or is no longer) a member with access to this project. */
+  uploaderName(row: ModelRow): string | null {
+    const id = row.dataset.createdByUserId;
+    if (!id) return null;
+    const member = this.members().find((m) => m.id === id);
+    return member ? `${member.firstName} ${member.lastName}`.trim() : null;
   }
 
   selectProject(id: string): void {

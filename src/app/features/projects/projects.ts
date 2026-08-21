@@ -5,6 +5,8 @@ import { Router } from '@angular/router';
 import { MsalService } from '@azure/msal-angular';
 
 import { localSignOut } from '../../core/auth/local-sign-out';
+import { ApiMember, MembersService } from '../../core/services/members.service';
+import { SessionService } from '../../core/services/notification.service';
 import { ProjectService } from '../../core/services/project.service';
 import { Project } from '../../core/models/domain.models';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
@@ -46,8 +48,29 @@ function backendErrorMessage(err: unknown, fallback: string): string {
 })
 export class Projects {
   private readonly projectService = inject(ProjectService);
+  private readonly membersService = inject(MembersService);
+  private readonly session = inject(SessionService);
   private readonly router = inject(Router);
   private readonly msalService = inject(MsalService);
+
+  /** Whole-tenant members, loaded once - only used to answer "is the signed-in account a Master," same real check Settings' own isAdmin uses (a project-scoped member list wouldn't include a Master who hasn't been explicitly added to this particular project). */
+  private readonly tenantMembers = signal<ApiMember[]>([]);
+  readonly isMaster = computed(() =>
+    this.tenantMembers().some((m) => m.id === this.session.userId() && m.globalRole === 'administrator'),
+  );
+
+  /** This project's real members, loaded when its view dialog opens. */
+  readonly viewMembers = signal<ApiMember[]>([]);
+  readonly loadingMembers = signal(false);
+  readonly membersError = signal<string | null>(null);
+  readonly canManageMembers = computed(() => (this.viewTarget()?.isMine ?? false) || this.isMaster());
+
+  readonly addMemberEmail = signal('');
+  readonly addingMember = signal(false);
+  readonly addMemberError = signal<string | null>(null);
+
+  readonly removingMemberId = signal<string | null>(null);
+  readonly removeMemberError = signal<string | null>(null);
 
   readonly projects = signal<Project[]>([]);
   readonly loading = signal(true);
@@ -107,6 +130,10 @@ export class Projects {
 
   constructor() {
     this.reload();
+    this.membersService.listMembers().subscribe({
+      next: (members) => this.tenantMembers.set(members),
+      error: (err: unknown) => console.error('Failed to load tenant members', err),
+    });
   }
 
   reload(): void {
@@ -181,10 +208,68 @@ export class Projects {
 
   openView(project: Project): void {
     this.viewTarget.set(project);
+    this.viewMembers.set([]);
+    this.membersError.set(null);
+    this.addMemberEmail.set('');
+    this.addMemberError.set(null);
+    this.loadingMembers.set(true);
+
+    this.projectService.listMembers(project.id).subscribe({
+      next: (members) => {
+        this.viewMembers.set(members);
+        this.loadingMembers.set(false);
+      },
+      error: (err: unknown) => {
+        this.membersError.set(backendErrorMessage(err, 'Could not load who has access to this project.'));
+        this.loadingMembers.set(false);
+      },
+    });
   }
 
   closeView(): void {
     this.viewTarget.set(null);
+  }
+
+  addMember(): void {
+    const target = this.viewTarget();
+    const email = this.addMemberEmail().trim();
+    if (!target || !email || this.addingMember()) return;
+
+    this.addingMember.set(true);
+    this.addMemberError.set(null);
+
+    this.projectService.addMember(target.id, email).subscribe({
+      next: (member) => {
+        this.addingMember.set(false);
+        this.addMemberEmail.set('');
+        this.viewMembers.update((list) => [...list, member]);
+      },
+      error: (err: unknown) => {
+        this.addingMember.set(false);
+        this.addMemberError.set(
+          backendErrorMessage(err, 'Could not add this person - check the email is an existing team member.'),
+        );
+      },
+    });
+  }
+
+  removeMember(member: ApiMember): void {
+    const target = this.viewTarget();
+    if (!target || this.removingMemberId()) return;
+
+    this.removingMemberId.set(member.id);
+    this.removeMemberError.set(null);
+
+    this.projectService.removeMember(target.id, member.id).subscribe({
+      next: () => {
+        this.removingMemberId.set(null);
+        this.viewMembers.update((list) => list.filter((m) => m.id !== member.id));
+      },
+      error: (err: unknown) => {
+        this.removingMemberId.set(null);
+        this.removeMemberError.set(backendErrorMessage(err, "Could not remove this person's access."));
+      },
+    });
   }
 
   openEdit(project: Project): void {

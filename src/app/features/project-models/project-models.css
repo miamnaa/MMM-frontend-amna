@@ -126,6 +126,13 @@
   color: var(--text-muted);
 }
 
+.uploader-label {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
 .progress-track {
   height: 7px;
   border-radius: var(--r-full);

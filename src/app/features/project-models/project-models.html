@@ -48,6 +48,9 @@
             <div class="model-info">
               <h2>{{ row.dataset.name }}</h2>
               <span class="status-label">{{ row.label }}</span>
+              @if (uploaderName(row); as name) {
+                <span class="uploader-label">Uploaded by {{ name }}</span>
+              }
             </div>
 
             <div class="progress-col">

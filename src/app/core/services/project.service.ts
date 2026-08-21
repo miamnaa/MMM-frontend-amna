@@ -4,6 +4,7 @@ import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { Project } from '../models/domain.models';
+import { ApiMember } from './members.service';
 import { SessionService } from './notification.service';
 
 /** The exact wire shape of GET/POST /projects (API-REFERENCE.md, "Data model: Project"). */
@@ -29,28 +30,36 @@ export class ProjectService {
   private readonly url = `${environment.apiBaseUrl}/projects`;
 
   /**
-   * The real GET /projects returns every tenant-wide project (real ownerId
-   * can differ from the signed-in account - ownerName's "Team member"
-   * fallback exists for exactly that case). Every list-of-projects screen
-   * (Projects, the Models page's project picker, Results & Insights' picker,
-   * Datasets, Overview) should only ever show what this account actually
-   * owns, so that filter happens once here rather than being repeated (or
-   * forgotten) in each of them.
+   * As of the real "projects are invite-only" change (2026-08-21), GET
+   * /projects itself only returns projects you actually have access to
+   * (own, added to, or every one if you're a Master) - no client-side
+   * filtering needed or correct here anymore. Before this backend change,
+   * every tenant-wide project came back regardless of access, which is why
+   * this used to filter to isMine; that would now incorrectly hide a
+   * project you were legitimately added to but don't own.
    */
   list(): Observable<Project[]> {
-    return this.http
-      .get<ApiProject[]>(this.url)
-      .pipe(map((rows) => rows.map((r) => this.toProject(r)).filter((p) => p.isMine)));
+    return this.http.get<ApiProject[]>(this.url).pipe(map((rows) => rows.map((r) => this.toProject(r))));
   }
 
-  /**
-   * Deliberately NOT filtered by ownership like list() above - callers that
-   * fetch a single project by id (e.g. projectContextGuard, validating a
-   * direct URL hit) need the real isMine flag to check against, not a
-   * silent 404 for a project that does exist but isn't theirs.
-   */
+  /** Real 404 (not a silent empty result) if you don't have access to this project - the backend deliberately doesn't confirm a private project even exists to someone not on it. */
   get(id: string): Observable<Project | undefined> {
     return this.http.get<ApiProject>(`${this.url}/${id}`).pipe(map((r) => this.toProject(r)));
+  }
+
+  /** Real endpoint, shipped alongside the invite-only change - every real member with access to this project. Available to anyone who can already see the project. */
+  listMembers(projectId: string): Observable<ApiMember[]> {
+    return this.http.get<ApiMember[]>(`${this.url}/${projectId}/members`);
+  }
+
+  /** Real endpoint - adds an existing tenant member to this project by email. Master or the project's owner only (real 403 otherwise); real 400 if the email isn't an existing team member yet or already has access. */
+  addMember(projectId: string, email: string): Observable<ApiMember> {
+    return this.http.post<ApiMember>(`${this.url}/${projectId}/members`, { email });
+  }
+
+  /** Real endpoint - removes someone's access to this project. Master or owner only; real 400 if you try to remove the project's own owner. */
+  removeMember(projectId: string, userId: string): Observable<void> {
+    return this.http.delete<void>(`${this.url}/${projectId}/members/${userId}`);
   }
 
   /**
