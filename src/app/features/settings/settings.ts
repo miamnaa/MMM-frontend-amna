@@ -35,11 +35,11 @@ export class Settings implements OnInit {
 
   /** Real role-change/remove controls and the invite form only show once this is confirmed true from the real member list - never assumed. */
   readonly isAdmin = computed(() =>
-    this.members().some((m) => m.id === this.session.userId() && m.globalRole === 'administrator'),
+    this.members().some((m) => m.id === this.session.userId() && m.globalRole === 'master'),
   );
 
   readonly inviteEmail = signal('');
-  readonly inviteRole = signal<GlobalRole>('marketing_analyst');
+  readonly inviteRole = signal<GlobalRole>('read_write');
   readonly inviting = signal(false);
   readonly inviteError = signal<string | null>(null);
 
@@ -94,7 +94,7 @@ export class Settings implements OnInit {
       next: () => {
         this.inviting.set(false);
         this.inviteEmail.set('');
-        this.inviteRole.set('marketing_analyst');
+        this.inviteRole.set('read_write');
         this.loadInvites();
       },
       error: (err: unknown) => {

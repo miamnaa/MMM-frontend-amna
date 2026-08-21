@@ -47,7 +47,7 @@ export class Projects {
   /** Whole-tenant members, loaded once - only used to answer "is the signed-in account a Master," same real check Settings' own isAdmin uses (a project-scoped member list wouldn't include a Master who hasn't been explicitly added to this particular project). */
   private readonly tenantMembers = signal<ApiMember[]>([]);
   readonly isMaster = computed(() =>
-    this.tenantMembers().some((m) => m.id === this.session.userId() && m.globalRole === 'administrator'),
+    this.tenantMembers().some((m) => m.id === this.session.userId() && m.globalRole === 'master'),
   );
 
   /** This project's real members, loaded when its view dialog opens. */

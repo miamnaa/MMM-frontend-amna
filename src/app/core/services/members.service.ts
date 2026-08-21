@@ -4,13 +4,23 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 
-export type GlobalRole = 'marketing_analyst' | 'marketing_manager' | 'data_scientist' | 'administrator';
+/**
+ * Real breaking change, shipped 2026-08-21: the old 4 marketing-titled
+ * values (marketing_analyst/marketing_manager/data_scientist/administrator)
+ * are gone, replaced with 3 real permission tiers the backend actually
+ * enforces - master (full access incl. member management), read (view
+ * only, no create/edit/train/delete), read_write (everything but member
+ * management). POST /members/invite and PATCH /members/:id/role now reject
+ * the old values with a real 400. Existing members were migrated
+ * automatically server-side (Administrator -> master, everyone else ->
+ * read_write) - nobody lost access from this change alone.
+ */
+export type GlobalRole = 'master' | 'read' | 'read_write';
 
 export const GLOBAL_ROLE_LABELS: Record<GlobalRole, string> = {
-  marketing_analyst: 'Marketing Analyst',
-  marketing_manager: 'Marketing Manager',
-  data_scientist: 'Data Scientist',
-  administrator: 'Administrator',
+  master: 'Master',
+  read: 'Read',
+  read_write: 'Read/Write',
 };
 
 export const GLOBAL_ROLE_OPTIONS: { value: GlobalRole; label: string }[] = (
