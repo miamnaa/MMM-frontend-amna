@@ -111,6 +111,12 @@
   display: block;
 }
 
+.sign-out-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
 /* The front stack is haloed in the item's own background so it reads as a
    separate cylinder rather than merging into the one behind it. */
 .db-front {

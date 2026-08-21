@@ -76,7 +76,13 @@
       }
       <li>
         <button class="nav-action" type="button" (click)="signOut()">
-          <span class="icon" aria-hidden="true">⤶</span>
+          <span class="icon" aria-hidden="true">
+            <svg class="sign-out-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+              <polyline points="14 7 9 12 14 17" />
+              <line x1="9" y1="12" x2="21" y2="12" />
+            </svg>
+          </span>
           <span class="nav-label">Sign out</span>
         </button>
       </li>
