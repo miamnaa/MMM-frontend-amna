@@ -52,13 +52,13 @@
 
             <div class="progress-col">
               <span class="progress-caption">
-                @if (row.percent === 100) {
+                @if (progressPercent(row) === 100) {
                   <span class="progress-check" aria-hidden="true">✓</span>
                 }
-                <strong>{{ row.percent }}%</strong> Configuration
+                <strong>{{ progressPercent(row) }}%</strong> {{ progressLabel(row) }}
               </span>
-              <div class="progress-track" [attr.aria-label]="'Configuration, ' + row.percent + '% complete'">
-                <div class="progress-fill" [style.width.%]="row.percent"></div>
+              <div class="progress-track" [attr.aria-label]="progressLabel(row) + ', ' + progressPercent(row) + '% complete'">
+                <div class="progress-fill" [style.width.%]="progressPercent(row)"></div>
               </div>
             </div>
 

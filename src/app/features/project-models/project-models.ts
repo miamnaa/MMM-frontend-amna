@@ -214,6 +214,24 @@ export class ProjectModels implements OnInit, OnDestroy {
     this.pollSubs.set(id, sub);
   }
 
+  /**
+   * "Configuration" only describes the 4 setup steps (Configure/Optimize/
+   * Calibrate/Hyperparameters) - once a model reaches Ready, that's over and
+   * done with, so the same top bar switches to reporting real training
+   * progress instead. Before this, a Ready row always showed a green
+   * "100% Configuration" bar no matter what training was actually doing
+   * underneath it - real, stuck, or failed all looked identical and done.
+   */
+  progressLabel(row: ModelRow): string {
+    return row.status === 'ready' ? 'Training' : 'Configuration';
+  }
+
+  progressPercent(row: ModelRow): number {
+    if (row.status !== 'ready') return row.percent;
+    const t = row.training;
+    return t.phase === 'training' ? (t.progress ?? 0) : t.phase === 'completed' ? 100 : 0;
+  }
+
   private loadProjectOptions(): void {
     this.projectService.list().subscribe({
       next: (projects) => this.projectOptions.set(projects),
