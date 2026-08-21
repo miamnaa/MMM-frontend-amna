@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription, interval } from 'rxjs';
 import { switchMap, takeWhile } from 'rxjs/operators';
@@ -57,7 +58,7 @@ interface ModelRow {
  */
 @Component({
   selector: 'app-project-models',
-  imports: [RouterLink, PageHeader, EmptyState],
+  imports: [FormsModule, RouterLink, PageHeader, EmptyState],
   templateUrl: './project-models.html',
   styleUrl: './project-models.css',
 })
@@ -75,6 +76,9 @@ export class ProjectModels implements OnInit, OnDestroy {
   readonly loading = signal(true);
   readonly loadError = signal<string | null>(null);
 
+  /** Every real project, for the sidebar-adjacent "Select project" dropdown - lets you switch without going back through /projects. */
+  readonly projectOptions = signal<Project[]>([]);
+
   readonly deleteTarget = signal<ModelRow | null>(null);
   readonly deleting = signal(false);
   readonly deleteError = signal<string | null>(null);
@@ -90,6 +94,7 @@ export class ProjectModels implements OnInit, OnDestroy {
     // Setup already does via resume().
     this.tunnelService.selectProject(this.projectId());
     this.load();
+    this.loadProjectOptions();
   }
 
   ngOnDestroy(): void {
@@ -207,6 +212,18 @@ export class ProjectModels implements OnInit, OnDestroy {
       });
 
     this.pollSubs.set(id, sub);
+  }
+
+  private loadProjectOptions(): void {
+    this.projectService.list().subscribe({
+      next: (projects) => this.projectOptions.set(projects),
+      error: () => {},
+    });
+  }
+
+  selectProject(id: string): void {
+    if (!id || id === this.projectId()) return;
+    this.router.navigate(['/models', id]);
   }
 
   confirmDelete(row: ModelRow): void {

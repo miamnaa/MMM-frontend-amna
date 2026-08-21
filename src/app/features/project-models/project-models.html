@@ -6,6 +6,15 @@
     <button class="btn btn-primary" type="button" (click)="newModel()">+ New model</button>
   </app-page-header>
 
+  <div class="project-select-row">
+    <label class="project-select-label" for="project-select">Select Project</label>
+    <select id="project-select" class="select" [ngModel]="projectId()" (ngModelChange)="selectProject($event)">
+      @for (p of projectOptions(); track p.id) {
+        <option [value]="p.id">{{ p.name }}</option>
+      }
+    </select>
+  </div>
+
   @if (loadError(); as err) {
     <div class="card error-banner">
       <span>{{ err }}</span>
