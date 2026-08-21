@@ -161,7 +161,11 @@
 
   <section class="card">
     <div class="card-header"><h2>Notifications</h2></div>
-    @if (preferences(); as prefs) {
+    @if (preferencesError(); as err) {
+      <div class="card-body">
+        <p class="field-error">{{ err }}</p>
+      </div>
+    } @else if (preferences(); as prefs) {
       <div class="card-body prefs">
         <label class="pref">
           <input

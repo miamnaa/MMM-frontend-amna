@@ -51,6 +51,7 @@ export class Settings implements OnInit {
   readonly removeError = signal<string | null>(null);
 
   readonly preferences = signal<NotificationPreferences | null>(null);
+  readonly preferencesError = signal<string | null>(null);
   readonly savingPreference = signal<keyof NotificationPreferences | null>(null);
 
   ngOnInit(): void {
@@ -58,7 +59,7 @@ export class Settings implements OnInit {
     this.loadInvites();
     this.membersService.getNotificationPreferences().subscribe({
       next: (prefs) => this.preferences.set(prefs),
-      error: (err: unknown) => console.error('Failed to load notification preferences', err),
+      error: (err: unknown) => this.preferencesError.set(backendErrorMessage(err, 'Could not load notification preferences.')),
     });
   }
 

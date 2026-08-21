@@ -43,15 +43,6 @@ export class Configure implements OnInit {
   readonly datasetId = signal('');
   readonly dataset = computed<TunnelDataset | null>(() => this.tunnelService.dataset());
 
-  /**
-   * A local placeholder was never a real dataset id - the real Save call
-   * would just fail with a confusing "uuid is expected" error from the
-   * backend's validator, so this blocks it here with an honest reason
-   * instead. Also skips the columns fetch below, since that would fail the
-   * same way against a fake id.
-   */
-  readonly isLocalDataset = computed(() => this.dataset()?.local === true);
-
   readonly availableColumns = signal<string[]>([]);
   readonly columnsLoading = signal(false);
   readonly columnsUnavailable = signal(false);
@@ -77,7 +68,6 @@ export class Configure implements OnInit {
 
   readonly canSave = computed(
     () =>
-      !this.isLocalDataset() &&
       this.dateColumn().trim().length > 0 &&
       this.kpiColumn().trim().length > 0 &&
       nonEmpty(this.mediaColumns()).length > 0 && // backend requires at least one media column
@@ -87,14 +77,6 @@ export class Configure implements OnInit {
   ngOnInit(): void {
     this.projectId.set(this.route.snapshot.paramMap.get('projectId') ?? '');
     this.datasetId.set(this.route.snapshot.paramMap.get('datasetId') ?? '');
-
-    if (this.isLocalDataset()) {
-      // No real dataset behind this id - a columns call would just fail
-      // the same confusing way the old Save call did.
-      this.columnsUnavailable.set(true);
-      this.seedFallbackRows();
-      return;
-    }
 
     this.columnsLoading.set(true);
     this.datasetService.getColumns(this.datasetId()).subscribe({

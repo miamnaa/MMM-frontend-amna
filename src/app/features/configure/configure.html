@@ -31,13 +31,7 @@
   }
 
   @if (dataset(); as ds) {
-    @if (ds.local) {
-      <div class="notice notice-blocking">
-        Using local data for now — real upload isn't fully live yet (storage isn't configured on
-        the backend), so this dataset has no real id and configuration can't be saved for real
-        yet. This screen will work the same once upload is fully live.
-      </div>
-    } @else if (columnsUnavailable() && columnsNotice()) {
+    @if (columnsUnavailable() && columnsNotice()) {
       <div class="notice">{{ columnsNotice() }}</div>
     }
     <p class="dataset-name muted">Configuring <strong>{{ ds.name }}</strong></p>

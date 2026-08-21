@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -12,24 +11,10 @@ import { Project } from '../../core/models/domain.models';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
 import { StatusBadge } from '../../shared/ui/status-badge/status-badge';
+import { backendErrorMessage } from '../../shared/utils/backend-error';
 import { relativeTime, shortDate } from '../../shared/utils/format';
 
 type SortOption = 'recent' | 'az' | 'created';
-
-/**
- * The backend's error body always has a `message` - a string for most
- * failures, an array of strings for validation errors (API-REFERENCE.md,
- * "Response conventions"). Prefer that real message (e.g. "Only the
- * project owner can do this.") over a generic fallback whenever it's there.
- */
-function backendErrorMessage(err: unknown, fallback: string): string {
-  if (err instanceof HttpErrorResponse) {
-    const message: unknown = err.error?.message;
-    if (typeof message === 'string') return message;
-    if (Array.isArray(message)) return message.join(' ');
-  }
-  return fallback;
-}
 
 @Component({
   selector: 'app-projects',

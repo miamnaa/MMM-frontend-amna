@@ -132,11 +132,6 @@
   line-height: 1.5;
 }
 
-.notice-blocking {
-  background: var(--red-50);
-  color: var(--red-600);
-}
-
 .dataset-name {
   margin: 0 0 18px;
   font-size: 13px;
