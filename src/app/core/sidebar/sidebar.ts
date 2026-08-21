@@ -21,7 +21,7 @@ export class Sidebar {
   private readonly msalService = inject(MsalService);
 
   readonly primary: NavItem[] = [
-    { label: 'Projects', path: '/projects', icon: '▤' },
+    { label: 'Models', path: '/models', icon: '▤' },
     { label: 'Experiments', path: '/experiments', icon: '▷' },
     { label: 'Model Studio', path: '/model-studio', icon: '⚙' },
   ];

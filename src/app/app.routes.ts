@@ -4,6 +4,7 @@ import { MsalGuard } from '@azure/msal-angular';
 import { calibrateContextGuard } from './core/auth/calibrate-context.guard';
 import { datasetContextGuard } from './core/auth/dataset-context.guard';
 import { hyperparametersContextGuard } from './core/auth/hyperparameters-context.guard';
+import { modelsEntryGuard } from './core/auth/models-entry.guard';
 import { optimizeContextGuard } from './core/auth/optimize-context.guard';
 import { otpGuard } from './core/auth/otp.guard';
 import { projectContextGuard } from './core/auth/project-context.guard';
@@ -103,6 +104,15 @@ export const routes: Routes = [
     // under this layout.
     canActivateChild: [MsalGuard, otpGuard],
     children: [
+      {
+        path: 'models',
+        title: 'Models · ROIVIO',
+        // The sidebar's "Models" link has no project of its own to point at
+        // - this guard always redirects (to whichever project is active
+        // this session, or to the real Projects list to pick one first), so
+        // the route itself never needs a component to render.
+        canActivate: [modelsEntryGuard],
+      },
       {
         path: 'models/:projectId',
         title: 'Models · ROIVIO',
