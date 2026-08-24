@@ -31,18 +31,21 @@ const SATURATION_POINTS = 30;
 const SATURATION_MAX_SPEND = 100;
 
 /**
- * One single green (a specific swatch requested directly, close to the
- * brand kit's own sage/light-green family) used across every chart on this
- * page - bars, lines, both series in the grouped charts - instead of a
- * multi-hue palette. Every other chart in the app keeps the default
- * accessibility-validated categorical palette (shared/charts/palette.ts)
- * unchanged - this override is scoped to just this page's charts via each
- * chart component's optional `colors` input.
+ * Two specific green swatches requested directly - a dark green and a
+ * light green - used across every chart on this page instead of a
+ * multi-hue palette. Single-series charts (channel contribution, the
+ * curves) use the dark green as their one solid color; the two grouped
+ * charts pair dark + light so their two series stay visually distinct.
+ * Every other chart in the app keeps the default accessibility-validated
+ * categorical palette (shared/charts/palette.ts) unchanged - this override
+ * is scoped to just this page's charts via each chart component's optional
+ * `colors` input.
  */
-const BRAND_SOLID_GREEN = '#8FCB92';
-const BRAND_CHART_COLORS = [BRAND_SOLID_GREEN];
-const BRAND_GROUPED_COLORS: [string, string] = [BRAND_SOLID_GREEN, BRAND_SOLID_GREEN];
-const BRAND_BUDGET_COLORS: [string, string] = [BRAND_SOLID_GREEN, BRAND_SOLID_GREEN];
+const BRAND_DARK_GREEN = '#00994D';
+const BRAND_LIGHT_GREEN = '#8FCB92';
+const BRAND_CHART_COLORS = [BRAND_DARK_GREEN];
+const BRAND_GROUPED_COLORS: [string, string] = [BRAND_DARK_GREEN, BRAND_LIGHT_GREEN];
+const BRAND_BUDGET_COLORS: [string, string] = [BRAND_LIGHT_GREEN, BRAND_DARK_GREEN];
 
 /**
  * "View Model" destination from both the Models list and Results & Insights'
