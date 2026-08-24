@@ -31,25 +31,18 @@ const SATURATION_POINTS = 30;
 const SATURATION_MAX_SPEND = 100;
 
 /**
- * Chart colors for this page, from the real CBT brand kit
- * (Desktop/MMM/brand-kit/tokens/tokens.css) - primary green, info blue,
- * warning amber, primary-light, error red, in that order. Every other
- * chart in the app keeps the default accessibility-validated categorical
- * palette (shared/charts/palette.ts) unchanged - this override is scoped
- * to just this page's charts via each chart component's optional `colors`
- * input.
+ * One single green (a specific swatch requested directly, close to the
+ * brand kit's own sage/light-green family) used across every chart on this
+ * page - bars, lines, both series in the grouped charts - instead of a
+ * multi-hue palette. Every other chart in the app keeps the default
+ * accessibility-validated categorical palette (shared/charts/palette.ts)
+ * unchanged - this override is scoped to just this page's charts via each
+ * chart component's optional `colors` input.
  */
-const BRAND_CHART_COLORS = ['#00994D', '#3B82F6', '#F59E0B', '#00C060', '#EF4444'];
-const BRAND_GROUPED_COLORS: [string, string] = ['#00994D', '#F59E0B'];
-
-/**
- * Budget recommendation specifically: two real CBT green shades rather than
- * two different hues, so both bars still read as "the same brand metric" -
- * the darker shade (primary-dark) marks the positive/recommended outcome
- * (optimized spend), the lighter shade (primary-light) is the baseline
- * (current spend). Both from the real brand kit, not invented.
- */
-const BRAND_BUDGET_COLORS: [string, string] = ['#00C060', '#007A3D'];
+const BRAND_SOLID_GREEN = '#8FCB92';
+const BRAND_CHART_COLORS = [BRAND_SOLID_GREEN];
+const BRAND_GROUPED_COLORS: [string, string] = [BRAND_SOLID_GREEN, BRAND_SOLID_GREEN];
+const BRAND_BUDGET_COLORS: [string, string] = [BRAND_SOLID_GREEN, BRAND_SOLID_GREEN];
 
 /**
  * "View Model" destination from both the Models list and Results & Insights'
