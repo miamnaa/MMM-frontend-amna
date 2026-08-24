@@ -43,13 +43,13 @@ const BRAND_CHART_COLORS = ['#00994D', '#3B82F6', '#F59E0B', '#00C060', '#EF4444
 const BRAND_GROUPED_COLORS: [string, string] = ['#00994D', '#F59E0B'];
 
 /**
- * Budget recommendation specifically: green is reserved for the positive/
- * recommended outcome (optimized spend), not just "first series" - having
- * current spend green and optimized spend amber read backwards (green
- * usually signals "good"/"go" here, not "the baseline"). Current spend
- * gets a neutral blue instead of amber/orange.
+ * Budget recommendation specifically: two real CBT green shades rather than
+ * two different hues, so both bars still read as "the same brand metric" -
+ * the darker shade (primary-dark) marks the positive/recommended outcome
+ * (optimized spend), the lighter shade (primary-light) is the baseline
+ * (current spend). Both from the real brand kit, not invented.
  */
-const BRAND_BUDGET_COLORS: [string, string] = ['#3B82F6', '#00994D'];
+const BRAND_BUDGET_COLORS: [string, string] = ['#00C060', '#007A3D'];
 
 /**
  * "View Model" destination from both the Models list and Results & Insights'
