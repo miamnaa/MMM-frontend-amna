@@ -199,16 +199,42 @@ export class GroupedBarChart {
     return (value / this.maxValue()) * plotHeight;
   }
 
+  /**
+   * A flat percent-of-groupWidth gap worked for short decimal labels
+   * ("0.04") but not currency ("$268,700") - real budget numbers are wide
+   * enough that two labels of near-equal value collided into unreadable
+   * mush regardless of that gap. Measuring each pair's actual label width
+   * (via an offscreen canvas, same font as the rendered <text>) and
+   * widening the gap only when a pair actually needs it fixes this for any
+   * formatter, not just currency, without wasting space on short labels.
+   */
+  private measureCanvasCtx: CanvasRenderingContext2D | null | undefined;
+
+  private measureTextWidth(text: string): number {
+    if (this.measureCanvasCtx === undefined) {
+      this.measureCanvasCtx = typeof document === 'undefined' ? null : document.createElement('canvas').getContext('2d');
+    }
+    if (!this.measureCanvasCtx) return text.length * 6;
+    this.measureCanvasCtx.font = '600 10px "DM Sans", sans-serif';
+    return this.measureCanvasCtx.measureText(text).width;
+  }
+
   readonly columns = computed(() => {
     const items = this.data();
     const plotWidth = VW - VPAD.left - VPAD.right;
     const groupWidth = plotWidth / Math.max(1, items.length);
     const barWidth = Math.min(28, groupWidth * 0.28);
-    // Wide enough that the $-value labels above each bar don't collide when
-    // the two bars are close in height (a fixed small gap made the labels
-    // overlap whenever a pair's values were similar) - scales down for many
-    // categories instead of a flat pixel value that stops fitting.
-    const gap = Math.min(16, Math.max(6, groupWidth * 0.1));
+
+    const LABEL_PADDING = 4;
+    const requiredGap = items.reduce((max, d) => {
+      const widthA = this.measureTextWidth(d.aDisplay);
+      const widthB = this.measureTextWidth(d.bDisplay);
+      return Math.max(max, widthA / 2 + widthB / 2 - barWidth + LABEL_PADDING);
+    }, 0);
+    // Still capped so a pair's gap never eats into the neighbouring group's
+    // own space - grows for wide labels, shrinks back for short ones.
+    const maxGapForGroup = Math.max(4, groupWidth - barWidth * 2 - 4);
+    const gap = Math.min(maxGapForGroup, Math.max(6, groupWidth * 0.1, requiredGap));
 
     return items.map((d, i) => {
       const groupStart = VPAD.left + i * groupWidth;

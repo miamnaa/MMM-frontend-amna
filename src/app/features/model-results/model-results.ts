@@ -43,6 +43,15 @@ const BRAND_CHART_COLORS = ['#00994D', '#3B82F6', '#F59E0B', '#00C060', '#EF4444
 const BRAND_GROUPED_COLORS: [string, string] = ['#00994D', '#F59E0B'];
 
 /**
+ * Budget recommendation specifically: green is reserved for the positive/
+ * recommended outcome (optimized spend), not just "first series" - having
+ * current spend green and optimized spend amber read backwards (green
+ * usually signals "good"/"go" here, not "the baseline"). Current spend
+ * gets a neutral blue instead of amber/orange.
+ */
+const BRAND_BUDGET_COLORS: [string, string] = ['#3B82F6', '#00994D'];
+
+/**
  * "View Model" destination from both the Models list and Results & Insights'
  * per-project model list. Fetches this dataset's real training results
  * (results.mock tells real vs. simulated) and renders them - unlike the
@@ -68,6 +77,7 @@ export class ModelResults implements OnInit {
 
   protected readonly brandChartColors = BRAND_CHART_COLORS;
   protected readonly brandGroupedColors = BRAND_GROUPED_COLORS;
+  protected readonly brandBudgetColors = BRAND_BUDGET_COLORS;
 
   /** Every other real trained model in this project, for the "Select Model" dropdown - lets you switch without going back to the Models list. Starts with just this model so the dropdown isn't empty while the rest are still being checked. */
   readonly modelOptions = signal<{ id: string; name: string }[]>([]);
