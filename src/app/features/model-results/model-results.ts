@@ -1,3 +1,4 @@
+import { DecimalPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -56,7 +57,7 @@ const BRAND_BUDGET_COLORS: [string, string] = [BRAND_LIGHT_GREEN, BRAND_DARK_GRE
  */
 @Component({
   selector: 'app-model-results',
-  imports: [FormsModule, RouterLink, PageHeader, EmptyState, StatTile, BarChart, GroupedBarChart, LineChart],
+  imports: [DecimalPipe, FormsModule, RouterLink, PageHeader, EmptyState, StatTile, BarChart, GroupedBarChart, LineChart],
   templateUrl: './model-results.html',
   styleUrl: './model-results.css',
 })
@@ -272,15 +273,20 @@ export class ModelResults implements OnInit {
     return 'Maintain';
   }
 
-  readonly scorecardRows = computed(() =>
-    this.channelMap().map((c) => ({
-      label: c.label,
-      spend: c.currentSpend !== undefined ? this.formatCurrency(c.currentSpend) : '—',
-      contribution: c.contributionPct !== undefined ? this.formatPercent(c.contributionPct) : '—',
-      roi: c.roi !== undefined ? c.roi.toFixed(2) : '—',
-      recommendation: this.recommendationFor(c.spendChangePercent),
-    })),
-  );
+  readonly scorecardRows = computed(() => {
+    const confidence = this.channelConfidenceMap();
+    return this.channelMap().map((c) => {
+      const range = confidence.get(c.label);
+      return {
+        label: c.label,
+        spend: c.currentSpend !== undefined ? this.formatCurrency(c.currentSpend) : '—',
+        contribution: c.contributionPct !== undefined ? this.formatPercent(c.contributionPct) : '—',
+        roi: c.roi !== undefined ? c.roi.toFixed(2) : '—',
+        roiRange: range ? `likely ${range.low.toFixed(2)}–${range.high.toFixed(2)}` : null,
+        recommendation: this.recommendationFor(c.spendChangePercent),
+      };
+    });
+  });
 
   readonly hasScorecard = computed(() => this.scorecardRows().length > 0);
 
@@ -326,6 +332,118 @@ export class ModelResults implements OnInit {
   });
 
   readonly hasKeyInsights = computed(() => this.keyInsights().length > 0);
+
+  /**
+   * The headline decision budget_recommendation already implies, said as a
+   * sentence instead of left for someone to read out of the table
+   * themselves - "move $X from the channel that's over its efficient range
+   * to the one with the higher marginal ROI." Only appears when both a real
+   * increase- and decrease-recommended channel exist; nothing invented for
+   * a channel budget_recommendation doesn't cover.
+   */
+  readonly budgetHeadline = computed<string | null>(() => {
+    const entries = this.budgetRows()
+      .map((row, i) => {
+        const key = Object.keys(row).find((k) => ['spend_change_dollars', 'spendchangedollars'].includes(k.toLowerCase()));
+        const change = key ? row[key] : undefined;
+        return typeof change === 'number' ? { label: this.channelLabel(row, i), change } : null;
+      })
+      .filter((e): e is { label: string; change: number } => e !== null);
+
+    const increase = entries.filter((e) => e.change > 0).sort((a, b) => b.change - a.change)[0];
+    const decrease = entries.filter((e) => e.change < 0).sort((a, b) => a.change - b.change)[0];
+
+    if (increase && decrease) {
+      const moveAmount = Math.min(Math.abs(decrease.change), increase.change);
+      return `Move ${currency(moveAmount)} from ${decrease.label} to ${increase.label} — marginal ROI is higher there.`;
+    }
+    if (increase) return `Consider increasing spend on ${increase.label} by ${currency(increase.change)} — marginal ROI is higher there.`;
+    if (decrease) return `Consider decreasing spend on ${decrease.label} by ${currency(Math.abs(decrease.change))} — it's already past its efficient range.`;
+    return null;
+  });
+
+  /**
+   * Turns roi + marginal_roi into the diminishing-returns story they
+   * already support: healthy average ROI but a much lower marginal ROI
+   * means more spend on that channel won't help much. Only fires when a
+   * real pair is at least this lopsided - not shown for every channel,
+   * just the one it's actually true for.
+   */
+  readonly diminishingReturnsInsight = computed<string | null>(() => {
+    const withRatio = this.roiGroupedBars()
+      .filter((b) => b.a > 0)
+      .map((b) => ({ ...b, ratio: b.b / b.a }));
+    if (withRatio.length === 0) return null;
+
+    const worst = withRatio.reduce((min, b) => (b.ratio < min.ratio ? b : min));
+    if (worst.ratio >= 0.6) return null;
+
+    return `${worst.label}'s average ROI (${worst.aDisplay}) is healthy, but marginal ROI (${worst.bDisplay}) is much lower — you're already near this channel's ceiling, more spend won't help much.`;
+  });
+
+  /**
+   * A real pacing story from the same real saved carryover value the decay
+   * curve already plots, just said as a sentence instead of left for
+   * someone to read off the chart: how many weeks until half of this
+   * channel's effect has faded. theta^N = 0.5 solved for N (weeks) - a real
+   * derived number from a real saved value, not a guess.
+   */
+  readonly decayPacingInsight = computed<string | null>(() => {
+    const channels = this.dataset()?.channelHyperparameters ?? [];
+    const withHalfLife = channels
+      .map((ch) => ({ channel: ch.channel, halfLife: Math.log(0.5) / Math.log(ch.carryover) }))
+      .filter((c) => Number.isFinite(c.halfLife) && c.halfLife > 0);
+    if (withHalfLife.length === 0) return null;
+
+    const fastest = withHalfLife.reduce((min, c) => (c.halfLife < min.halfLife ? c : min));
+    const weeks = Math.max(1, Math.round(fastest.halfLife));
+    return `Half of what you spend on ${fastest.channel} stops working within ${weeks} week${weeks === 1 ? '' : 's'} — steady spend beats big spikes here.`;
+  });
+
+  /**
+   * Real endpoint field, added 2026-08-24 - one {date, actual, predicted}
+   * point per real date in the dataset, so the model's fit can be charted
+   * over time instead of summarized as a single accuracy percent. Optional
+   * on the type - older completed runs won't have it.
+   */
+  readonly actualVsPredictedSeries = computed<LineSeries[]>(() => {
+    const points = this.results()?.actual_vs_predicted;
+    if (!points || points.length === 0) return [];
+    const sorted = [...points].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return [
+      { name: 'Actual', points: sorted.map((p) => ({ x: new Date(p.date).getTime(), y: p.actual })) },
+      { name: 'Predicted', points: sorted.map((p) => ({ x: new Date(p.date).getTime(), y: p.predicted })) },
+    ];
+  });
+
+  readonly hasActualVsPredicted = computed(() => this.actualVsPredictedSeries().length > 0);
+
+  readonly formatDateAxis = (v: number) => new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+
+  /**
+   * Real field, added 2026-08-24 - a real ROI range per channel, not just
+   * the single point-estimate channel_efficiency already has. Joined into
+   * the scorecard by channel name so "ROI: 2.10 (likely 1.80–2.40)" sits
+   * next to the same channel's other real numbers, rather than a separate
+   * disconnected table.
+   */
+  private readonly channelConfidenceMap = computed(() => {
+    const map = new Map<string, { low: number; high: number; confidencePercent: number }>();
+    for (const row of this.results()?.channel_confidence ?? []) {
+      map.set(row.channel, { low: row.roi_low, high: row.roi_high, confidencePercent: row.confidence_percent });
+    }
+    return map;
+  });
+
+  readonly hasChannelConfidence = computed(() => this.channelConfidenceMap().size > 0);
+
+  /**
+   * Real field, added 2026-08-24 - what would have happened with zero
+   * marketing vs. what marketing actually added, as a real split rather
+   * than two disconnected outcome numbers. Optional - older completed runs
+   * won't have it.
+   */
+  readonly baselineVsMarketing = computed(() => this.results()?.baseline_vs_marketing ?? null);
 
   /**
    * Illustrative only, same honesty rule as Hyperparameters' own charts -

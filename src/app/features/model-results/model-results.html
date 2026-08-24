@@ -94,9 +94,23 @@
         </p>
       </section>
 
-      <div class="card results-section backend-gap-note">
-        <strong>Not shown yet:</strong> an actual-vs-predicted trend chart needs a real prediction time series the API doesn't return today — flagged to add once that data exists.
-      </div>
+      @if (hasActualVsPredicted()) {
+        <section class="card results-section">
+          <h2 class="section-title">Actual vs predicted</h2>
+          <p class="muted field-hint">How closely the model's fit tracks what actually happened, over time.</p>
+          <app-line-chart
+            [series]="actualVsPredictedSeries()"
+            xLabel="Date"
+            [formatX]="formatDateAxis"
+            [formatY]="formatXSpend"
+            [colors]="brandGroupedColors"
+          />
+        </section>
+      } @else {
+        <div class="card results-section backend-gap-note">
+          <strong>Not shown yet:</strong> this model's results don't include a real prediction time series — will appear automatically once a run includes one.
+        </div>
+      }
     } @else {
       <app-empty-state title="No model performance metrics" message="This model's results didn't include confidence metrics." />
     }
@@ -122,7 +136,7 @@
                   <td>{{ row.label }}</td>
                   <td>{{ row.spend }}</td>
                   <td>{{ row.contribution }}</td>
-                  <td>{{ row.roi }}</td>
+                  <td>{{ row.roi }}@if (row.roiRange) { <span class="muted roi-range">({{ row.roiRange }})</span> }</td>
                   <td>
                     <span
                       class="rec-badge"
@@ -152,6 +166,25 @@
       </section>
     }
 
+    @if (baselineVsMarketing(); as bm) {
+      <section class="card results-section">
+        <h2 class="section-title">Is marketing working?</h2>
+        <p class="muted field-hint">What would have happened with zero marketing, vs. what marketing actually added.</p>
+        <div class="baseline-bar">
+          <div class="baseline-segment baseline-segment-base" [style.width.%]="bm.baseline_percent">
+            <span class="baseline-segment-label">Baseline {{ bm.baseline_percent | number: '1.0-1' }}%</span>
+          </div>
+          <div class="baseline-segment baseline-segment-marketing" [style.width.%]="bm.marketing_percent">
+            <span class="baseline-segment-label">Marketing {{ bm.marketing_percent | number: '1.0-1' }}%</span>
+          </div>
+        </div>
+        <div class="baseline-legend">
+          <span><strong>{{ formatXSpend(bm.baseline_outcome) }}</strong> would have happened anyway</span>
+          <span><strong>{{ formatXSpend(bm.marketing_outcome) }}</strong> came from marketing</span>
+        </div>
+      </section>
+    }
+
     @if (hasScorecard()) {
       <section class="card results-section">
         <h2 class="section-title">Channel performance scorecard</h2>
@@ -172,7 +205,7 @@
                   <td>{{ row.label }}</td>
                   <td>{{ row.spend }}</td>
                   <td>{{ row.contribution }}</td>
-                  <td>{{ row.roi }}</td>
+                  <td>{{ row.roi }}@if (row.roiRange) { <span class="muted roi-range">({{ row.roiRange }})</span> }</td>
                   <td>
                     <span
                       class="rec-badge"
@@ -206,6 +239,9 @@
     @if (hasEfficiencyChart()) {
       <section class="card results-section">
         <h2 class="section-title">ROI vs Marginal ROI</h2>
+        @if (diminishingReturnsInsight(); as insight) {
+          <p class="insight-callout">{{ insight }}</p>
+        }
         <app-grouped-bar-chart [data]="roiGroupedBars()" aLabel="ROI" bLabel="Marginal ROI" [colors]="brandGroupedColors" />
       </section>
     } @else if (efficiencyFallback().length > 0) {
@@ -229,6 +265,9 @@
     @if (hasBudgetChart()) {
       <section class="card results-section">
         <h2 class="section-title">Budget recommendation</h2>
+        @if (budgetHeadline(); as headline) {
+          <p class="insight-callout">{{ headline }}</p>
+        }
         <app-grouped-bar-chart [data]="budgetGroupedBars()" aLabel="Current spend" bLabel="Optimized spend" [tickFormat]="formatXSpend" [vertical]="true" [colors]="brandBudgetColors" />
       </section>
     } @else if (budgetFallback().length > 0) {
@@ -247,6 +286,9 @@
       <section class="card results-section">
         <h2 class="section-title">Carryover / decay curve</h2>
         <p class="muted field-hint">Illustrative — computed from this model's saved carryover values, not a real curve the backend returned.</p>
+        @if (decayPacingInsight(); as insight) {
+          <p class="insight-callout">{{ insight }}</p>
+        }
         <app-line-chart [series]="carryoverCurves()" xLabel="Week" [formatX]="formatX" [formatY]="formatYPercent" [colors]="brandChartColors" />
       </section>
 

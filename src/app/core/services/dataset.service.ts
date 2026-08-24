@@ -226,12 +226,41 @@ export interface ChannelContributionRow extends Record<string, unknown> {
 
 export type ChannelEfficiencyRow = Record<string, unknown>;
 
+/** Real field, added 2026-08-24 - one point per real date in the dataset, so the model's fit can be charted against what actually happened instead of just summarized in a single accuracy percent. */
+export interface ActualVsPredictedPoint {
+  date: string;
+  actual: number;
+  predicted: number;
+}
+
+/** Real field, added 2026-08-24 - a real range around each channel's ROI point-estimate, not just the single number channel_efficiency already has. */
+export interface ChannelConfidenceRow {
+  channel: string;
+  roi_low: number;
+  roi_high: number;
+  confidence_percent: number;
+}
+
+/** Real field, added 2026-08-24 - what would have happened with zero marketing vs. what marketing actually added. */
+export interface BaselineVsMarketing {
+  baseline_outcome: number;
+  marketing_outcome: number;
+  baseline_percent: number;
+  marketing_percent: number;
+}
+
 export interface TrainingResults extends Record<string, unknown> {
   mock?: boolean;
   model_confidence?: ModelConfidence;
   channel_contribution?: ChannelContributionRow[];
   channel_efficiency?: ChannelEfficiencyRow[];
   budget_recommendation?: unknown;
+  /** Optional - only present on runs completed after 2026-08-24; check for presence before rendering. */
+  actual_vs_predicted?: ActualVsPredictedPoint[];
+  /** Optional - only present on runs completed after 2026-08-24; check for presence before rendering. */
+  channel_confidence?: ChannelConfidenceRow[];
+  /** Optional - only present on runs completed after 2026-08-24; check for presence before rendering. */
+  baseline_vs_marketing?: BaselineVsMarketing;
 }
 
 /**
