@@ -61,14 +61,14 @@
     @if (confidenceTiles().length > 0) {
       <div class="tile-row">
         @for (tile of confidenceTiles(); track tile.key) {
-          <app-stat-tile [label]="tile.label" [value]="tile.value" [large]="true" [icon]="tile.icon" />
+          <app-stat-tile [label]="tile.label" [value]="tile.value" [large]="true" [icon]="tile.icon" [hint]="tile.hint" />
         }
       </div>
     }
 
     @if (compositeScore(); as score) {
       <section class="card results-section reliability-card">
-        <h2 class="section-title">Does this model understand your business?</h2>
+        <h2 class="section-title">Does this model understand your business?<app-info-tip term="Composite score" [text]="HINTS.composite" /></h2>
         <div class="composite-score">
           <span class="composite-pct">{{ score.pct }}%</span>
           <span class="composite-label">composite score</span>
@@ -155,6 +155,15 @@
       </section>
     }
   } @else {
+    @if (hasStoryline()) {
+      <section class="card results-section story-card">
+        <h2 class="section-title">The story so far</h2>
+        @for (line of storyline(); track line) {
+          <p class="story-line">{{ line }}</p>
+        }
+      </section>
+    }
+
     @if (hasKeyInsights()) {
       <section class="card results-section">
         <h2 class="section-title">Key insights</h2>
@@ -238,7 +247,9 @@
 
     @if (hasEfficiencyChart()) {
       <section class="card results-section">
-        <h2 class="section-title">ROI vs Marginal ROI</h2>
+        <h2 class="section-title">
+          ROI<app-info-tip term="ROI" [text]="HINTS.roi" /> vs Marginal ROI<app-info-tip term="Marginal ROI" [text]="HINTS.marginalRoi" />
+        </h2>
         @if (diminishingReturnsInsight(); as insight) {
           <p class="insight-callout">{{ insight }}</p>
         }
@@ -284,7 +295,7 @@
 
     @if (hasCurves()) {
       <section class="card results-section">
-        <h2 class="section-title">Carryover / decay curve</h2>
+        <h2 class="section-title">Carryover / decay curve<app-info-tip term="Carryover / decay" [text]="HINTS.carryover" /></h2>
         <p class="muted field-hint">Illustrative — computed from this model's saved carryover values, not a real curve the backend returned.</p>
         @if (decayPacingInsight(); as insight) {
           <p class="insight-callout">{{ insight }}</p>
@@ -293,7 +304,7 @@
       </section>
 
       <section class="card results-section">
-        <h2 class="section-title">Saturation curve</h2>
+        <h2 class="section-title">Saturation curve<app-info-tip term="Saturation" [text]="HINTS.saturation" /></h2>
         <p class="muted field-hint">Illustrative — computed from this model's saved saturation (gamma) values over an illustrative spend range, not this channel's real spend numbers.</p>
         <app-line-chart [series]="saturationCurves()" xLabel="Spend" [formatX]="formatXSpend" [formatY]="formatYPercent" [colors]="brandChartColors" />
       </section>

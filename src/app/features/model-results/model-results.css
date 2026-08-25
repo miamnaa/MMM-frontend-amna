@@ -410,3 +410,19 @@
   color: var(--text);
   font-weight: 600;
 }
+
+.story-card {
+  background: var(--brand-50);
+  border-color: color-mix(in srgb, var(--brand-500) 30%, transparent);
+}
+
+.story-line {
+  margin: 0 0 8px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.story-line:last-child {
+  margin-bottom: 0;
+}

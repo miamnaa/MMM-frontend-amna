@@ -1,7 +1,10 @@
 import { Component, input } from '@angular/core';
 
+import { InfoTip } from '../info-tip/info-tip';
+
 @Component({
   selector: 'app-stat-tile',
+  imports: [InfoTip],
   template: `
     <div class="tile" [class.large]="large()">
       @if (large()) {
@@ -10,6 +13,9 @@ import { Component, input } from '@angular/core';
             <span class="icon-badge" aria-hidden="true">{{ i }}</span>
           }
           <span class="label">{{ label() }}</span>
+          @if (hint(); as h) {
+            <app-info-tip [term]="label()" [text]="h" />
+          }
         </div>
       } @else {
         <span class="label">{{ label() }}</span>
@@ -111,4 +117,6 @@ export class StatTile {
   readonly large = input<boolean>(false);
   /** Small emoji/symbol shown in a rounded-square badge next to the label - only rendered when `large` is also set. */
   readonly icon = input<string | null>(null);
+  /** Plain-English explanation of what this metric means - only rendered when `large` is also set, next to the label. */
+  readonly hint = input<string | null>(null);
 }

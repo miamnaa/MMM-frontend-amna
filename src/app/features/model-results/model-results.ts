@@ -15,6 +15,7 @@ import { BarChart, BarDatum } from '../../shared/charts/bar-chart/bar-chart';
 import { GroupedBarChart, GroupedBarDatum } from '../../shared/charts/grouped-bar-chart/grouped-bar-chart';
 import { LineChart, LineSeries } from '../../shared/charts/line-chart/line-chart';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
+import { InfoTip } from '../../shared/ui/info-tip/info-tip';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
 import { StatTile } from '../../shared/ui/stat-tile/stat-tile';
 import { currency } from '../../shared/utils/format';
@@ -57,7 +58,7 @@ const BRAND_BUDGET_COLORS: [string, string] = [BRAND_LIGHT_GREEN, BRAND_DARK_GRE
  */
 @Component({
   selector: 'app-model-results',
-  imports: [DecimalPipe, FormsModule, RouterLink, PageHeader, EmptyState, StatTile, BarChart, GroupedBarChart, LineChart],
+  imports: [DecimalPipe, FormsModule, RouterLink, PageHeader, EmptyState, StatTile, InfoTip, BarChart, GroupedBarChart, LineChart],
   templateUrl: './model-results.html',
   styleUrl: './model-results.css',
 })
@@ -90,6 +91,28 @@ export class ModelResults implements OnInit {
   private static readonly CONFIDENCE_ICONS = ['📈', '📊', '🎯', '📐', '⏱️', '🧮'];
 
   /**
+   * Plain-English explanation per known confidence metric, matched by
+   * substring on the real key name so a field like "r_squared" or
+   * "adjusted_r_squared" both resolve without a second lookup table -
+   * checked in order, first match wins. Falls back to a generic line for
+   * any real field the backend adds that isn't one of these yet, so a new
+   * metric never shows up with no explanation at all.
+   */
+  private static readonly METRIC_HINTS: [string, string][] = [
+    ['adjusted_r_squared', 'How much of the change in your sales this model can explain, adjusted so adding more channels doesn\'t inflate the score artificially. Closer to 100% is better.'],
+    ['r_squared', 'How much of the change in your sales this model can explain overall. Closer to 100% is better.'],
+    ['weighted_average_error', 'How far off the model\'s guesses were on average, weighted toward the periods that matter most. Lower is better.'],
+    ['average_error', 'How far off the model\'s guesses were from what actually happened, on average. Lower is better.'],
+    ['overall_accuracy', 'How often this model\'s predictions were close to what actually happened. Higher is better.'],
+  ];
+
+  private tileHint(key: string): string {
+    const lower = key.toLowerCase();
+    const match = ModelResults.METRIC_HINTS.find(([k]) => lower.includes(k));
+    return match ? match[1] : 'A technical measure of how well this model fits your real data.';
+  }
+
+  /**
    * Every real NUMERIC key model_confidence actually has, not just the two
    * documented ones (overall_accuracy_percent, r_squared) - if the backend
    * sends more real confidence metrics (e.g. an adjusted R² or an error
@@ -108,6 +131,7 @@ export class ModelResults implements OnInit {
         label: this.humanizeKey(key),
         value: this.formatConfidenceValue(key, value),
         icon: ModelResults.CONFIDENCE_ICONS[i % ModelResults.CONFIDENCE_ICONS.length],
+        hint: this.tileHint(key),
       }));
   });
 
@@ -444,6 +468,68 @@ export class ModelResults implements OnInit {
    * won't have it.
    */
   readonly baselineVsMarketing = computed(() => this.results()?.baseline_vs_marketing ?? null);
+
+  /** Plain-English text for the (i) badges next to jargon-heavy section titles - no ROI/marginal ROI/carryover/saturation left unexplained. */
+  protected readonly HINTS = {
+    composite: 'A single score summarizing how well this model fits your real data. Higher and greener is more trustworthy; a low score means take its recommendations with caution.',
+    roi: 'Return on investment - for every $1 spent on this channel, how much extra revenue it brought in on average.',
+    marginalRoi: 'What the next dollar you spend on this channel would likely bring back - not the average, but what you\'d get right now if you spent a little more.',
+    carryover: 'Ads don\'t stop working the moment they run - some of the effect lingers into following weeks. This shows how quickly that leftover effect fades.',
+    saturation: 'Every channel eventually stops paying off as well the more you spend on it. This shows how close a channel already is to that point.',
+  };
+
+  /**
+   * A short, plain-English story of what's actually happening in this
+   * model's results - the same real numbers already on this page (top
+   * channel, budget move, baseline split), rewritten as sentences a
+   * non-technical reader can follow without knowing what "ROI" or
+   * "marginal" mean. Each line only appears when the real data behind it
+   * exists; nothing here is invented.
+   */
+  readonly storyline = computed<string[]>(() => {
+    const lines: string[] = [];
+
+    const contributions = this.contributionBars();
+    const outcomes = this.contributionOutcomes();
+    if (contributions.length > 0) {
+      const top = contributions.reduce((a, b) => (b.value > a.value ? b : a));
+      const outcome = outcomes.find((o) => o.label === top.label);
+      lines.push(
+        `${top.label} is your best-performing channel right now` +
+          (outcome ? `, bringing in ${outcome.value} in extra sales that marketing alone is responsible for.` : '.'),
+      );
+    }
+
+    const bm = this.baselineVsMarketing();
+    if (bm) {
+      lines.push(
+        `Overall, ${this.formatXSpend(bm.marketing_outcome)} of your results came from marketing - the other ${this.formatXSpend(bm.baseline_outcome)} would likely have happened anyway.`,
+      );
+    }
+
+    const entries = this.budgetRows()
+      .map((row, i) => {
+        const key = Object.keys(row).find((k) => ['spend_change_dollars', 'spendchangedollars'].includes(k.toLowerCase()));
+        const change = key ? row[key] : undefined;
+        return typeof change === 'number' ? { label: this.channelLabel(row, i), change } : null;
+      })
+      .filter((e): e is { label: string; change: number } => e !== null);
+    const increase = entries.filter((e) => e.change > 0).sort((a, b) => b.change - a.change)[0];
+    const decrease = entries.filter((e) => e.change < 0).sort((a, b) => a.change - b.change)[0];
+    if (increase && decrease) {
+      lines.push(
+        `If you moved some budget from ${decrease.label} into ${increase.label}, you'd likely see a better return - ${increase.label} still has room to grow, while ${decrease.label} is already getting less out of every extra dollar.`,
+      );
+    } else if (increase) {
+      lines.push(`${increase.label} still has room to grow - spending a bit more there would likely pay off.`);
+    } else if (decrease) {
+      lines.push(`${decrease.label} is already past the point where extra spend pays off well - consider pulling some budget back.`);
+    }
+
+    return lines;
+  });
+
+  readonly hasStoryline = computed(() => this.storyline().length > 0);
 
   /**
    * Illustrative only, same honesty rule as Hyperparameters' own charts -
