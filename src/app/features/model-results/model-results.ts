@@ -73,8 +73,8 @@ export class ModelResults implements OnInit {
   readonly projectId = signal('');
   readonly datasetId = signal('');
 
-  /** 'performance' answers "can I trust this model" (the confidence KPIs); 'insights' answers "what should I do about it" (everything channel-level). Mirrors the Performances/Insights split from the Cassandra reference. */
-  readonly activeTab = signal<'performance' | 'insights'>('performance');
+  /** 'overview' is the at-a-glance summary (KPIs, key takeaways, contribution donut, recommended impact); 'performance' answers "can I trust this model" (the confidence KPIs); 'insights' answers "what should I do about it" (everything channel-level). */
+  readonly activeTab = signal<'overview' | 'performance' | 'insights'>('overview');
 
   protected readonly brandChartColors = BRAND_CHART_COLORS;
   protected readonly brandGroupedColors = BRAND_GROUPED_COLORS;
@@ -717,8 +717,14 @@ export class ModelResults implements OnInit {
     });
   }
 
-  setTab(tab: 'performance' | 'insights'): void {
+  setTab(tab: 'overview' | 'performance' | 'insights'): void {
     this.activeTab.set(tab);
+  }
+
+  /** The Budget recommendation section only exists in the DOM once the Insights tab is actually active - switching tabs and scrolling in the same tick would jump at nothing, since Angular hasn't rendered it yet. */
+  goToBudgetPlan(): void {
+    this.setTab('insights');
+    setTimeout(() => document.getElementById('budget-recommendation')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   selectModel(id: string): void {

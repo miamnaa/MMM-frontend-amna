@@ -39,6 +39,16 @@
       type="button"
       role="tab"
       class="tab"
+      [class.active]="activeTab() === 'overview'"
+      [attr.aria-selected]="activeTab() === 'overview'"
+      (click)="setTab('overview')"
+    >
+      Overview
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="tab"
       [class.active]="activeTab() === 'performance'"
       [attr.aria-selected]="activeTab() === 'performance'"
       (click)="setTab('performance')"
@@ -57,7 +67,77 @@
     </button>
   </div>
 
-  @if (activeTab() === 'performance') {
+  @if (activeTab() === 'overview') {
+    @if (hasExecutiveTiles()) {
+      <div class="tile-row">
+        @for (tile of executiveTiles(); track tile.label) {
+          <app-stat-tile [label]="tile.label" [value]="tile.value" [caption]="tile.caption" [large]="true" [icon]="tile.icon" />
+        }
+      </div>
+    }
+
+    @if (hasStoryline() || hasDonut()) {
+      <div class="overview-grid">
+        @if (hasStoryline()) {
+          <section class="card results-section overview-card">
+            <h2 class="section-title">Key takeaways</h2>
+            <ul class="insights-list">
+              @for (line of storyline(); track line) {
+                <li>{{ line }}</li>
+              }
+            </ul>
+          </section>
+        }
+
+        @if (hasDonut()) {
+          <section class="card results-section overview-card">
+            <h2 class="section-title">Marketing contribution</h2>
+            <div class="donut-row">
+              <div class="donut" [style.background]="donutGradient()">
+                <div class="donut-hole">
+                  @if (totalIncrementalOutcome(); as total) {
+                    <strong>{{ formatXSpend(total) }}</strong>
+                  }
+                  <span>Incremental</span>
+                </div>
+              </div>
+              <ul class="donut-legend">
+                @for (segment of donutSegments(); track segment.label) {
+                  <li>
+                    <span class="donut-swatch" [style.background]="segment.color"></span>
+                    <span class="donut-legend-label">{{ segment.label }}</span>
+                    <span class="donut-legend-value">{{ segment.display }}</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          </section>
+        }
+      </div>
+    }
+
+    @if (recommendedImpact(); as impact) {
+      <section class="card results-section">
+        <h2 class="section-title">Recommended impact</h2>
+        <p class="muted field-hint">If every channel's spend followed the budget recommendation below.</p>
+        <div class="impact-row">
+          <div class="impact-lift" [class.impact-negative]="impact.liftPercent < 0">
+            {{ impact.liftPercent >= 0 ? '+' : '' }}{{ impact.liftPercent | number: '1.0-1' }}%
+          </div>
+          <div class="impact-figures">
+            <span>Current outcome <strong>{{ formatXSpend(impact.currentTotal) }}</strong></span>
+            <span class="impact-arrow">→</span>
+            <span>Expected outcome <strong>{{ formatXSpend(impact.optimizedTotal) }}</strong></span>
+          </div>
+          <button class="btn btn-primary btn-sm" type="button" (click)="goToBudgetPlan()">See budget plan</button>
+        </div>
+      </section>
+    }
+
+    @if (!hasExecutiveTiles() && !hasStoryline() && !hasDonut() && !recommendedImpact()) {
+      <app-empty-state title="No overview data yet" message="This model's results didn't include the fields this summary is built from." />
+    }
+  } @else if (activeTab() === 'performance') {
     @if (confidenceTiles().length > 0) {
       <div class="tile-row">
         @for (tile of confidenceTiles(); track tile.key) {
@@ -155,72 +235,6 @@
       </section>
     }
   } @else {
-    @if (hasExecutiveTiles()) {
-      <div class="tile-row">
-        @for (tile of executiveTiles(); track tile.label) {
-          <app-stat-tile [label]="tile.label" [value]="tile.value" [caption]="tile.caption" [large]="true" [icon]="tile.icon" />
-        }
-      </div>
-    }
-
-    @if (hasStoryline() || hasDonut()) {
-      <div class="overview-grid">
-        @if (hasStoryline()) {
-          <section class="card results-section overview-card">
-            <h2 class="section-title">Key takeaways</h2>
-            <ul class="insights-list">
-              @for (line of storyline(); track line) {
-                <li>{{ line }}</li>
-              }
-            </ul>
-          </section>
-        }
-
-        @if (hasDonut()) {
-          <section class="card results-section overview-card">
-            <h2 class="section-title">Marketing contribution</h2>
-            <div class="donut-row">
-              <div class="donut" [style.background]="donutGradient()">
-                <div class="donut-hole">
-                  @if (totalIncrementalOutcome(); as total) {
-                    <strong>{{ formatXSpend(total) }}</strong>
-                  }
-                  <span>Incremental</span>
-                </div>
-              </div>
-              <ul class="donut-legend">
-                @for (segment of donutSegments(); track segment.label) {
-                  <li>
-                    <span class="donut-swatch" [style.background]="segment.color"></span>
-                    <span class="donut-legend-label">{{ segment.label }}</span>
-                    <span class="donut-legend-value">{{ segment.display }}</span>
-                  </li>
-                }
-              </ul>
-            </div>
-          </section>
-        }
-      </div>
-    }
-
-    @if (recommendedImpact(); as impact) {
-      <section class="card results-section">
-        <h2 class="section-title">Recommended impact</h2>
-        <p class="muted field-hint">If every channel's spend followed the budget recommendation below.</p>
-        <div class="impact-row">
-          <div class="impact-lift" [class.impact-negative]="impact.liftPercent < 0">
-            {{ impact.liftPercent >= 0 ? '+' : '' }}{{ impact.liftPercent | number: '1.0-1' }}%
-          </div>
-          <div class="impact-figures">
-            <span>Current outcome <strong>{{ formatXSpend(impact.currentTotal) }}</strong></span>
-            <span class="impact-arrow">→</span>
-            <span>Expected outcome <strong>{{ formatXSpend(impact.optimizedTotal) }}</strong></span>
-          </div>
-          <a class="btn btn-primary btn-sm" href="#budget-recommendation">See budget plan</a>
-        </div>
-      </section>
-    }
-
     @if (baselineVsMarketing(); as bm) {
       <section class="card results-section">
         <h2 class="section-title">Is marketing working?</h2>
