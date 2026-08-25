@@ -158,7 +158,7 @@ export class ProjectModels implements OnInit, OnDestroy {
           return;
         }
         if (!isTerminalTrainingStatus(res.status)) {
-          this.updateTraining(id, { phase: 'training', progress: res.progress, message: res.message });
+          this.updateTraining(id, { phase: 'training', progress: this.toPercent(res.progress), message: res.message });
           this.pollTraining(id);
           return;
         }
@@ -176,6 +176,17 @@ export class ProjectModels implements OnInit, OnDestroy {
 
   private updateTraining(datasetId: string, training: TrainState): void {
     this.rows.update((list) => list.map((r) => (r.dataset.id === datasetId ? { ...r, training } : r)));
+  }
+
+  /**
+   * Real /status returns progress as a 0-1 fraction (confirmed live -
+   * "0.3" and "0.8" were real training runs at 30% and 80%, not 0.3% and
+   * 0.8%), not the 0-100 percent this was originally assumed to already
+   * be. Every caller that stores progress into TrainState goes through
+   * this so "30%"/"80%" always means what it says, in one place.
+   */
+  private toPercent(fraction: number | undefined): number | undefined {
+    return fraction === undefined ? undefined : Math.round(fraction * 100);
   }
 
   /** Real POST .../train, then polls the real .../status endpoint every 3s until it reaches a terminal state. */
@@ -207,7 +218,7 @@ export class ProjectModels implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           if (!isTerminalTrainingStatus(res.status)) {
-            this.updateTraining(id, { phase: 'training', progress: res.progress, message: res.message });
+            this.updateTraining(id, { phase: 'training', progress: this.toPercent(res.progress), message: res.message });
             return;
           }
           if (isFailedTrainingStatus(res.status)) {
