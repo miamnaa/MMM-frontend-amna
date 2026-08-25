@@ -166,14 +166,6 @@ export class ModelResults implements OnInit {
       });
   });
 
-  /** Simple average of the bars above - a plain summary of what's already shown below it, not a separate metric the backend computes. */
-  readonly compositeScore = computed(() => {
-    const rows = this.reliabilityRows();
-    if (rows.length === 0) return null;
-    const avg = rows.reduce((sum, r) => sum + r.barPct, 0) / rows.length;
-    return { pct: Math.round(avg * 10) / 10, tier: this.reliabilityTier(avg) };
-  });
-
   private reliabilityTier(pct: number): 'strong' | 'moderate' | 'weak' {
     if (pct >= 85) return 'strong';
     if (pct >= 70) return 'moderate';
@@ -602,7 +594,6 @@ export class ModelResults implements OnInit {
 
   /** Plain-English text for the (i) badges next to jargon-heavy section titles - no ROI/marginal ROI/carryover/saturation left unexplained. */
   protected readonly HINTS = {
-    composite: 'A single score summarizing how well this model fits your real data. Higher and greener is more trustworthy; a low score means take its recommendations with caution.',
     roi: 'Return on investment - for every $1 spent on this channel, how much extra revenue it brought in on average.',
     marginalRoi: 'What the next dollar you spend on this channel would likely bring back - not the average, but what you\'d get right now if you spent a little more.',
     carryover: 'Ads don\'t stop working the moment they run - some of the effect lingers into following weeks. This shows how quickly that leftover effect fades.',
