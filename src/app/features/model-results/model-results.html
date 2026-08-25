@@ -156,17 +156,52 @@
         <p class="muted field-hint backend-gap-inline">A shaded confidence band around this line would need real per-date upper/lower bounds — not part of the results data yet.</p>
       </section>
 
-      <section class="card results-section">
-        <h2 class="section-title">Residuals (Actual − Predicted)</h2>
-        <p class="muted field-hint">The gap between what happened and what the model guessed, at each real date - closer to zero and evenly scattered above/below it is better.</p>
-        <app-line-chart
-          [series]="residualSeries()"
-          xLabel="Date"
-          [formatX]="formatDateAxis"
-          [formatY]="formatSignedOutcome"
-          [colors]="brandChartColors"
-        />
-      </section>
+      @if (modelFitReadout(); as fit) {
+        <div class="chart-grid explain-grid">
+          <section class="card results-section explain-card">
+            <h2 class="section-title">What does this mean?</h2>
+            <p class="explain-line"><span class="explain-swatch" style="background: var(--brand-500);"></span>The dark green line is what actually happened.</p>
+            <p class="explain-line"><span class="explain-swatch" style="background: var(--brand-500); opacity: 0.55;"></span>The light green line is what the model predicted.</p>
+            <p class="explain-line">The closer they are, the better the model.</p>
+          </section>
+          <section class="card results-section">
+            <div class="explain-stats">
+              @if (fit.rSquared) {
+                <div class="explain-stat">
+                  <span class="explain-stat-label">Model fit (R²)</span>
+                  <span class="explain-stat-value">{{ fit.rSquared }}</span>
+                </div>
+              }
+              @if (fit.avgError) {
+                <div class="explain-stat">
+                  <span class="explain-stat-label">Average error</span>
+                  <span class="explain-stat-value">{{ fit.avgError }}</span>
+                </div>
+              }
+            </div>
+          </section>
+        </div>
+      }
+
+      @if (residualBars(); as chart) {
+        <section class="card results-section">
+          <h2 class="section-title">Residuals (Actual − Predicted)</h2>
+          <p class="muted field-hint">The gap between what happened and what the model guessed, at each real date.</p>
+          <svg [attr.viewBox]="'0 0 ' + chart.W + ' ' + chart.H" preserveAspectRatio="xMidYMid meet" class="residual-svg" role="img" aria-label="Residuals bar chart">
+            @for (t of chart.yTicks; track t.value) {
+              <line [attr.x1]="chart.PAD.left" [attr.x2]="chart.W - chart.PAD.right" [attr.y1]="t.y" [attr.y2]="t.y" class="grid-line" />
+              <text [attr.x]="chart.PAD.left - 8" [attr.y]="t.y + 4" text-anchor="end" class="tick">{{ t.label }}</text>
+            }
+            @for (t of chart.xTicks; track t.label) {
+              <text [attr.x]="t.x" [attr.y]="chart.H - 6" text-anchor="middle" class="tick">{{ t.label }}</text>
+            }
+            @for (bar of chart.bars; track $index) {
+              <rect [attr.x]="bar.x" [attr.y]="bar.y" [attr.width]="bar.width" [attr.height]="bar.height" [attr.fill]="bar.positive ? '#8b5cf6' : '#c4b5fd'" />
+            }
+          </svg>
+          <p class="muted field-hint backend-gap-inline">Residuals should be randomly scattered around zero. That's what we want to see.</p>
+        </section>
+      }
 
       <div class="chart-grid">
         <section class="card results-section">

@@ -521,16 +521,61 @@ export class ModelResults implements OnInit {
 
   readonly formatDateAxis = (v: number) => new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
 
-  /** Real, plain arithmetic on the same real actual_vs_predicted points above - actual minus predicted, per date. Not a new field the backend returns, just the same two real numbers subtracted. */
-  readonly residualSeries = computed<LineSeries[]>(() => {
-    const sorted = this.sortedActualVsPredicted();
-    if (sorted.length === 0) return [];
-    return [{ name: 'Residual (Actual − Predicted)', points: sorted.map((p) => ({ x: new Date(p.date).getTime(), y: p.actual - p.predicted })) }];
+  readonly formatSignedOutcome = (v: number) => (v >= 0 ? '+' : '−') + currency(Math.abs(v));
+
+  /** Real R² and average error, same real model_confidence fields as the KPI tiles - reused here as a plain-language "what does this mean" readout next to the Actual vs predicted chart. */
+  readonly modelFitReadout = computed(() => {
+    const confidence = this.confidenceTiles();
+    const rSquared = confidence.find((t) => t.key.toLowerCase().includes('r_squared') && !t.key.toLowerCase().includes('adjusted'));
+    const avgError = confidence.find((t) => t.key.toLowerCase().includes('average_error') && !t.key.toLowerCase().includes('weighted'));
+    if (!rSquared && !avgError) return null;
+    return { rSquared: rSquared?.value ?? null, avgError: avgError?.value ?? null };
   });
 
-  readonly hasResiduals = computed(() => this.residualSeries().length > 0);
+  /**
+   * A real signed-bar layout for the residual chart - actual minus
+   * predicted, per real date, as vertical bars around a zero baseline
+   * instead of a line. Computed here (not left to the shared LineChart,
+   * which doesn't draw bars) since this is the one chart on this page that
+   * needs a real centered-on-zero column view rather than a line or a
+   * paired comparison.
+   */
+  readonly residualBars = computed(() => {
+    const sorted = this.sortedActualVsPredicted();
+    if (sorted.length === 0) return null;
 
-  readonly formatSignedOutcome = (v: number) => (v >= 0 ? '+' : '−') + currency(Math.abs(v));
+    const W = 720;
+    const H = 200;
+    const PAD = { top: 14, right: 16, bottom: 26, left: 56 };
+    const plotW = W - PAD.left - PAD.right;
+    const plotH = H - PAD.top - PAD.bottom;
+    const midY = PAD.top + plotH / 2;
+
+    const values = sorted.map((p) => p.actual - p.predicted);
+    const maxAbs = Math.max(...values.map((v) => Math.abs(v)), 1);
+    const n = values.length;
+    const barWidth = Math.max(1, Math.min(6, plotW / n - 1));
+
+    const bars = values.map((v, i) => {
+      const x = PAD.left + (n === 1 ? plotW / 2 : (i / (n - 1)) * (plotW - barWidth));
+      const h = (Math.abs(v) / maxAbs) * (plotH / 2);
+      return { x, y: v >= 0 ? midY - h : midY, width: barWidth, height: Math.max(1, h), positive: v >= 0 };
+    });
+
+    const yTicks = [maxAbs, 0, -maxAbs].map((v) => ({
+      value: v,
+      y: midY - (v / maxAbs) * (plotH / 2),
+      label: this.formatSignedOutcome(v),
+    }));
+
+    const tickCount = Math.min(6, n);
+    const xTicks = Array.from({ length: tickCount }, (_, i) => {
+      const idx = tickCount === 1 ? 0 : Math.round((i / (tickCount - 1)) * (n - 1));
+      return { x: PAD.left + (n === 1 ? plotW / 2 : (idx / (n - 1)) * (plotW - barWidth)) + barWidth / 2, label: this.formatDateAxis(new Date(sorted[idx].date).getTime()) };
+    });
+
+    return { W, H, PAD, midY, bars, yTicks, xTicks };
+  });
 
   /** Same real actual_vs_predicted points, run as a cumulative sum - how far the model's total running estimate has drifted from the real running total, not just point-by-point. */
   readonly cumulativeSeries = computed<LineSeries[]>(() => {
