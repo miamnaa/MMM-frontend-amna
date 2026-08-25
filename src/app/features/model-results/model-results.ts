@@ -49,6 +49,9 @@ const BRAND_CHART_COLORS = [BRAND_DARK_GREEN];
 const BRAND_GROUPED_COLORS: [string, string] = [BRAND_DARK_GREEN, BRAND_LIGHT_GREEN];
 const BRAND_BUDGET_COLORS: [string, string] = [BRAND_LIGHT_GREEN, BRAND_DARK_GREEN];
 
+/** A real categorical set, only for the Marketing Contribution donut - the one chart on this page that genuinely needs several distinguishable colors (one per channel), unlike the others which compare exactly two series. */
+const DONUT_COLORS = ['#00994D', '#3B82F6', '#F59E0B', '#8FCB92', '#EF4444', '#9CA3AF', '#8B5CF6', '#EC4899'];
+
 /**
  * "View Model" destination from both the Models list and Results & Insights'
  * per-project model list. Fetches this dataset's real training results
@@ -202,6 +205,84 @@ export class ModelResults implements OnInit {
     })),
   );
 
+  /**
+   * Same real channel_contribution data as the bar chart above, reshaped
+   * into donut segments - real percentages normalized to sum to 100 (in
+   * case rounding in the source data leaves them a hair off), each given a
+   * real distinguishable color and a running start/end position around the
+   * ring, computed once here instead of duplicated in the template.
+   */
+  readonly donutSegments = computed(() => {
+    const bars = this.contributionBars();
+    const total = bars.reduce((sum, b) => sum + b.value, 0);
+    if (total <= 0) return [];
+    let cursor = 0;
+    return bars.map((b, i) => {
+      const pct = (b.value / total) * 100;
+      const start = cursor;
+      cursor += pct;
+      return { label: b.label, display: b.display, pct, start, end: cursor, color: DONUT_COLORS[i % DONUT_COLORS.length] };
+    });
+  });
+
+  readonly donutGradient = computed(() => {
+    const segments = this.donutSegments();
+    if (segments.length === 0) return 'none';
+    return `conic-gradient(${segments.map((s) => `${s.color} ${s.start}% ${s.end}%`).join(', ')})`;
+  });
+
+  readonly hasDonut = computed(() => this.donutSegments().length > 0);
+
+  /** Real total incremental outcome across every channel - the sum of the same real per-channel numbers the donut's segments are built from. */
+  readonly totalIncrementalOutcome = computed(() => {
+    const rows = this.results()?.channel_contribution ?? [];
+    const total = rows.reduce((sum, r) => sum + (typeof r.incremental_outcome === 'number' ? r.incremental_outcome : 0), 0);
+    return total > 0 ? total : null;
+  });
+
+  /**
+   * A 4-tile snapshot for the Overview card - total/incremental outcome
+   * from the real baseline_vs_marketing split, plus this model's own real
+   * R² and average error already shown on Model Performance. Each tile
+   * only appears when its real source field is present.
+   */
+  readonly executiveTiles = computed(() => {
+    const tiles: { label: string; value: string; caption: string; icon: string }[] = [];
+
+    const bm = this.baselineVsMarketing();
+    if (bm) {
+      tiles.push({
+        label: 'Total outcome',
+        value: this.formatXSpend(bm.baseline_outcome + bm.marketing_outcome),
+        caption: 'In this period',
+        icon: '📦',
+      });
+      tiles.push({
+        label: 'Incremental outcome',
+        value: this.formatXSpend(bm.marketing_outcome),
+        caption: `${Math.round(bm.marketing_percent)}% of total`,
+        icon: '📈',
+      });
+    }
+
+    const confidence = this.confidenceTiles();
+    const rSquared = confidence.find((t) => t.key.toLowerCase().includes('r_squared') && !t.key.toLowerCase().includes('adjusted'));
+    if (rSquared) {
+      tiles.push({
+        label: 'Model accuracy (R²)',
+        value: rSquared.value,
+        caption: Number(rSquared.value) >= 0.7 ? 'Good fit' : 'Needs review',
+        icon: '🎯',
+      });
+    }
+    const avgError = confidence.find((t) => t.key.toLowerCase().includes('average_error') && !t.key.toLowerCase().includes('weighted'));
+    if (avgError) tiles.push({ label: 'Average error', value: avgError.value, caption: 'Average error', icon: '🛡️' });
+
+    return tiles;
+  });
+
+  readonly hasExecutiveTiles = computed(() => this.executiveTiles().length > 0);
+
   private readonly efficiencyRows = computed(() => this.results()?.channel_efficiency ?? []);
 
   /** Best-effort field detection - channel_efficiency's exact field names aren't documented, only "map into an ROI view." Falls back to a flattened list per channel if a real roi + marginal roi pair isn't found. */
@@ -232,6 +313,48 @@ export class ModelResults implements OnInit {
     const b = this.results()?.budget_recommendation;
     if (b === undefined || this.hasBudgetChart()) return [];
     return this.flattenForDisplay(b);
+  });
+
+  private numField(row: Record<string, unknown>, keys: string[]): number | undefined {
+    const key = Object.keys(row).find((k) => keys.includes(k.toLowerCase()));
+    const value = key ? row[key] : undefined;
+    return typeof value === 'number' ? value : undefined;
+  }
+
+  /**
+   * A real total-impact figure, not a separate field the backend returns -
+   * plain outcome = spend x ROI, summed across every real channel that has
+   * both current_spend/current_roi (for "now") and optimized_spend/
+   * optimized_roi (for "if you follow the recommendation"). Same real math
+   * as the per-channel budget table, just rolled up into one before/after
+   * number so the impact of following every recommendation at once is
+   * visible without adding them up by hand.
+   */
+  readonly recommendedImpact = computed(() => {
+    let currentTotal = 0;
+    let optimizedTotal = 0;
+    let sawCurrent = false;
+    let sawOptimized = false;
+
+    for (const row of this.budgetRows()) {
+      const currentSpend = this.numField(row, ['current_spend', 'currentspend']);
+      const currentRoi = this.numField(row, ['current_roi', 'currentroi']);
+      if (currentSpend !== undefined && currentRoi !== undefined) {
+        currentTotal += currentSpend * currentRoi;
+        sawCurrent = true;
+      }
+
+      const optimizedSpend = this.numField(row, ['optimized_spend', 'optimizedspend']);
+      const optimizedRoi = this.numField(row, ['optimized_roi', 'optimizedroi']);
+      if (optimizedSpend !== undefined && optimizedRoi !== undefined) {
+        optimizedTotal += optimizedSpend * optimizedRoi;
+        sawOptimized = true;
+      }
+    }
+
+    if (!sawCurrent || !sawOptimized || currentTotal <= 0) return null;
+    const liftPercent = ((optimizedTotal - currentTotal) / currentTotal) * 100;
+    return { currentTotal, optimizedTotal, liftPercent };
   });
 
   /**
@@ -313,49 +436,6 @@ export class ModelResults implements OnInit {
   });
 
   readonly hasScorecard = computed(() => this.scorecardRows().length > 0);
-
-  /**
-   * 3-4 short, auto-written takeaways from data already on this page - the
-   * answer someone would otherwise have to read every chart to piece
-   * together themselves. Nothing here is a guess: each line only appears
-   * when the real field it depends on is present.
-   */
-  readonly keyInsights = computed<string[]>(() => {
-    const insights: string[] = [];
-
-    const contributions = this.contributionBars();
-    if (contributions.length > 0) {
-      const top = contributions.reduce((a, b) => (b.value > a.value ? b : a));
-      insights.push(`${top.label} drives the most revenue, contributing ${top.display} of total incremental outcome.`);
-    }
-
-    const channels = this.channelMap();
-    const withRoi = channels.filter((c): c is typeof c & { roi: number } => c.roi !== undefined);
-    if (withRoi.length > 0) {
-      const best = withRoi.reduce((a, b) => (b.roi > a.roi ? b : a));
-      insights.push(`${best.label} has the strongest ROI at ${best.roi.toFixed(2)}.`);
-    }
-
-    const withChange = channels.filter(
-      (c): c is typeof c & { spendChangePercent: number } => c.spendChangePercent !== undefined,
-    );
-    if (withChange.length > 0) {
-      const increase = withChange.filter((c) => c.spendChangePercent > 0).sort((a, b) => b.spendChangePercent - a.spendChangePercent)[0];
-      const decrease = withChange.filter((c) => c.spendChangePercent < 0).sort((a, b) => a.spendChangePercent - b.spendChangePercent)[0];
-      if (increase) {
-        insights.push(`Consider increasing spend on ${increase.label} by ${Math.round(increase.spendChangePercent)}% for a better return.`);
-      }
-      if (decrease) {
-        insights.push(
-          `${decrease.label} looks over-invested relative to its return - consider decreasing spend by ${Math.abs(Math.round(decrease.spendChangePercent))}%.`,
-        );
-      }
-    }
-
-    return insights;
-  });
-
-  readonly hasKeyInsights = computed(() => this.keyInsights().length > 0);
 
   /**
    * The headline decision budget_recommendation already implies, said as a
