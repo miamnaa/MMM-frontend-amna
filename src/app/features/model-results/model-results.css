@@ -380,6 +380,10 @@
   color: var(--text-muted);
 }
 
+.backend-gap-inline {
+  margin: 10px 0 0;
+}
+
 .insight-callout {
   margin: -6px 0 14px;
   padding: 10px 14px;

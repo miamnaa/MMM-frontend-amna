@@ -189,11 +189,60 @@
             [formatY]="formatXSpend"
             [colors]="brandGroupedColors"
           />
+          <p class="muted field-hint backend-gap-inline">A shaded confidence band around this line would need real per-date upper/lower bounds — not part of the results data yet.</p>
+        </section>
+
+        <section class="card results-section">
+          <h2 class="section-title">Residuals (Actual − Predicted)</h2>
+          <p class="muted field-hint">The gap between what happened and what the model guessed, at each real date - closer to zero and evenly scattered above/below it is better.</p>
+          <app-line-chart
+            [series]="residualSeries()"
+            xLabel="Date"
+            [formatX]="formatDateAxis"
+            [formatY]="formatSignedOutcome"
+            [colors]="brandChartColors"
+          />
+        </section>
+
+        <section class="card results-section">
+          <h2 class="section-title">Cumulative actual vs predicted</h2>
+          <p class="muted field-hint">Running total over time - a real, growing gap here means the model is consistently over- or under-estimating, not just off on individual weeks.</p>
+          <app-line-chart
+            [series]="cumulativeSeries()"
+            xLabel="Date"
+            [formatX]="formatDateAxis"
+            [formatY]="formatXSpend"
+            [colors]="brandGroupedColors"
+          />
         </section>
       } @else {
         <div class="card results-section backend-gap-note">
           <strong>Not shown yet:</strong> this model's results don't include a real prediction time series — will appear automatically once a run includes one.
         </div>
+      }
+
+      @if (hasPerformanceSummary()) {
+        <section class="card results-section">
+          <h2 class="section-title">Performance summary</h2>
+          <table class="scorecard">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Value</th>
+                <th>Read</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of performanceSummaryRows(); track row.label) {
+                <tr>
+                  <td>{{ row.label }}</td>
+                  <td>{{ row.value }}</td>
+                  <td><span class="tier-badge" [class]="'tier-' + row.tier">{{ TIER_LABELS[row.tier] }}</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </section>
       }
     } @else {
       <app-empty-state title="No model performance metrics" message="This model's results didn't include confidence metrics." />

@@ -510,10 +510,15 @@ export class ModelResults implements OnInit {
    * over time instead of summarized as a single accuracy percent. Optional
    * on the type - older completed runs won't have it.
    */
-  readonly actualVsPredictedSeries = computed<LineSeries[]>(() => {
+  private readonly sortedActualVsPredicted = computed(() => {
     const points = this.results()?.actual_vs_predicted;
     if (!points || points.length === 0) return [];
-    const sorted = [...points].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return [...points].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  });
+
+  readonly actualVsPredictedSeries = computed<LineSeries[]>(() => {
+    const sorted = this.sortedActualVsPredicted();
+    if (sorted.length === 0) return [];
     return [
       { name: 'Actual', points: sorted.map((p) => ({ x: new Date(p.date).getTime(), y: p.actual })) },
       { name: 'Predicted', points: sorted.map((p) => ({ x: new Date(p.date).getTime(), y: p.predicted })) },
@@ -523,6 +528,52 @@ export class ModelResults implements OnInit {
   readonly hasActualVsPredicted = computed(() => this.actualVsPredictedSeries().length > 0);
 
   readonly formatDateAxis = (v: number) => new Date(v).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+
+  /** Real, plain arithmetic on the same real actual_vs_predicted points above - actual minus predicted, per date. Not a new field the backend returns, just the same two real numbers subtracted. */
+  readonly residualSeries = computed<LineSeries[]>(() => {
+    const sorted = this.sortedActualVsPredicted();
+    if (sorted.length === 0) return [];
+    return [{ name: 'Residual (Actual − Predicted)', points: sorted.map((p) => ({ x: new Date(p.date).getTime(), y: p.actual - p.predicted })) }];
+  });
+
+  readonly hasResiduals = computed(() => this.residualSeries().length > 0);
+
+  readonly formatSignedOutcome = (v: number) => (v >= 0 ? '+' : '−') + currency(Math.abs(v));
+
+  /** Same real actual_vs_predicted points, run as a cumulative sum - how far the model's total running estimate has drifted from the real running total, not just point-by-point. */
+  readonly cumulativeSeries = computed<LineSeries[]>(() => {
+    const sorted = this.sortedActualVsPredicted();
+    if (sorted.length === 0) return [];
+    let actualSum = 0;
+    let predictedSum = 0;
+    const actualPoints: { x: number; y: number }[] = [];
+    const predictedPoints: { x: number; y: number }[] = [];
+    for (const p of sorted) {
+      actualSum += p.actual;
+      predictedSum += p.predicted;
+      const x = new Date(p.date).getTime();
+      actualPoints.push({ x, y: actualSum });
+      predictedPoints.push({ x, y: predictedSum });
+    }
+    return [
+      { name: 'Cumulative actual', points: actualPoints },
+      { name: 'Cumulative predicted', points: predictedPoints },
+    ];
+  });
+
+  readonly hasCumulative = computed(() => this.cumulativeSeries().length > 0);
+
+  /** Same real reliabilityRows already used for the composite score bars, reshaped into a table row per metric with its own real value and Good/Moderate/Needs review read - plus a real Total outcome row when baseline_vs_marketing is present. */
+  readonly performanceSummaryRows = computed(() => {
+    const rows = this.reliabilityRows().map((r) => ({ label: r.label, value: r.display, tier: r.tier }));
+    const bm = this.baselineVsMarketing();
+    if (bm) {
+      rows.push({ label: 'Total outcome', value: this.formatXSpend(bm.baseline_outcome + bm.marketing_outcome), tier: 'strong' as const });
+    }
+    return rows;
+  });
+
+  readonly hasPerformanceSummary = computed(() => this.performanceSummaryRows().length > 0);
 
   /**
    * Real field, added 2026-08-24 - a real ROI range per channel, not just
