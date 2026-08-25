@@ -77,7 +77,7 @@ export class ModelResults implements OnInit {
   readonly datasetId = signal('');
 
   /** 'overview' is the at-a-glance summary (KPIs, key takeaways, contribution donut, recommended impact); 'performance' answers "can I trust this model" (the confidence KPIs); 'insights' answers "what should I do about it" (everything channel-level). */
-  readonly activeTab = signal<'overview' | 'performance' | 'insights'>('overview');
+  readonly activeTab = signal<'overview' | 'performance' | 'channels' | 'insights'>('overview');
 
   protected readonly brandChartColors = BRAND_CHART_COLORS;
   protected readonly brandGroupedColors = BRAND_GROUPED_COLORS;
@@ -429,6 +429,32 @@ export class ModelResults implements OnInit {
   });
 
   readonly hasScorecard = computed(() => this.scorecardRows().length > 0);
+
+  /**
+   * Best performer, top contributor, and lowest ROI - all real, direct
+   * lookups over channelMap, same source as the table below. "Most
+   * efficient (cost per conversion)" and a per-channel "Saturation status"
+   * from the reference this was modeled on are deliberately NOT here -
+   * both need real fields (a conversion count, a saturation/stability
+   * score) the API doesn't return; nothing here is estimated in their
+   * place.
+   */
+  readonly channelSummary = computed(() => {
+    const channels = this.channelMap();
+    const withRoi = channels.filter((c): c is typeof c & { roi: number } => c.roi !== undefined);
+    const withContribution = channels.filter((c): c is typeof c & { contributionPct: number } => c.contributionPct !== undefined);
+
+    return {
+      bestRoi: withRoi.length > 0 ? withRoi.reduce((a, b) => (b.roi > a.roi ? b : a)) : null,
+      lowestRoi: withRoi.length > 1 ? withRoi.reduce((a, b) => (b.roi < a.roi ? b : a)) : null,
+      topContribution: withContribution.length > 0 ? withContribution.reduce((a, b) => (b.contributionPct > a.contributionPct ? b : a)) : null,
+    };
+  });
+
+  readonly hasChannelSummary = computed(() => {
+    const s = this.channelSummary();
+    return s.bestRoi !== null || s.lowestRoi !== null || s.topContribution !== null;
+  });
 
   /**
    * The headline decision budget_recommendation already implies, said as a
@@ -822,7 +848,7 @@ export class ModelResults implements OnInit {
     });
   }
 
-  setTab(tab: 'overview' | 'performance' | 'insights'): void {
+  setTab(tab: 'overview' | 'performance' | 'channels' | 'insights'): void {
     this.activeTab.set(tab);
   }
 
@@ -864,7 +890,7 @@ export class ModelResults implements OnInit {
       .filter((r): r is GroupedBarDatum => r !== null);
   }
 
-  private formatPercent(value: unknown): string {
+  protected formatPercent(value: unknown): string {
     return typeof value === 'number' ? `${Math.round(value * 10) / 10}%` : '—';
   }
 

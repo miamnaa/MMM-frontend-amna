@@ -55,6 +55,16 @@
       type="button"
       role="tab"
       class="tab"
+      [class.active]="activeTab() === 'channels'"
+      [attr.aria-selected]="activeTab() === 'channels'"
+      (click)="setTab('channels')"
+    >
+      Channel Performance
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="tab"
       [class.active]="activeTab() === 'insights'"
       [attr.aria-selected]="activeTab() === 'insights'"
       (click)="setTab('insights')"
@@ -239,29 +249,24 @@
     } @else {
       <app-empty-state title="No model performance metrics" message="This model's results didn't include a prediction time series." />
     }
-  } @else {
-    @if (baselineVsMarketing(); as bm) {
-      <section class="card results-section">
-        <h2 class="section-title">Is marketing working?</h2>
-        <p class="muted field-hint">What would have happened with zero marketing, vs. what marketing actually added.</p>
-        <div class="baseline-bar">
-          <div class="baseline-segment baseline-segment-base" [style.width.%]="bm.baseline_percent">
-            <span class="baseline-segment-label">Baseline {{ bm.baseline_percent | number: '1.0-1' }}%</span>
-          </div>
-          <div class="baseline-segment baseline-segment-marketing" [style.width.%]="bm.marketing_percent">
-            <span class="baseline-segment-label">Marketing {{ bm.marketing_percent | number: '1.0-1' }}%</span>
-          </div>
-        </div>
-        <div class="baseline-legend">
-          <span><strong>{{ formatXSpend(bm.baseline_outcome) }}</strong> would have happened anyway</span>
-          <span><strong>{{ formatXSpend(bm.marketing_outcome) }}</strong> came from marketing</span>
-        </div>
-      </section>
+  } @else if (activeTab() === 'channels') {
+    @if (hasChannelSummary()) {
+      <div class="exec-tile-row channel-summary-row">
+        @if (channelSummary().bestRoi; as best) {
+          <app-stat-tile label="Best performer (ROI)" [value]="best.label" [caption]="best.roi.toFixed(2) + ' ROI'" [large]="true" [wide]="true" icon="🏆" />
+        }
+        @if (channelSummary().topContribution; as top) {
+          <app-stat-tile label="Highest contribution" [value]="top.label" [caption]="formatPercent(top.contributionPct)" [large]="true" [wide]="true" icon="📊" />
+        }
+        @if (channelSummary().lowestRoi; as low) {
+          <app-stat-tile label="Needs attention" [value]="low.label" [caption]="low.roi.toFixed(2) + ' ROI'" [large]="true" [wide]="true" icon="⚠️" />
+        }
+      </div>
     }
 
     @if (hasScorecard()) {
       <section class="card results-section">
-        <h2 class="section-title">Channel performance scorecard</h2>
+        <h2 class="section-title">How each marketing channel performed</h2>
         <div class="scorecard-wrap">
           <table class="scorecard">
             <thead>
@@ -294,6 +299,28 @@
               }
             </tbody>
           </table>
+        </div>
+        <p class="muted field-hint backend-gap-inline">Cost per conversion and a per-channel saturation status aren't shown - both need real fields (a conversion count, a saturation/stability score) the API doesn't return yet.</p>
+      </section>
+    } @else {
+      <app-empty-state title="No channel data yet" message="This model's results didn't include per-channel numbers." />
+    }
+  } @else {
+    @if (baselineVsMarketing(); as bm) {
+      <section class="card results-section">
+        <h2 class="section-title">Is marketing working?</h2>
+        <p class="muted field-hint">What would have happened with zero marketing, vs. what marketing actually added.</p>
+        <div class="baseline-bar">
+          <div class="baseline-segment baseline-segment-base" [style.width.%]="bm.baseline_percent">
+            <span class="baseline-segment-label">Baseline {{ bm.baseline_percent | number: '1.0-1' }}%</span>
+          </div>
+          <div class="baseline-segment baseline-segment-marketing" [style.width.%]="bm.marketing_percent">
+            <span class="baseline-segment-label">Marketing {{ bm.marketing_percent | number: '1.0-1' }}%</span>
+          </div>
+        </div>
+        <div class="baseline-legend">
+          <span><strong>{{ formatXSpend(bm.baseline_outcome) }}</strong> would have happened anyway</span>
+          <span><strong>{{ formatXSpend(bm.marketing_outcome) }}</strong> came from marketing</span>
         </div>
       </section>
     }
