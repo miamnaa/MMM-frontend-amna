@@ -168,6 +168,13 @@ export interface TrainModelResponse {
  * on a `failed` status (seen 2026-08-18, a real Meridian multicollinearity
  * rejection) - `message` is kept too since it's what's used for in-progress
  * status text, a different real field for a different purpose.
+ *
+ * As of today (Anas), `errorMessage` can ALSO appear on a real `status:
+ * "running"` response during a brief, real network hiccup reaching the
+ * model engine - that is NOT a failure, just an informational note; only
+ * `status: "failed"` (checked by isFailedTrainingStatus below) is a real
+ * failure. Callers must keep polling normally on a non-terminal status
+ * regardless of whether errorMessage is present.
  */
 export interface TrainingStatusResponse {
   status: string;
@@ -203,16 +210,13 @@ export function isFailedTrainingStatus(status: string): boolean {
 }
 
 /**
- * Real endpoint, confirmed working 2026-08-13. As of 2026-08-18, Anas
- * confirmed real Meridian training runs on a Colab GPU when it's reachable
- * (Colab's own log proved a real end-to-end run), same shape as the mock -
- * `results.mock` is the real boolean that tells you which one you got.
- * `mock === true` -> simulated; `false` or absent -> a real trained model.
- * Which one you get isn't fixed - it depends on whether the real engine was
- * reachable at the moment /train was called, so both are expected, not a
- * bug either way. The four named fields below are the confirmed real shape;
- * `[key: string]: unknown` keeps this forward-compatible with any field not
- * yet documented, same honesty rule as before.
+ * Real endpoint, confirmed working 2026-08-13. As of today (Anas, real
+ * policy change), train/status/results never fall back to fake numbers
+ * anymore - that fallback was deleted from the backend entirely, not just
+ * disabled, so `results.mock` can never come back `true`. The four named
+ * fields below are the confirmed real shape; `[key: string]: unknown` keeps
+ * this forward-compatible with any field not yet documented, same honesty
+ * rule as before.
  */
 export interface ModelConfidence extends Record<string, unknown> {
   overall_accuracy_percent?: number;
@@ -250,7 +254,6 @@ export interface BaselineVsMarketing {
 }
 
 export interface TrainingResults extends Record<string, unknown> {
-  mock?: boolean;
   model_confidence?: ModelConfidence;
   channel_contribution?: ChannelContributionRow[];
   channel_efficiency?: ChannelEfficiencyRow[];
@@ -421,7 +424,7 @@ export class DatasetService {
     return this.http.get<TrainingStatusResponse>(`${environment.apiBaseUrl}/datasets/${datasetId}/status`);
   }
 
-  /** Real endpoint, confirmed working 2026-08-13 - real trained-model output when the Meridian engine was reachable, simulated otherwise. Check `results.mock` to tell which one came back, not the endpoint used. */
+  /** Real endpoint, confirmed working 2026-08-13 - always real trained-model output now (no more mock fallback). A real error here means exactly what it says: training isn't done yet, or the engine couldn't be reached - the caller should show the real message, not assume a specific reason. */
   getResults(datasetId: string): Observable<TrainingResults> {
     return this.http.get<TrainingResults>(`${environment.apiBaseUrl}/datasets/${datasetId}/results`);
   }

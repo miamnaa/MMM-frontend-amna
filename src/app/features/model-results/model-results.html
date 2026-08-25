@@ -23,16 +23,12 @@
 } @else if (notTrained()) {
   <app-empty-state
     title="Not trained yet"
-    message="This model hasn't completed a real training run - go to its Models page to start one."
+    [message]="loadError() ?? 'This model hasn\'t completed a real training run - go to its Models page to start one.'"
   >
     <a class="btn btn-primary btn-sm" [routerLink]="['/models', projectId()]">Go to Models</a>
   </app-empty-state>
 } @else if (results(); as r) {
-  @if (isMockResult()) {
-    <div class="results-banner">Simulated results — not from a real trained model run yet.</div>
-  } @else {
-    <div class="results-banner results-banner-real">Real model results</div>
-  }
+  <div class="results-banner results-banner-real">Real model results</div>
 
   <div class="tabs" role="tablist">
     <button

@@ -18,6 +18,7 @@ import { EmptyState } from '../../shared/ui/empty-state/empty-state';
 import { InfoTip } from '../../shared/ui/info-tip/info-tip';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
 import { StatTile } from '../../shared/ui/stat-tile/stat-tile';
+import { backendErrorMessage } from '../../shared/utils/backend-error';
 import { currency } from '../../shared/utils/format';
 
 /** Common field names the real backend might use for a channel's display name - checked in order, first match wins. */
@@ -54,10 +55,12 @@ const DONUT_COLORS = ['#00994D', '#3B82F6', '#F59E0B', '#8FCB92', '#EF4444', '#9
 
 /**
  * "View Model" destination from both the Models list and Results & Insights'
- * per-project model list. Fetches this dataset's real training results
- * (results.mock tells real vs. simulated) and renders them - unlike the
- * Models list's old inline panel, this reuses the shared BarChart/LineChart
- * components for the richer visualization layout.
+ * per-project model list. Fetches this dataset's real training results and
+ * renders them - unlike the Models list's old inline panel, this reuses the
+ * shared BarChart/LineChart components for the richer visualization layout.
+ * As of today (Anas, real policy change), the backend never falls back to
+ * fake/mock data anymore - results.mock can no longer come back true, so
+ * there's nothing left to distinguish real vs. simulated here.
  */
 @Component({
   selector: 'app-model-results',
@@ -88,8 +91,6 @@ export class ModelResults implements OnInit {
   readonly loading = signal(true);
   readonly notTrained = signal(false);
   readonly loadError = signal<string | null>(null);
-
-  readonly isMockResult = computed(() => this.results()?.mock === true);
 
   private static readonly CONFIDENCE_ICONS = ['📈', '📊', '🎯', '📐', '⏱️', '🧮'];
 
@@ -764,6 +765,7 @@ export class ModelResults implements OnInit {
   private loadModel(): void {
     this.loading.set(true);
     this.notTrained.set(false);
+    this.loadError.set(null);
     this.dataset.set(null);
     this.results.set(null);
 
@@ -784,11 +786,14 @@ export class ModelResults implements OnInit {
         this.results.set(results);
         this.loading.set(false);
       },
-      error: () => {
-        // A model that reached "Ready" but was never actually trained gets
-        // a real error here, not fake data - that's a normal state to show
-        // plainly, not a failure to alarm about.
+      // Real policy as of today (Anas): the backend never silently falls
+      // back to fake data anymore - a real 4xx/5xx here means exactly what
+      // it says (training isn't done yet, or the engine couldn't be
+      // reached), so show the real message instead of always assuming
+      // "not trained yet."
+      error: (err: unknown) => {
         this.notTrained.set(true);
+        this.loadError.set(backendErrorMessage(err, "This model hasn't completed a real training run yet."));
         this.loading.set(false);
       },
     });
