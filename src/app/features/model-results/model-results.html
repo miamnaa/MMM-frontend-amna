@@ -69,9 +69,9 @@
 
   @if (activeTab() === 'overview') {
     @if (hasExecutiveTiles()) {
-      <div class="tile-row">
+      <div class="exec-tile-row">
         @for (tile of executiveTiles(); track tile.label) {
-          <app-stat-tile [label]="tile.label" [value]="tile.value" [caption]="tile.caption" [large]="true" [icon]="tile.icon" />
+          <app-stat-tile [label]="tile.label" [value]="tile.value" [caption]="tile.caption" [large]="true" [wide]="true" [icon]="tile.icon" />
         }
       </div>
     }
@@ -81,11 +81,14 @@
         @if (hasStoryline()) {
           <section class="card results-section overview-card">
             <h2 class="section-title">Key takeaways</h2>
-            <ul class="insights-list">
-              @for (line of storyline(); track line) {
-                <li>{{ line }}</li>
+            <div class="takeaway-list">
+              @for (line of storyline(); track line.text) {
+                <div class="takeaway-row">
+                  <span class="takeaway-icon" [class]="'tone-' + line.tone" aria-hidden="true">{{ line.icon }}</span>
+                  <p class="takeaway-text">{{ line.text }}</p>
+                </div>
               }
-            </ul>
+            </div>
           </section>
         }
 
@@ -129,6 +132,7 @@
             <span class="impact-arrow">→</span>
             <span>Expected outcome <strong>{{ formatXSpend(impact.optimizedTotal) }}</strong></span>
           </div>
+          <span class="impact-spacer"></span>
           <button class="btn btn-primary btn-sm" type="button" (click)="goToBudgetPlan()">See budget plan</button>
         </div>
       </section>

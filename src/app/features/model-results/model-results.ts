@@ -558,33 +558,31 @@ export class ModelResults implements OnInit {
     saturation: 'Every channel eventually stops paying off as well the more you spend on it. This shows how close a channel already is to that point.',
   };
 
-  /**
-   * A short, plain-English story of what's actually happening in this
-   * model's results - the same real numbers already on this page (top
-   * channel, budget move, baseline split), rewritten as sentences a
-   * non-technical reader can follow without knowing what "ROI" or
-   * "marginal" mean. Each line only appears when the real data behind it
-   * exists; nothing here is invented.
-   */
-  readonly storyline = computed<string[]>(() => {
-    const lines: string[] = [];
+/** A takeaway line paired with a real reason it exists - icon/tone are just presentation, chosen by what kind of point the line makes (performance/money/action), not a separate field the backend returns. */
+  readonly storyline = computed<{ text: string; icon: string; tone: 'brand' | 'info' | 'warn' }[]>(() => {
+    const lines: { text: string; icon: string; tone: 'brand' | 'info' | 'warn' }[] = [];
 
     const contributions = this.contributionBars();
     const outcomes = this.contributionOutcomes();
     if (contributions.length > 0) {
       const top = contributions.reduce((a, b) => (b.value > a.value ? b : a));
       const outcome = outcomes.find((o) => o.label === top.label);
-      lines.push(
-        `${top.label} is your best-performing channel right now` +
+      lines.push({
+        text:
+          `${top.label} is your best-performing channel right now` +
           (outcome ? `, bringing in ${outcome.value} in extra sales that marketing alone is responsible for.` : '.'),
-      );
+        icon: '📊',
+        tone: 'brand',
+      });
     }
 
     const bm = this.baselineVsMarketing();
     if (bm) {
-      lines.push(
-        `Overall, ${this.formatXSpend(bm.marketing_outcome)} of your results came from marketing - the other ${this.formatXSpend(bm.baseline_outcome)} would likely have happened anyway.`,
-      );
+      lines.push({
+        text: `Overall, ${this.formatXSpend(bm.marketing_outcome)} of your results came from marketing - the other ${this.formatXSpend(bm.baseline_outcome)} would likely have happened anyway.`,
+        icon: '💰',
+        tone: 'info',
+      });
     }
 
     const entries = this.budgetRows()
@@ -597,13 +595,28 @@ export class ModelResults implements OnInit {
     const increase = entries.filter((e) => e.change > 0).sort((a, b) => b.change - a.change)[0];
     const decrease = entries.filter((e) => e.change < 0).sort((a, b) => a.change - b.change)[0];
     if (increase && decrease) {
-      lines.push(
-        `If you moved some budget from ${decrease.label} into ${increase.label}, you'd likely see a better return - ${increase.label} still has room to grow, while ${decrease.label} is already getting less out of every extra dollar.`,
-      );
+      lines.push({
+        text: `If you moved some budget from ${decrease.label} into ${increase.label}, you'd likely see a better return - ${increase.label} still has room to grow, while ${decrease.label} is already getting less out of every extra dollar.`,
+        icon: '🔄',
+        tone: 'warn',
+      });
     } else if (increase) {
-      lines.push(`${increase.label} still has room to grow - spending a bit more there would likely pay off.`);
+      lines.push({ text: `${increase.label} still has room to grow - spending a bit more there would likely pay off.`, icon: '🔄', tone: 'warn' });
     } else if (decrease) {
-      lines.push(`${decrease.label} is already past the point where extra spend pays off well - consider pulling some budget back.`);
+      lines.push({
+        text: `${decrease.label} is already past the point where extra spend pays off well - consider pulling some budget back.`,
+        icon: '🔄',
+        tone: 'warn',
+      });
+    }
+
+    const impact = this.recommendedImpact();
+    if (impact) {
+      lines.push({
+        text: `Reallocating budget as recommended could change your total outcome by ${impact.liftPercent >= 0 ? '+' : ''}${Math.round(impact.liftPercent * 10) / 10}%.`,
+        icon: '📐',
+        tone: 'brand',
+      });
     }
 
     return lines;

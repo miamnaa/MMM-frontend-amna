@@ -6,7 +6,7 @@ import { InfoTip } from '../info-tip/info-tip';
   selector: 'app-stat-tile',
   imports: [InfoTip],
   template: `
-    <div class="tile" [class.large]="large()">
+    <div class="tile" [class.large]="large()" [class.wide]="wide()">
       @if (large()) {
         <div class="tile-head">
           @if (icon(); as i) {
@@ -107,6 +107,18 @@ import { InfoTip } from '../info-tip/info-tip';
       letter-spacing: -0.01em;
       color: var(--text);
     }
+
+    /* Wide variant - a row of these should fill the container edge-to-edge
+       (e.g. a 4-tile Executive Summary row), not stay pinned to a fixed
+       210px square that leaves empty space on wider screens. Same content
+       and type scale as .large, just sized by its grid/flex cell instead
+       of a fixed box. */
+    .tile.large.wide {
+      width: 100%;
+      height: auto;
+      min-height: 128px;
+      flex: 1 1 0;
+    }
   `,
 })
 export class StatTile {
@@ -119,4 +131,6 @@ export class StatTile {
   readonly icon = input<string | null>(null);
   /** Plain-English explanation of what this metric means - only rendered when `large` is also set, next to the label. */
   readonly hint = input<string | null>(null);
+  /** Fills its container's width instead of staying a fixed 210px square - for a KPI row meant to span the full page width (e.g. an Executive Summary), rather than a row of matched square cards. */
+  readonly wide = input<boolean>(false);
 }
