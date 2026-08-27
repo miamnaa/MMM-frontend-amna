@@ -235,7 +235,7 @@ export class GroupedBarChart {
    * <text class="tick">) and widening the pad only when a real label
    * actually needs it fixes this for any tickFormat, not just currency.
    */
-  private readonly vLeftPad = computed(() => {
+  protected readonly vLeftPad = computed(() => {
     const max = this.maxValue();
     const format = this.tickFormat();
     let widest = 0;
