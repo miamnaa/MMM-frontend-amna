@@ -21,7 +21,10 @@ const H_TICKS = 5;
 // Vertical layout (e.g. Budget recommendation - a real column chart, matching the reference)
 const VW = 720;
 const VH = 300;
-const VPAD = { top: 16, right: 16, bottom: 56, left: 56 };
+// top has extra headroom (beyond the usual small label margin) so a
+// staggered label still has room to raise even when the taller bar in its
+// pair is already near the chart's own maximum height.
+const VPAD = { top: 30, right: 16, bottom: 56, left: 56 };
 const V_TICKS = 5;
 
 const VALUE_LABEL_FONT = '500 10px "DM Sans", sans-serif';
@@ -311,24 +314,27 @@ export class GroupedBarChart {
       const pairWidth = barWidth * 2 + gap;
       const pairStart = groupStart + (groupWidth - pairWidth) / 2;
 
-      // With bars kept consistently close together, most wide-currency
-      // pairs will collide side by side - that's expected and handled here,
-      // not by prying the bars themselves apart: the shorter bar's label
-      // is forced to sit clearly above the taller bar's, whatever it takes.
+      // With bars kept consistently close together, wide-currency labels
+      // would collide side by side whenever the two bars are close in
+      // height - that's handled below by staggering, not by prying the
+      // bars themselves apart. But two bars that are NOT close in height
+      // (e.g. \$2,202,000 vs \$2,863,000) already sit ~50px apart vertically -
+      // measuring only "are the labels too wide for the horizontal gap"
+      // and ignoring that natural vertical separation was itself the bug:
+      // it forced a stagger those two didn't need, which then got clamped
+      // near the chart's top edge and crushed them right back together.
+      // Stagger only when the bars' heights - and so their natural label
+      // positions - are actually close enough to cause real overlap.
       const widthA = this.measureTextWidth(d.aDisplay);
       const widthB = this.measureTextWidth(d.bDisplay);
-      const stillCollides = widthA / 2 + widthB / 2 + 2 > barWidth + gap;
+      const wideEnoughToCollide = widthA / 2 + widthB / 2 + 2 > barWidth + gap;
 
       const naturalAY = this.vPlotBottom() - aH - 4;
       const naturalBY = this.vPlotBottom() - bH - 4;
-      // Blindly adding a fixed raise to the shorter bar's label (regardless
-      // of how much natural gap already separated the two) could actually
-      // narrow a decent gap down to almost nothing - e.g. two labels ~18px
-      // apart naturally, minus a flat 15px raise, left only ~3px between
-      // them. Forcing an explicit MIN_GAP relative to the OTHER label's
-      // final position guarantees real separation no matter the starting gap.
       const MIN_GAP = 14;
       const OUTSET = 6;
+      const stillCollides = wideEnoughToCollide && Math.abs(naturalAY - naturalBY) < MIN_GAP;
+
       let aLabelY = naturalAY;
       let bLabelY = naturalBY;
       let raiseA = false;
