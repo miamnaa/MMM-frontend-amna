@@ -175,12 +175,25 @@ export interface TrainModelResponse {
  * `status: "failed"` (checked by isFailedTrainingStatus below) is a real
  * failure. Callers must keep polling normally on a non-terminal status
  * regardless of whether errorMessage is present.
+ *
+ * Real change from Anas (today): `stepNumber`/`totalSteps`/`stepLabel`
+ * describe which of the 7 fixed real pipeline steps is running right now
+ * (e.g. `{ stepNumber: 3, totalSteps: 7, stepLabel: "Building the model
+ * configuration" }`) - `progress` alone only ever jumps between 7 exact
+ * fractions, so the raw percentage read as a confusing ".3%". These three
+ * are optional: absent when `status` is `"not_started"` (nothing to show
+ * yet) or during the same transient network hiccup described above for
+ * `errorMessage` - keep polling normally rather than treating the absence
+ * as an error.
  */
 export interface TrainingStatusResponse {
   status: string;
   progress?: number;
   message?: string;
   errorMessage?: string;
+  stepNumber?: number;
+  totalSteps?: number;
+  stepLabel?: string;
 }
 
 const TERMINAL_TRAINING_STATUSES = ['completed', 'success', 'succeeded', 'failed', 'error'];

@@ -39,7 +39,14 @@ type TrainState =
   | { phase: 'idle' }
   | { phase: 'checking' }
   | { phase: 'starting' }
-  | { phase: 'training'; progress?: number; message?: string }
+  | {
+      phase: 'training';
+      progress?: number;
+      message?: string;
+      stepNumber?: number;
+      totalSteps?: number;
+      stepLabel?: string;
+    }
   | { phase: 'completed' }
   | { phase: 'failed'; error: string };
 
@@ -158,7 +165,7 @@ export class ProjectModels implements OnInit, OnDestroy {
           return;
         }
         if (!isTerminalTrainingStatus(res.status)) {
-          this.updateTraining(id, { phase: 'training', progress: this.toPercent(res.progress), message: res.message });
+          this.updateTraining(id, this.toTrainingState(res));
           this.pollTraining(id);
           return;
         }
@@ -187,6 +194,32 @@ export class ProjectModels implements OnInit, OnDestroy {
    */
   private toPercent(fraction: number | undefined): number | undefined {
     return fraction === undefined ? undefined : Math.round(fraction * 100);
+  }
+
+  /**
+   * Real change from Anas: `stepNumber`/`totalSteps`/`stepLabel` name which
+   * of the 7 fixed real pipeline steps is running (e.g. "Building the model
+   * configuration"), so the UI can read "Step 3 of 7: ..." instead of the
+   * confusing raw ".3%" `progress` alone produced. All three are optional -
+   * absent on "not_started" or during a transient network hiccup reaching
+   * the engine - so this only ever adds them when the backend actually sent
+   * them, never guesses.
+   */
+  private toTrainingState(res: {
+    progress?: number;
+    message?: string;
+    stepNumber?: number;
+    totalSteps?: number;
+    stepLabel?: string;
+  }): TrainState {
+    return {
+      phase: 'training',
+      progress: this.toPercent(res.progress),
+      message: res.message,
+      stepNumber: res.stepNumber,
+      totalSteps: res.totalSteps,
+      stepLabel: res.stepLabel,
+    };
   }
 
   /** Real POST .../train, then polls the real .../status endpoint every 3s until it reaches a terminal state. */
@@ -218,7 +251,7 @@ export class ProjectModels implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           if (!isTerminalTrainingStatus(res.status)) {
-            this.updateTraining(id, { phase: 'training', progress: this.toPercent(res.progress), message: res.message });
+            this.updateTraining(id, this.toTrainingState(res));
             return;
           }
           if (isFailedTrainingStatus(res.status)) {
@@ -251,6 +284,20 @@ export class ProjectModels implements OnInit, OnDestroy {
     if (row.status !== 'ready') return row.percent;
     const t = row.training;
     return t.phase === 'training' ? (t.progress ?? 0) : t.phase === 'completed' ? 100 : 0;
+  }
+
+  /** "Step 3 of 7: Building the model configuration" - null until the backend actually sends the 3 step fields (not_started, or a transient hiccup reaching the engine). */
+  stepText(row: ModelRow): string | null {
+    const t = row.training;
+    if (t.phase !== 'training' || !t.stepNumber || !t.totalSteps || !t.stepLabel) return null;
+    return `Step ${t.stepNumber} of ${t.totalSteps}: ${t.stepLabel}`;
+  }
+
+  /** Ticks for the 7-step segmented bar - filled up to and including the current step. Only meaningful once stepText() is non-null. */
+  stepTicks(row: ModelRow): boolean[] {
+    const t = row.training;
+    if (t.phase !== 'training' || !t.totalSteps) return [];
+    return Array.from({ length: t.totalSteps }, (_, i) => i < (t.stepNumber ?? 0));
   }
 
   private loadProjectOptions(): void {

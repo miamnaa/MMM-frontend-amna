@@ -62,11 +62,25 @@
                 @if (progressPercent(row) === 100) {
                   <span class="progress-check" aria-hidden="true">✓</span>
                 }
-                <strong>{{ progressPercent(row) }}%</strong> {{ progressLabel(row) }}
+                @if (stepText(row); as step) {
+                  {{ step }}
+                } @else {
+                  <strong>{{ progressPercent(row) }}%</strong> {{ progressLabel(row) }}
+                }
               </span>
-              <div class="progress-track" [attr.aria-label]="progressLabel(row) + ', ' + progressPercent(row) + '% complete'">
-                <div class="progress-fill" [style.width.%]="progressPercent(row)"></div>
-              </div>
+              @if (stepTicks(row); as ticks) {
+                @if (ticks.length) {
+                  <div class="step-track" [attr.aria-label]="stepText(row)">
+                    @for (filled of ticks; track $index) {
+                      <span class="step-tick" [class.filled]="filled"></span>
+                    }
+                  </div>
+                } @else {
+                  <div class="progress-track" [attr.aria-label]="progressLabel(row) + ', ' + progressPercent(row) + '% complete'">
+                    <div class="progress-fill" [style.width.%]="progressPercent(row)"></div>
+                  </div>
+                }
+              }
             </div>
 
             <div class="row-actions">
@@ -82,7 +96,11 @@
                   <button class="btn btn-primary btn-sm" type="button" disabled>Starting…</button>
                 } @else if (row.training.phase === 'training') {
                   <button class="btn btn-primary btn-sm" type="button" disabled>
-                    Training…{{ row.training.progress != null ? ' ' + row.training.progress + '%' : '' }}
+                    @if (row.training.stepNumber && row.training.totalSteps) {
+                      Training… Step {{ row.training.stepNumber }}/{{ row.training.totalSteps }}
+                    } @else {
+                      Training…{{ row.training.progress != null ? ' ' + row.training.progress + '%' : '' }}
+                    }
                   </button>
                 } @else if (row.training.phase === 'checking') {
                   <button class="btn btn-secondary btn-sm" type="button" disabled>Checking…</button>

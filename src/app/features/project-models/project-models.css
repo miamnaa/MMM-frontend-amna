@@ -147,6 +147,25 @@
   transition: width 0.2s;
 }
 
+/* One tick per real pipeline step (7 total) - progress only ever jumps
+   between these exact steps, never continuously, so a segmented bar reads
+   more honestly than a smooth 0-100% fill. */
+.step-track {
+  display: flex;
+  gap: 3px;
+}
+
+.step-tick {
+  flex: 1;
+  height: 7px;
+  border-radius: var(--r-full);
+  background: var(--gray-100);
+}
+
+.step-tick.filled {
+  background: var(--brand-500);
+}
+
 @media (max-width: 640px) {
   .model-row-main {
     grid-template-columns: 1fr;
