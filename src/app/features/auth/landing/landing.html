@@ -209,78 +209,32 @@
     </div>
   </section>
 
-  <section class="highlight-cta">
-    <div class="highlight-card">
-      <div class="highlight-visual" aria-hidden="true">
-        <span class="highlight-stat-label">Predicted lift</span>
-        <span class="highlight-stat-value">+12.4%</span>
-        <svg class="spark" viewBox="0 0 220 100" fill="none">
-          <path
-            d="M4 76 C 26 74, 38 58, 58 60 S 92 48, 108 38 S 138 44, 158 26 S 190 12, 214 6"
-            stroke-width="2.5"
-            fill="none"
-            stroke-linecap="round"
-          />
-          <circle cx="150" cy="30" r="4.5" />
-        </svg>
-      </div>
-      <div class="highlight-copy">
-        <h2>Ready to put a number on every channel?</h2>
-        <p>Start with one project and a single spend file. You can have a fitted model today.</p>
-        <a class="pill pill-solid pill-lg highlight-btn" routerLink="/signup">
-          Run a free model
-          <svg class="arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <path
-              d="M2.9 8h10.2M9.3 4.2 13.1 8l-3.8 3.8"
-              stroke="currentColor"
-              stroke-width="1.9"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </a>
-      </div>
-    </div>
+  <section class="cta">
+    <h2>Put a number on every channel</h2>
+    <p>Start with one project and a single spend file. You can have a fitted model today.</p>
+    <a class="pill pill-lg cta-btn" routerLink="/signup">
+      Run a free model
+      <svg class="arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path
+          d="M2.9 8h10.2M9.3 4.2 13.1 8l-3.8 3.8"
+          stroke="currentColor"
+          stroke-width="1.9"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </a>
   </section>
 
   <footer class="footer">
-    <div class="footer-top">
-      <div class="footer-brand">
-        <app-logo [size]="26" [flat]="true" />
-        <span class="footer-brand-name">Roivio</span>
-        <p class="footer-tagline">
-          Empowering data-driven decisions through advanced marketing mix modeling.
-        </p>
-      </div>
-
-      <div class="footer-col">
-        <h3>Platform</h3>
-        <a href="#engines">Modeling Engine</a>
-        <a href="#how">Data Validation</a>
-        <a routerLink="/scenarios">Budget Scenarios</a>
-      </div>
-
-      <div class="footer-col">
-        <h3>Company</h3>
-        <span class="footer-static">About Us</span>
-        <span class="footer-static">Careers</span>
-        <span class="footer-static">Contact</span>
-      </div>
-
-      <div class="footer-col">
-        <h3>Legal</h3>
-        <span class="footer-static">Privacy Policy</span>
-        <span class="footer-static">Terms of Service</span>
-        <span class="footer-static">Compliance</span>
-      </div>
+    <div class="footer-brand">
+      <app-logo [size]="24" [flat]="true" />
+      <span>ROIVIO · Convergent BT</span>
     </div>
-
-    <div class="footer-bottom">
-      <span>© 2026 Roivio Technologies. All rights reserved.</span>
-      <div class="footer-links">
-        <a routerLink="/login">Sign in</a>
-        <a routerLink="/signup">Create account</a>
-      </div>
+    <div class="footer-links">
+      <a routerLink="/login">Sign in</a>
+      <a routerLink="/signup">Create account</a>
+      <a href="#faqs">FAQs</a>
     </div>
   </footer>
 </div>
