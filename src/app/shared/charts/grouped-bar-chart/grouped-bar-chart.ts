@@ -68,8 +68,8 @@ const ROW_LABEL_FONT = '10.5px "DM Sans", sans-serif';
              bar was getting visually clipped, painted-over by that bar since
              it came later in a single combined per-column loop. -->
         @for (col of columns(); track col.label) {
-          <text [attr.x]="col.aX + col.barWidth / 2" [attr.y]="col.aLabelY" text-anchor="middle" class="value-label">{{ col.aDisplay }}</text>
-          <text [attr.x]="col.bX + col.barWidth / 2" [attr.y]="col.bLabelY" text-anchor="middle" class="value-label">{{ col.bDisplay }}</text>
+          <text [attr.x]="col.aLabelX" [attr.y]="col.aLabelY" text-anchor="middle" class="value-label">{{ col.aDisplay }}</text>
+          <text [attr.x]="col.bLabelX" [attr.y]="col.bLabelY" text-anchor="middle" class="value-label">{{ col.bDisplay }}</text>
           @for (line of col.labelLines; track $index) {
             <text [attr.x]="col.centerX" [attr.y]="vPlotBottom() + 16 + $index * 12" text-anchor="middle" class="row-label">
               <title>{{ col.label }}</title>{{ line }}
@@ -324,6 +324,13 @@ export class GroupedBarChart {
       const stillCollides = widthA / 2 + widthB / 2 + 2 > barWidth + gap;
       const raiseA = stillCollides && aH <= bH;
       const raiseB = stillCollides && bH < aH;
+      // A vertical-only stagger left the two labels still touching when
+      // the raise (13px) was close to the rendered text's own line height -
+      // nudging the raised label further away from the pair's centre too
+      // (A left, B right) guarantees real separation in both directions,
+      // not just a coin-flip on whether 13px cleared the font metrics.
+      const RAISE = 15;
+      const OUTSET = 6;
 
       return {
         ...d,
@@ -331,11 +338,13 @@ export class GroupedBarChart {
         aX: pairStart,
         aH,
         aY: this.vPlotBottom() - aH,
-        aLabelY: Math.max(10, this.vPlotBottom() - aH - 4 - (raiseA ? 13 : 0)),
+        aLabelX: pairStart + barWidth / 2 - (raiseA ? OUTSET : 0),
+        aLabelY: Math.max(10, this.vPlotBottom() - aH - 4 - (raiseA ? RAISE : 0)),
         bX: pairStart + barWidth + gap,
         bH,
         bY: this.vPlotBottom() - bH,
-        bLabelY: Math.max(10, this.vPlotBottom() - bH - 4 - (raiseB ? 13 : 0)),
+        bLabelX: pairStart + barWidth + gap + barWidth / 2 + (raiseB ? OUTSET : 0),
+        bLabelY: Math.max(10, this.vPlotBottom() - bH - 4 - (raiseB ? RAISE : 0)),
         centerX: groupStart + groupWidth / 2,
         labelLines: this.wrapLabel(d.label, labelMaxWidth),
       };
