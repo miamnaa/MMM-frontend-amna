@@ -68,8 +68,8 @@ const ROW_LABEL_FONT = '10.5px "DM Sans", sans-serif';
              bar was getting visually clipped, painted-over by that bar since
              it came later in a single combined per-column loop. -->
         @for (col of columns(); track col.label) {
-          <text [attr.x]="col.aX + col.barWidth / 2" [attr.y]="col.aY - 4" text-anchor="middle" class="value-label">{{ col.aDisplay }}</text>
-          <text [attr.x]="col.bX + col.barWidth / 2" [attr.y]="col.bY - 4" text-anchor="middle" class="value-label">{{ col.bDisplay }}</text>
+          <text [attr.x]="col.aX + col.barWidth / 2" [attr.y]="col.aLabelY" text-anchor="middle" class="value-label">{{ col.aDisplay }}</text>
+          <text [attr.x]="col.bX + col.barWidth / 2" [attr.y]="col.bLabelY" text-anchor="middle" class="value-label">{{ col.bDisplay }}</text>
           @for (line of col.labelLines; track $index) {
             <text [attr.x]="col.centerX" [attr.y]="vPlotBottom() + 16 + $index * 12" text-anchor="middle" class="row-label">
               <title>{{ col.label }}</title>{{ line }}
@@ -310,15 +310,32 @@ export class GroupedBarChart {
       const pairStart = groupStart + (groupWidth - pairWidth) / 2;
       const aH = Math.max(2, this.scaleY(d.a));
       const bH = Math.max(2, this.scaleY(d.b));
+
+      // `gap` is one shared value for every group, sized for the widest
+      // pair in the whole chart but capped so it can't eat into a
+      // neighbouring group. That cap can still leave one specific pair's
+      // labels too close together (e.g. two near-equal, near-max-height
+      // bars whose full-currency labels are both wide) - when that pair's
+      // two labels would still overlap side by side at this group's actual
+      // gap, raise the shorter bar's label an extra row so the two stagger
+      // diagonally instead of colliding on the same line.
+      const widthA = this.measureTextWidth(d.aDisplay);
+      const widthB = this.measureTextWidth(d.bDisplay);
+      const stillCollides = widthA / 2 + widthB / 2 + 2 > barWidth + gap;
+      const raiseA = stillCollides && aH <= bH;
+      const raiseB = stillCollides && bH < aH;
+
       return {
         ...d,
         barWidth,
         aX: pairStart,
         aH,
         aY: this.vPlotBottom() - aH,
+        aLabelY: Math.max(10, this.vPlotBottom() - aH - 4 - (raiseA ? 13 : 0)),
         bX: pairStart + barWidth + gap,
         bH,
         bY: this.vPlotBottom() - bH,
+        bLabelY: Math.max(10, this.vPlotBottom() - bH - 4 - (raiseB ? 13 : 0)),
         centerX: groupStart + groupWidth / 2,
         labelLines: this.wrapLabel(d.label, labelMaxWidth),
       };
