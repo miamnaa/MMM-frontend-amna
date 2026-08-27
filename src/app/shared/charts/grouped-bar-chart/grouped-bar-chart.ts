@@ -24,6 +24,10 @@ const VH = 300;
 const VPAD = { top: 16, right: 16, bottom: 56, left: 56 };
 const V_TICKS = 5;
 
+const VALUE_LABEL_FONT = '600 10px "DM Sans", sans-serif';
+const TICK_FONT = '11px "DM Sans", sans-serif';
+const ROW_LABEL_FONT = '10.5px "DM Sans", sans-serif';
+
 /**
  * Two bars per category (e.g. ROI vs Marginal ROI, current vs optimized
  * spend) sharing one real axis - a proper chart with gridlines and a
@@ -45,11 +49,11 @@ const V_TICKS = 5;
     @if (vertical()) {
       <svg [attr.viewBox]="'0 0 ' + VW + ' ' + VH" preserveAspectRatio="xMidYMid meet" role="img" [attr.aria-label]="ariaLabel()">
         @for (t of yTicks(); track t.value) {
-          <line [attr.x1]="VPAD.left" [attr.x2]="VW - VPAD.right" [attr.y1]="t.y" [attr.y2]="t.y" class="grid-line" />
-          <text [attr.x]="VPAD.left - 8" [attr.y]="t.y + 3" text-anchor="end" class="tick">{{ t.label }}</text>
+          <line [attr.x1]="vLeftPad()" [attr.x2]="VW - VPAD.right" [attr.y1]="t.y" [attr.y2]="t.y" class="grid-line" />
+          <text [attr.x]="vLeftPad() - 8" [attr.y]="t.y + 3" text-anchor="end" class="tick">{{ t.label }}</text>
         }
-        <line [attr.x1]="VPAD.left" [attr.x2]="VPAD.left" [attr.y1]="VPAD.top" [attr.y2]="vPlotBottom()" class="axis-line" />
-        <line [attr.x1]="VPAD.left" [attr.x2]="VW - VPAD.right" [attr.y1]="vPlotBottom()" [attr.y2]="vPlotBottom()" class="axis-line" />
+        <line [attr.x1]="vLeftPad()" [attr.x2]="vLeftPad()" [attr.y1]="VPAD.top" [attr.y2]="vPlotBottom()" class="axis-line" />
+        <line [attr.x1]="vLeftPad()" [attr.x2]="VW - VPAD.right" [attr.y1]="vPlotBottom()" [attr.y2]="vPlotBottom()" class="axis-line" />
 
         @for (col of columns(); track col.label) {
           <rect [attr.x]="col.aX" [attr.y]="col.aY" [attr.width]="col.barWidth" [attr.height]="col.aH" [attr.fill]="colorA()" rx="2">
@@ -60,7 +64,11 @@ const V_TICKS = 5;
             <title>{{ col.label }} — {{ bLabel() }}: {{ col.bDisplay }}</title>
           </rect>
           <text [attr.x]="col.bX + col.barWidth / 2" [attr.y]="col.bY - 4" text-anchor="middle" class="value-label">{{ col.bDisplay }}</text>
-          <text [attr.x]="col.centerX" [attr.y]="vPlotBottom() + 16" text-anchor="middle" class="row-label">{{ col.label }}</text>
+          @for (line of col.labelLines; track $index) {
+            <text [attr.x]="col.centerX" [attr.y]="vPlotBottom() + 16 + $index * 12" text-anchor="middle" class="row-label">
+              <title>{{ col.label }}</title>{{ line }}
+            </text>
+          }
         }
       </svg>
     } @else {
@@ -124,7 +132,7 @@ const V_TICKS = 5;
     }
     .row-label {
       fill: var(--chart-text);
-      font-size: 11.5px;
+      font-size: 10.5px;
     }
     .value-label {
       fill: var(--chart-text);
@@ -210,20 +218,74 @@ export class GroupedBarChart {
    */
   private measureCanvasCtx: CanvasRenderingContext2D | null | undefined;
 
-  private measureTextWidth(text: string): number {
+  private measureTextWidth(text: string, font = VALUE_LABEL_FONT): number {
     if (this.measureCanvasCtx === undefined) {
       this.measureCanvasCtx = typeof document === 'undefined' ? null : document.createElement('canvas').getContext('2d');
     }
     if (!this.measureCanvasCtx) return text.length * 6;
-    this.measureCanvasCtx.font = '600 10px "DM Sans", sans-serif';
+    this.measureCanvasCtx.font = font;
     return this.measureCanvasCtx.measureText(text).width;
+  }
+
+  /**
+   * Real budget numbers render as full currency ("$1,863,000"), not the
+   * default "K" shorthand - the fixed 56px left pad was sized for short
+   * tick labels and silently clipped the widest one off the left edge of
+   * the viewBox. Measuring every tick label (same font as the rendered
+   * <text class="tick">) and widening the pad only when a real label
+   * actually needs it fixes this for any tickFormat, not just currency.
+   */
+  private readonly vLeftPad = computed(() => {
+    const max = this.maxValue();
+    const format = this.tickFormat();
+    let widest = 0;
+    for (let i = 0; i <= V_TICKS; i++) {
+      widest = Math.max(widest, this.measureTextWidth(format((max / V_TICKS) * i), TICK_FONT));
+    }
+    return Math.max(VPAD.left, Math.ceil(widest) + 16);
+  });
+
+  /**
+   * Long channel names ("Google Branded Paid Search") in a 9-category
+   * chart don't fit their ~70px-wide column - left alone, adjacent labels'
+   * text visibly ran into each other. Wraps to at most 2 lines, then
+   * hard-truncates each line (with an ellipsis + the full name in a
+   * <title> tooltip) so no label can ever render wider than its own
+   * column - the only way to *guarantee* neighbours can't collide,
+   * short of shrinking the font past legibility.
+   */
+  private fitLine(text: string, maxWidth: number): string {
+    if (this.measureTextWidth(text, ROW_LABEL_FONT) <= maxWidth) return text;
+    let truncated = text;
+    while (truncated.length > 1 && this.measureTextWidth(`${truncated}…`, ROW_LABEL_FONT) > maxWidth) {
+      truncated = truncated.slice(0, -1);
+    }
+    return `${truncated}…`;
+  }
+
+  private wrapLabel(label: string, maxWidth: number): string[] {
+    if (this.measureTextWidth(label, ROW_LABEL_FONT) <= maxWidth) return [label];
+
+    const words = label.split(' ');
+    let line1 = words[0] ?? label;
+    let i = 1;
+    for (; i < words.length; i++) {
+      const candidate = `${line1} ${words[i]}`;
+      if (this.measureTextWidth(candidate, ROW_LABEL_FONT) > maxWidth) break;
+      line1 = candidate;
+    }
+    const rest = words.slice(i).join(' ');
+    if (!rest) return [line1];
+    return [this.fitLine(line1, maxWidth), this.fitLine(rest, maxWidth)];
   }
 
   readonly columns = computed(() => {
     const items = this.data();
-    const plotWidth = VW - VPAD.left - VPAD.right;
+    const leftPad = this.vLeftPad();
+    const plotWidth = VW - leftPad - VPAD.right;
     const groupWidth = plotWidth / Math.max(1, items.length);
     const barWidth = Math.min(28, groupWidth * 0.28);
+    const labelMaxWidth = Math.max(20, groupWidth - 4);
 
     const LABEL_PADDING = 4;
     const requiredGap = items.reduce((max, d) => {
@@ -237,7 +299,7 @@ export class GroupedBarChart {
     const gap = Math.min(maxGapForGroup, Math.max(6, groupWidth * 0.1, requiredGap));
 
     return items.map((d, i) => {
-      const groupStart = VPAD.left + i * groupWidth;
+      const groupStart = leftPad + i * groupWidth;
       const pairWidth = barWidth * 2 + gap;
       const pairStart = groupStart + (groupWidth - pairWidth) / 2;
       const aH = Math.max(2, this.scaleY(d.a));
@@ -252,6 +314,7 @@ export class GroupedBarChart {
         bH,
         bY: this.vPlotBottom() - bH,
         centerX: groupStart + groupWidth / 2,
+        labelLines: this.wrapLabel(d.label, labelMaxWidth),
       };
     });
   });
