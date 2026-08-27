@@ -166,6 +166,52 @@
   background: var(--brand-500);
 }
 
+/* Current step pulses so the bar reads as actively moving, not stuck. */
+.step-tick.filled.current {
+  animation: step-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes step-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.btn-training {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.spinner {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step-tick.filled.current {
+    animation: none;
+  }
+  .spinner {
+    animation: spin 1.4s linear infinite;
+  }
+}
+
 @media (max-width: 640px) {
   .model-row-main {
     grid-template-columns: 1fr;

@@ -72,7 +72,11 @@
                 @if (ticks.length) {
                   <div class="step-track" [attr.aria-label]="stepText(row)">
                     @for (filled of ticks; track $index) {
-                      <span class="step-tick" [class.filled]="filled"></span>
+                      <span
+                        class="step-tick"
+                        [class.filled]="filled"
+                        [class.current]="isCurrentStep(row, $index)"
+                      ></span>
                     }
                   </div>
                 } @else {
@@ -95,7 +99,8 @@
                 } @else if (row.training.phase === 'starting') {
                   <button class="btn btn-primary btn-sm" type="button" disabled>Starting…</button>
                 } @else if (row.training.phase === 'training') {
-                  <button class="btn btn-primary btn-sm" type="button" disabled>
+                  <button class="btn btn-primary btn-sm btn-training" type="button" disabled>
+                    <span class="spinner" aria-hidden="true"></span>
                     @if (row.training.stepNumber && row.training.totalSteps) {
                       Training… Step {{ row.training.stepNumber }}/{{ row.training.totalSteps }}
                     } @else {
@@ -105,7 +110,7 @@
                 } @else if (row.training.phase === 'checking') {
                   <button class="btn btn-secondary btn-sm" type="button" disabled>Checking…</button>
                 } @else if (row.training.phase === 'completed') {
-                  <a class="btn btn-primary btn-sm" [routerLink]="['/results', projectId(), row.dataset.id]">View Model</a>
+                  <a class="btn btn-primary btn-sm" [routerLink]="['/results', projectId(), row.dataset.id]">View Results</a>
                 }
               } @else {
                 <button class="btn btn-secondary btn-sm" type="button" (click)="resume(row)">

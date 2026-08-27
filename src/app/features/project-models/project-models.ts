@@ -300,6 +300,12 @@ export class ProjectModels implements OnInit, OnDestroy {
     return Array.from({ length: t.totalSteps }, (_, i) => i < (t.stepNumber ?? 0));
   }
 
+  /** True for the single tick that's actively running right now, so it can pulse instead of sitting static (reading as "in progress," not stuck). */
+  isCurrentStep(row: ModelRow, index: number): boolean {
+    const t = row.training;
+    return t.phase === 'training' && index + 1 === t.stepNumber;
+  }
+
   private loadProjectOptions(): void {
     this.projectService.list().subscribe({
       next: (projects) => this.projectOptions.set(projects),
