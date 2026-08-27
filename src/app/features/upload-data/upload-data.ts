@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { environment } from '../../../environments/environment';
 import { DatasetService } from '../../core/services/dataset.service';
 import { SessionService } from '../../core/services/notification.service';
 import { TunnelService } from '../../core/services/tunnel.service';
@@ -50,6 +51,9 @@ export class UploadData implements OnInit {
 
   readonly modelOptions = MODEL_OPTIONS;
   readonly accepted = ACCEPTED.join(',');
+
+  /** Real GET /samples/dataset.csv (@Public(), no auth) - the real 157-week file Anas built, not the stale bundled copy this used to point at. */
+  readonly sampleDatasetUrl = `${environment.apiBaseUrl}/samples/dataset.csv`;
 
   /**
    * Set when you arrive here already resuming a real dataset (via "Open
