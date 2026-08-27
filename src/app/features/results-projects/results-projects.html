@@ -56,7 +56,7 @@
           } @else if (row.trained === 'checking') {
             <button class="btn btn-secondary btn-sm" type="button" disabled>Checking…</button>
           } @else if (row.trained === 'trained') {
-            <a class="btn btn-primary btn-sm" [routerLink]="['/results', projectId(), row.dataset.id]">View Model</a>
+            <a class="btn btn-primary btn-sm" [routerLink]="['/results', projectId(), row.dataset.id]">View Results</a>
           } @else {
             <span class="muted">Not trained yet — <a [routerLink]="['/models', projectId()]">go to Models</a></span>
           }
