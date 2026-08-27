@@ -649,38 +649,6 @@
   color: var(--lp-body);
 }
 
-/* ---------- Closing CTA ---------- */
-
-.cta {
-  padding: 76px 40px;
-  text-align: center;
-  background: #0b0d10;
-  color: #fff;
-}
-
-.cta h2 {
-  font-size: clamp(24px, 2.8vw, 34px);
-  letter-spacing: -0.025em;
-  font-weight: 700;
-  margin-bottom: 12px;
-}
-
-.cta p {
-  font-size: 15px;
-  color: #a3aab3;
-  margin-bottom: 28px;
-}
-
-.cta-btn {
-  background: #fff;
-  color: var(--lp-ink);
-}
-
-.cta-btn:hover {
-  background: #eef0ef;
-  transform: translateY(-1px);
-}
-
 /* ---------- Footer ---------- */
 
 .footer {
@@ -789,9 +757,6 @@
   .features,
   .how,
   .faqs {
-    padding: 56px 20px;
-  }
-  .cta {
     padding: 56px 20px;
   }
   .highlight-cta {
