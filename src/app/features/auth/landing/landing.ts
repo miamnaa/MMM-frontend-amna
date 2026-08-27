@@ -3,8 +3,10 @@ import { RouterLink } from '@angular/router';
 
 import { Logo } from '../../../shared/ui/logo/logo';
 
+type FeatureIcon = 'database' | 'sliders' | 'search' | 'chart';
+
 interface Feature {
-  icon: string;
+  icon: FeatureIcon;
   title: string;
   body: string;
 }
@@ -29,22 +31,22 @@ interface Faq {
 export class Landing {
   readonly features: Feature[] = [
     {
-      icon: '↥',
+      icon: 'database',
       title: 'Bring your own data',
       body: 'Upload weekly spend, impressions and revenue. Every file is validated against the expected schema before a model ever sees it.',
     },
     {
-      icon: '⚙',
+      icon: 'sliders',
       title: 'Two proven engines',
       body: 'Fit with Google Meridian or PyMC-Marketing. Adstock, saturation and seasonality are configurable, not hidden.',
     },
     {
-      icon: '◨',
+      icon: 'search',
       title: 'Answers you can defend',
       body: 'Contribution, ROI and response curves come with the fit diagnostics — R², MAPE, convergence — so you know what to trust.',
     },
     {
-      icon: '◈',
+      icon: 'chart',
       title: 'Plan the next quarter',
       body: 'Move budget between channels and read the predicted lift straight off the curves the model actually fitted.',
     },
