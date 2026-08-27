@@ -19,7 +19,7 @@ import { InfoTip } from '../../shared/ui/info-tip/info-tip';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
 import { StatTile } from '../../shared/ui/stat-tile/stat-tile';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
-import { currency } from '../../shared/utils/format';
+import { compactCurrency, currency } from '../../shared/utils/format';
 
 /** Common field names the real backend might use for a channel's display name - checked in order, first match wins. */
 const CHANNEL_NAME_KEYS = ['channel', 'channel_name', 'name', 'variable', 'media_channel'];
@@ -296,8 +296,14 @@ export class ModelResults implements OnInit {
   });
 
   /** Real fields confirmed 2026-08-18 from an actual response: channel, current_spend, optimized_spend, current_roi, optimized_roi, spend_change_dollars/percent, current/optimized_pct_of_budget. */
+  /** Compact ("$2.9M", "$264K") rather than full currency for the bar-top value labels specifically - these sit right above a ~20px-wide bar, and a full "$2,863,000" string is always going to spill well past that no matter the font size. */
   readonly budgetGroupedBars = computed<GroupedBarDatum[]>(() =>
-    this.detectGroupedBars(this.budgetRows(), ['current_spend', 'currentspend'], ['optimized_spend', 'optimizedspend'], currency),
+    this.detectGroupedBars(
+      this.budgetRows(),
+      ['current_spend', 'currentspend'],
+      ['optimized_spend', 'optimizedspend'],
+      compactCurrency,
+    ),
   );
 
   readonly hasBudgetChart = computed(() => this.budgetGroupedBars().length > 0);

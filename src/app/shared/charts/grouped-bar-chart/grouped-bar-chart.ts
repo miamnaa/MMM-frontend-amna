@@ -27,7 +27,7 @@ const VH = 300;
 const VPAD = { top: 30, right: 16, bottom: 56, left: 56 };
 const V_TICKS = 5;
 
-const VALUE_LABEL_FONT = '500 10px "DM Sans", sans-serif';
+const VALUE_LABEL_FONT = '500 9px "DM Sans", sans-serif';
 const TICK_FONT = '11px "DM Sans", sans-serif';
 const ROW_LABEL_FONT = '10.5px "DM Sans", sans-serif';
 
@@ -145,7 +145,7 @@ const ROW_LABEL_FONT = '10.5px "DM Sans", sans-serif';
     }
     .value-label {
       fill: var(--chart-text);
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 500;
       font-variant-numeric: tabular-nums;
     }
