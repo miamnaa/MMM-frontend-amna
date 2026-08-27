@@ -294,33 +294,36 @@ export class GroupedBarChart {
     const labelMaxWidth = Math.max(20, groupWidth - 4);
 
     const LABEL_PADDING = 4;
-    const requiredGap = items.reduce((max, d) => {
-      const widthA = this.measureTextWidth(d.aDisplay);
-      const widthB = this.measureTextWidth(d.bDisplay);
-      return Math.max(max, widthA / 2 + widthB / 2 - barWidth + LABEL_PADDING);
-    }, 0);
     // Still capped so a pair's gap never eats into the neighbouring group's
     // own space - grows for wide labels, shrinks back for short ones.
     const maxGapForGroup = Math.max(4, groupWidth - barWidth * 2 - 4);
-    const gap = Math.min(maxGapForGroup, Math.max(6, groupWidth * 0.1, requiredGap));
 
     return items.map((d, i) => {
       const groupStart = leftPad + i * groupWidth;
-      const pairWidth = barWidth * 2 + gap;
-      const pairStart = groupStart + (groupWidth - pairWidth) / 2;
       const aH = Math.max(2, this.scaleY(d.a));
       const bH = Math.max(2, this.scaleY(d.b));
 
-      // `gap` is one shared value for every group, sized for the widest
-      // pair in the whole chart but capped so it can't eat into a
-      // neighbouring group. That cap can still leave one specific pair's
-      // labels too close together (e.g. two near-equal, near-max-height
-      // bars whose full-currency labels are both wide) - when that pair's
-      // two labels would still overlap side by side at this group's actual
-      // gap, raise the shorter bar's label an extra row so the two stagger
-      // diagonally instead of colliding on the same line.
+      // One shared gap for every group (sized for the widest pair in the
+      // whole chart) made a short pair like TV's ($714K/$928K) spread its
+      // two bars far apart just because some other category (Meta) needed
+      // the room - the category name then sat centred in the empty middle,
+      // looking like it belonged to neither bar. Each group's gap is now
+      // sized only for its OWN pair's labels, capped the same way.
       const widthA = this.measureTextWidth(d.aDisplay);
       const widthB = this.measureTextWidth(d.bDisplay);
+      const requiredGap = widthA / 2 + widthB / 2 - barWidth + LABEL_PADDING;
+      const gap = Math.min(maxGapForGroup, Math.max(6, groupWidth * 0.1, requiredGap));
+
+      const pairWidth = barWidth * 2 + gap;
+      const pairStart = groupStart + (groupWidth - pairWidth) / 2;
+
+      // The gap is still capped so it can't eat into a neighbouring group's
+      // own space - that cap can leave one specific pair's labels too close
+      // together (e.g. two near-equal, near-max-height bars whose full-
+      // currency labels are both wide) - when that pair's two labels would
+      // still overlap side by side at this group's actual gap, raise the
+      // shorter bar's label an extra row so the two stagger diagonally
+      // instead of colliding on the same line.
       const stillCollides = widthA / 2 + widthB / 2 + 2 > barWidth + gap;
       const raiseA = stillCollides && aH <= bH;
       const raiseB = stillCollides && bH < aH;
