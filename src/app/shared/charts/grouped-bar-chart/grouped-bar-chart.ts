@@ -313,21 +313,35 @@ export class GroupedBarChart {
 
       // With bars kept consistently close together, most wide-currency
       // pairs will collide side by side - that's expected and handled here,
-      // not by prying the bars themselves apart: raise the shorter bar's
-      // label an extra row so the two stagger diagonally instead of
-      // overlapping on the same line.
+      // not by prying the bars themselves apart: the shorter bar's label
+      // is forced to sit clearly above the taller bar's, whatever it takes.
       const widthA = this.measureTextWidth(d.aDisplay);
       const widthB = this.measureTextWidth(d.bDisplay);
       const stillCollides = widthA / 2 + widthB / 2 + 2 > barWidth + gap;
-      const raiseA = stillCollides && aH <= bH;
-      const raiseB = stillCollides && bH < aH;
-      // A vertical-only stagger left the two labels still touching when
-      // the raise (13px) was close to the rendered text's own line height -
-      // nudging the raised label further away from the pair's centre too
-      // (A left, B right) guarantees real separation in both directions,
-      // not just a coin-flip on whether 13px cleared the font metrics.
-      const RAISE = 15;
+
+      const naturalAY = this.vPlotBottom() - aH - 4;
+      const naturalBY = this.vPlotBottom() - bH - 4;
+      // Blindly adding a fixed raise to the shorter bar's label (regardless
+      // of how much natural gap already separated the two) could actually
+      // narrow a decent gap down to almost nothing - e.g. two labels ~18px
+      // apart naturally, minus a flat 15px raise, left only ~3px between
+      // them. Forcing an explicit MIN_GAP relative to the OTHER label's
+      // final position guarantees real separation no matter the starting gap.
+      const MIN_GAP = 14;
       const OUTSET = 6;
+      let aLabelY = naturalAY;
+      let bLabelY = naturalBY;
+      let raiseA = false;
+      let raiseB = false;
+      if (stillCollides) {
+        if (aH <= bH) {
+          aLabelY = naturalBY - MIN_GAP;
+          raiseA = true;
+        } else {
+          bLabelY = naturalAY - MIN_GAP;
+          raiseB = true;
+        }
+      }
 
       return {
         ...d,
@@ -336,12 +350,12 @@ export class GroupedBarChart {
         aH,
         aY: this.vPlotBottom() - aH,
         aLabelX: pairStart + barWidth / 2 - (raiseA ? OUTSET : 0),
-        aLabelY: Math.max(10, this.vPlotBottom() - aH - 4 - (raiseA ? RAISE : 0)),
+        aLabelY: Math.max(10, aLabelY),
         bX: pairStart + barWidth + gap,
         bH,
         bY: this.vPlotBottom() - bH,
         bLabelX: pairStart + barWidth + gap + barWidth / 2 + (raiseB ? OUTSET : 0),
-        bLabelY: Math.max(10, this.vPlotBottom() - bH - 4 - (raiseB ? RAISE : 0)),
+        bLabelY: Math.max(10, bLabelY),
         centerX: groupStart + groupWidth / 2,
         labelLines: this.wrapLabel(d.label, labelMaxWidth),
       };
