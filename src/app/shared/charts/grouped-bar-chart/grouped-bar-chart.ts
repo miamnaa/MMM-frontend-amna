@@ -59,10 +59,16 @@ const ROW_LABEL_FONT = '10.5px "DM Sans", sans-serif';
           <rect [attr.x]="col.aX" [attr.y]="col.aY" [attr.width]="col.barWidth" [attr.height]="col.aH" [attr.fill]="colorA()" rx="2">
             <title>{{ col.label }} — {{ aLabel() }}: {{ col.aDisplay }}</title>
           </rect>
-          <text [attr.x]="col.aX + col.barWidth / 2" [attr.y]="col.aY - 4" text-anchor="middle" class="value-label">{{ col.aDisplay }}</text>
           <rect [attr.x]="col.bX" [attr.y]="col.bY" [attr.width]="col.barWidth" [attr.height]="col.bH" [attr.fill]="colorB()" rx="2">
             <title>{{ col.label }} — {{ bLabel() }}: {{ col.bDisplay }}</title>
           </rect>
+        }
+        <!-- All value/row labels painted after every bar, in their own pass -
+             a short bar's value label sitting close to a taller neighbouring
+             bar was getting visually clipped, painted-over by that bar since
+             it came later in a single combined per-column loop. -->
+        @for (col of columns(); track col.label) {
+          <text [attr.x]="col.aX + col.barWidth / 2" [attr.y]="col.aY - 4" text-anchor="middle" class="value-label">{{ col.aDisplay }}</text>
           <text [attr.x]="col.bX + col.barWidth / 2" [attr.y]="col.bY - 4" text-anchor="middle" class="value-label">{{ col.bDisplay }}</text>
           @for (line of col.labelLines; track $index) {
             <text [attr.x]="col.centerX" [attr.y]="vPlotBottom() + 16 + $index * 12" text-anchor="middle" class="row-label">
