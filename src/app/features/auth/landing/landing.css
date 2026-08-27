@@ -333,7 +333,7 @@
   gap: 44px;
   padding: 44px 48px;
   border-radius: 28px;
-  background: radial-gradient(120% 150% at 0% 0%, #123f2a 0%, #0a2e1c 45%, #071f13 100%);
+  background: radial-gradient(120% 150% at 0% 0%, var(--brand-700) 0%, var(--brand-900) 100%);
   color: #fff;
   box-shadow: var(--shadow-lg);
 }
@@ -364,7 +364,7 @@
 .highlight-stat-label {
   display: block;
   font-size: 12px;
-  color: #a8d9bd;
+  color: var(--brand-200);
 }
 
 .highlight-stat-value {
@@ -372,7 +372,7 @@
   margin-top: 4px;
   font-size: 26px;
   font-weight: 700;
-  color: #4ee08a;
+  color: var(--brand-400);
 }
 
 .spark {
@@ -380,6 +380,11 @@
   height: auto;
   margin-top: 14px;
   display: block;
+  stroke: var(--brand-400);
+}
+
+.spark circle {
+  fill: var(--brand-400);
 }
 
 .highlight-copy {
@@ -398,7 +403,7 @@
 .highlight-copy p {
   font-size: 14.5px;
   line-height: 1.6;
-  color: #cdd8d1;
+  color: rgba(255, 255, 255, 0.78);
   max-width: 42ch;
   margin-bottom: 26px;
 }
