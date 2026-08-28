@@ -202,7 +202,13 @@
               <text [attr.x]="t.x" [attr.y]="chart.H - 6" text-anchor="middle" class="tick">{{ t.label }}</text>
             }
             @for (bar of chart.bars; track $index) {
-              <rect [attr.x]="bar.x" [attr.y]="bar.y" [attr.width]="bar.width" [attr.height]="bar.height" [attr.fill]="bar.positive ? '#8b5cf6' : '#c4b5fd'" />
+              <rect
+                [attr.x]="bar.x"
+                [attr.y]="bar.y"
+                [attr.width]="bar.width"
+                [attr.height]="bar.height"
+                [attr.fill]="bar.positive ? residualPositiveColor : residualNegativeColor"
+              />
             }
           </svg>
           <p class="muted field-hint backend-gap-inline">Residuals should be randomly scattered around zero. That's what we want to see.</p>

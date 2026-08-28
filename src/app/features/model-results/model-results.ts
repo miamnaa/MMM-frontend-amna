@@ -82,6 +82,9 @@ export class ModelResults implements OnInit {
   protected readonly brandChartColors = BRAND_CHART_COLORS;
   protected readonly brandGroupedColors = BRAND_GROUPED_COLORS;
   protected readonly brandBudgetColors = BRAND_BUDGET_COLORS;
+  /** Residual bars: dark green for over-performance (actual > predicted), light green for under-performance - matches the brand green pair used everywhere else on this page instead of the old purple. */
+  protected readonly residualPositiveColor = BRAND_DARK_GREEN;
+  protected readonly residualNegativeColor = BRAND_LIGHT_GREEN;
 
   /** Every other real trained model in this project, for the "Select Model" dropdown - lets you switch without going back to the Models list. Starts with just this model so the dropdown isn't empty while the rest are still being checked. */
   readonly modelOptions = signal<{ id: string; name: string }[]>([]);
