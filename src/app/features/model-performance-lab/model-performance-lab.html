@@ -1,0 +1,132 @@
+<div class="page">
+  <div class="tab-row">
+    <div class="tabs">
+      <button type="button" class="tab" [class.active]="activeTab() === 'performance'">Model performance</button>
+      <button type="button" class="tab disabled" disabled title="Coming later">Business insights</button>
+    </div>
+    <span class="trained-range">{{ trainedRangeLabel }}</span>
+  </div>
+
+  <div class="kpi-row">
+    @for (kpi of kpis; track kpi.label) {
+      <div class="kpi-card">
+        <span class="kpi-icon" aria-hidden="true">
+          @switch (kpi.label) {
+            @case ('Accuracy') {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="8" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            }
+            @case ('Typical error') {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12h4l2-7 4 14 2-7h6" />
+              </svg>
+            }
+            @case ('Pattern explained') {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="12" r="6" />
+                <circle cx="15" cy="12" r="6" />
+              </svg>
+            }
+            @case ('Trust-checked score') {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" />
+                <path d="m9 12 2 2 4-4" />
+              </svg>
+            }
+          }
+        </span>
+        <span class="kpi-label">{{ kpi.label }}</span>
+        <span class="kpi-value">{{ kpi.value }}</span>
+        <p class="kpi-explain">{{ kpi.explanation }}</p>
+      </div>
+    }
+  </div>
+
+  <div class="chart-row">
+    <section class="chart-card">
+      <h2 class="chart-title">How long effects last</h2>
+      <p class="chart-subtitle">A sale today from a TV ad two weeks ago still counts. This shows how fast that fades.</p>
+
+      <svg [attr.viewBox]="decayViewBox" class="chart-svg" role="img" aria-label="How each channel's effect fades over time">
+        @for (t of decayYTicks; track t.value) {
+          <line [attr.x1]="decayPad.left" [attr.x2]="480 - decayPad.right" [attr.y1]="t.y" [attr.y2]="t.y" class="grid-line" />
+          <text [attr.x]="decayPad.left - 8" [attr.y]="t.y + 3" text-anchor="end" class="tick">{{ t.value }}%</text>
+        }
+        <line [attr.x1]="decayPad.left" [attr.x2]="decayPad.left" [attr.y1]="decayPad.top" [attr.y2]="decayPlotBottom" class="axis-line" />
+        <line [attr.x1]="decayPad.left" [attr.x2]="480 - decayPad.right" [attr.y1]="decayPlotBottom" [attr.y2]="decayPlotBottom" class="axis-line" />
+        @for (t of decayXTicks; track t.value) {
+          <text [attr.x]="t.x" [attr.y]="decayPlotBottom + 16" text-anchor="middle" class="tick">wk {{ t.value }}</text>
+        }
+        @for (s of decaySeries; track s.name) {
+          <polyline [attr.points]="s.points" fill="none" [attr.stroke]="s.color" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        }
+      </svg>
+
+      <div class="legend">
+        @for (s of decaySeries; track s.name) {
+          <span class="legend-item"><span class="legend-dot" [style.background]="s.color"></span>{{ s.name }}</span>
+        }
+      </div>
+    </section>
+
+    <section class="chart-card">
+      <div class="chart-head-row">
+        <div>
+          <h2 class="chart-title">Room left to grow</h2>
+          <p class="chart-subtitle">As spend rises, the extra return eventually flattens out — this shows roughly where.</p>
+        </div>
+        <select
+          class="channel-select"
+          [ngModel]="selectedChannel()"
+          (ngModelChange)="selectedChannel.set($event)"
+          aria-label="Choose a channel"
+        >
+          @for (name of channelNames; track name) {
+            <option [value]="name">{{ name }}</option>
+          }
+        </select>
+      </div>
+
+      <svg [attr.viewBox]="satViewBox" class="chart-svg" role="img" aria-label="Saturation curve for the selected channel">
+        <line [attr.x1]="satPad.left" [attr.x2]="satPad.left" [attr.y1]="satPad.top" [attr.y2]="satPlotBottom" class="axis-line" />
+        <line [attr.x1]="satPad.left" [attr.x2]="480 - satPad.right" [attr.y1]="satPlotBottom" [attr.y2]="satPlotBottom" class="axis-line" />
+        <polyline [attr.points]="saturationPath()" fill="none" stroke="var(--brand-500)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+        <text [attr.x]="(480 - satPad.left - satPad.right) / 2 + satPad.left" [attr.y]="satPlotBottom + 20" text-anchor="middle" class="axis-caption">Spend level →</text>
+      </svg>
+    </section>
+  </div>
+
+  <section class="chart-card scatter-card">
+    <h2 class="chart-title">Where each channel sits</h2>
+    <p class="chart-subtitle">Bottom-left: quick, but has room to spend more. Top-right: long-lasting, but already close to maxed out.</p>
+
+    <svg [attr.viewBox]="scatterViewBox" class="chart-svg scatter-svg" role="img" aria-label="Each channel plotted by how long its effect lasts and how saturated it is">
+      @for (t of scatterYTicks; track t.value) {
+        <line [attr.x1]="scatterPad.left" [attr.x2]="560 - scatterPad.right" [attr.y1]="t.y" [attr.y2]="t.y" class="grid-line" />
+        <text [attr.x]="scatterPad.left - 8" [attr.y]="t.y + 3" text-anchor="end" class="tick">{{ t.value }}%</text>
+      }
+      <line [attr.x1]="scatterPad.left" [attr.x2]="scatterPad.left" [attr.y1]="scatterPad.top" [attr.y2]="scatterPlotBottom" class="axis-line" />
+      <line [attr.x1]="scatterPad.left" [attr.x2]="560 - scatterPad.right" [attr.y1]="scatterPlotBottom" [attr.y2]="scatterPlotBottom" class="axis-line" />
+      @for (t of scatterXTicks; track t.value) {
+        <text [attr.x]="t.x" [attr.y]="scatterPlotBottom + 16" text-anchor="middle" class="tick">{{ t.value }}</text>
+      }
+      <text [attr.x]="(560 - scatterPad.left - scatterPad.right) / 2 + scatterPad.left" [attr.y]="scatterPlotBottom + 34" text-anchor="middle" class="axis-caption">Weeks until effect fades to half</text>
+      <text [attr.x]="16" [attr.y]="(scatterPlotBottom + scatterPad.top) / 2" text-anchor="middle" class="axis-caption" [attr.transform]="'rotate(-90 16 ' + (scatterPlotBottom + scatterPad.top) / 2 + ')'">How close to maxed out (%)</text>
+
+      @for (p of scatterPoints; track p.name) {
+        <circle [attr.cx]="p.x" [attr.cy]="p.y" r="5.5" [attr.fill]="p.lowData ? 'var(--amber-500)' : 'var(--blue-500)'" />
+        <text [attr.x]="p.x + 9" [attr.y]="p.y + 3.5" class="point-label">{{ p.name }}</text>
+      }
+    </svg>
+
+    <p class="scatter-legend-note"><span class="legend-dot" style="background: var(--amber-500);"></span>Amber = limited historical data</p>
+  </section>
+
+  <div class="info-strip">
+    <span class="info-item"><span class="info-icon" aria-hidden="true">▤</span>{{ channelCount }} marketing channels analyzed</span>
+    <span class="info-item"><span class="info-icon" aria-hidden="true">◔</span>{{ weeksOfHistory }} weeks of history</span>
+    <span class="info-item"><span class="legend-dot" style="background: var(--amber-500);"></span>Amber = limited historical data</span>
+  </div>
+</div>

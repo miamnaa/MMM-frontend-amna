@@ -172,6 +172,16 @@ export const routes: Routes = [
         loadComponent: () => import('./features/scenarios/scenarios').then((m) => m.Scenarios),
       },
       {
+        path: 'model-performance-lab',
+        title: 'Model performance · ROIVIO',
+        // Brand-new standalone page (2026-08-28 design brief) - deliberately
+        // separate from the real Results & Insights page's four tabs, not a
+        // replacement for any of them. Illustrative data only - see
+        // model-performance-lab.ts for why.
+        loadComponent: () =>
+          import('./features/model-performance-lab/model-performance-lab').then((m) => m.ModelPerformanceLab),
+      },
+      {
         path: 'settings',
         title: 'Settings · ROIVIO',
         loadComponent: () => import('./features/settings/settings').then((m) => m.Settings),
