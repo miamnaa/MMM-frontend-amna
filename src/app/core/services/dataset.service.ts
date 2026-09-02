@@ -243,6 +243,9 @@ export interface ChannelContributionRow extends Record<string, unknown> {
 
 export type ChannelEfficiencyRow = Record<string, unknown>;
 
+/** Real field per Hammad's 2026-09-02 handover, same for both engines - exact shape still undocumented beyond "flags a channel," so kept as loosely-typed as channel_efficiency above until a real response confirms its fields. */
+export type DataQualityFlagRow = Record<string, unknown>;
+
 /** Real field, added 2026-08-24 - one point per real date in the dataset, so the model's fit can be charted against what actually happened instead of just summarized in a single accuracy percent. */
 export interface ActualVsPredictedPoint {
   date: string;
@@ -277,6 +280,8 @@ export interface TrainingResults extends Record<string, unknown> {
   channel_confidence?: ChannelConfidenceRow[];
   /** Optional - only present on runs completed after 2026-08-24; check for presence before rendering. */
   baseline_vs_marketing?: BaselineVsMarketing;
+  /** Real field per Hammad's 2026-09-02 handover - present for both Meridian and PyMC runs. */
+  data_quality_flags?: DataQualityFlagRow[];
 }
 
 /**

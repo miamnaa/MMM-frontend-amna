@@ -35,31 +35,11 @@
       type="button"
       role="tab"
       class="tab"
-      [class.active]="activeTab() === 'overview'"
-      [attr.aria-selected]="activeTab() === 'overview'"
-      (click)="setTab('overview')"
-    >
-      Overview
-    </button>
-    <button
-      type="button"
-      role="tab"
-      class="tab"
       [class.active]="activeTab() === 'performance'"
       [attr.aria-selected]="activeTab() === 'performance'"
       (click)="setTab('performance')"
     >
       Model Performance
-    </button>
-    <button
-      type="button"
-      role="tab"
-      class="tab"
-      [class.active]="activeTab() === 'channels'"
-      [attr.aria-selected]="activeTab() === 'channels'"
-      (click)="setTab('channels')"
-    >
-      Channel Performance
     </button>
     <button
       type="button"
@@ -73,81 +53,7 @@
     </button>
   </div>
 
-  @if (activeTab() === 'overview') {
-    @if (hasExecutiveTiles()) {
-      <div class="exec-tile-row">
-        @for (tile of executiveTiles(); track tile.label) {
-          <app-stat-tile [label]="tile.label" [value]="tile.value" [caption]="tile.caption" [large]="true" [wide]="true" [icon]="tile.icon" />
-        }
-      </div>
-    }
-
-    @if (hasStoryline() || hasDonut()) {
-      <div class="overview-grid">
-        @if (hasStoryline()) {
-          <section class="card results-section overview-card">
-            <h2 class="section-title">Key takeaways</h2>
-            <div class="takeaway-list">
-              @for (line of storyline(); track line.text) {
-                <div class="takeaway-row">
-                  <span class="takeaway-icon" [class]="'tone-' + line.tone" aria-hidden="true">{{ line.icon }}</span>
-                  <p class="takeaway-text">{{ line.text }}</p>
-                </div>
-              }
-            </div>
-          </section>
-        }
-
-        @if (hasDonut()) {
-          <section class="card results-section overview-card">
-            <h2 class="section-title">Marketing contribution</h2>
-            <div class="donut-row">
-              <div class="donut" [style.background]="donutGradient()">
-                <div class="donut-hole">
-                  @if (totalIncrementalOutcome(); as total) {
-                    <strong>{{ formatXSpend(total) }}</strong>
-                  }
-                  <span>Incremental</span>
-                </div>
-              </div>
-              <ul class="donut-legend">
-                @for (segment of donutSegments(); track segment.label) {
-                  <li>
-                    <span class="donut-swatch" [style.background]="segment.color"></span>
-                    <span class="donut-legend-label">{{ segment.label }}</span>
-                    <span class="donut-legend-value">{{ segment.display }}</span>
-                  </li>
-                }
-              </ul>
-            </div>
-          </section>
-        }
-      </div>
-    }
-
-    @if (recommendedImpact(); as impact) {
-      <section class="card results-section">
-        <h2 class="section-title">Recommended impact</h2>
-        <p class="muted field-hint">If every channel's spend followed the budget recommendation below.</p>
-        <div class="impact-row">
-          <div class="impact-lift" [class.impact-negative]="impact.liftPercent < 0">
-            {{ impact.liftPercent >= 0 ? '+' : '' }}{{ impact.liftPercent | number: '1.0-1' }}%
-          </div>
-          <div class="impact-figures">
-            <span>Current outcome <strong>{{ formatXSpend(impact.currentTotal) }}</strong></span>
-            <span class="impact-arrow">→</span>
-            <span>Expected outcome <strong>{{ formatXSpend(impact.optimizedTotal) }}</strong></span>
-          </div>
-          <span class="impact-spacer"></span>
-          <button class="btn btn-primary btn-sm" type="button" (click)="goToBudgetPlan()">See budget plan</button>
-        </div>
-      </section>
-    }
-
-    @if (!hasExecutiveTiles() && !hasStoryline() && !hasDonut() && !recommendedImpact()) {
-      <app-empty-state title="No overview data yet" message="This model's results didn't include the fields this summary is built from." />
-    }
-  } @else if (activeTab() === 'performance') {
+  @if (activeTab() === 'performance') {
     @if (hasActualVsPredicted()) {
       <section class="card results-section">
         <h2 class="section-title">Actual vs predicted</h2>
@@ -255,63 +161,40 @@
     } @else {
       <app-empty-state title="No model performance metrics" message="This model's results didn't include a prediction time series." />
     }
-  } @else if (activeTab() === 'channels') {
-    @if (hasChannelSummary()) {
-      <div class="exec-tile-row channel-summary-row">
+  } @else {
+    @if (totalIncrementalOutcome(); as total) {
+      <div class="exec-tile-row">
+        <app-stat-tile
+          label="Total impact"
+          [value]="formatXSpend(total)"
+          caption="Extra results your marketing directly drove, beyond what would've happened anyway"
+          [large]="true"
+          [wide]="true"
+          icon="📈"
+        />
+        @if (overallReturn(); as ret) {
+          <app-stat-tile
+            label="Overall return"
+            [value]="formatRatio(ret)"
+            caption="Back for every $1 spent, blended across all channels"
+            [large]="true"
+            [wide]="true"
+            icon="💰"
+          />
+        }
         @if (channelSummary().bestRoi; as best) {
-          <app-stat-tile label="Best performer (ROI)" [value]="best.label" [caption]="best.roi.toFixed(2) + ' ROI'" [large]="true" [wide]="true" icon="🏆" />
-        }
-        @if (channelSummary().topContribution; as top) {
-          <app-stat-tile label="Highest contribution" [value]="top.label" [caption]="formatPercent(top.contributionPct)" [large]="true" [wide]="true" icon="📊" />
-        }
-        @if (channelSummary().lowestRoi; as low) {
-          <app-stat-tile label="Needs attention" [value]="low.label" [caption]="low.roi.toFixed(2) + ' ROI'" [large]="true" [wide]="true" icon="⚠️" />
+          <app-stat-tile
+            label="Top channel"
+            [value]="best.label"
+            [caption]="formatRatio(best.roi) + ' back for every $1 spent — your best-performing channel right now'"
+            [large]="true"
+            [wide]="true"
+            icon="🏆"
+          />
         }
       </div>
     }
 
-    @if (hasScorecard()) {
-      <section class="card results-section">
-        <h2 class="section-title">How each marketing channel performed</h2>
-        <div class="scorecard-wrap">
-          <table class="scorecard">
-            <thead>
-              <tr>
-                <th>Channel</th>
-                <th>Spend</th>
-                <th>Contribution</th>
-                <th>ROI</th>
-                <th>Recommendation</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of scorecardRows(); track row.label) {
-                <tr>
-                  <td>{{ row.label }}</td>
-                  <td>{{ row.spend }}</td>
-                  <td>{{ row.contribution }}</td>
-                  <td>{{ row.roi }}@if (row.roiRange) { <span class="muted roi-range">({{ row.roiRange }})</span> }</td>
-                  <td>
-                    <span
-                      class="rec-badge"
-                      [class.rec-increase]="row.recommendation === 'Increase'"
-                      [class.rec-decrease]="row.recommendation === 'Decrease'"
-                      [class.rec-maintain]="row.recommendation === 'Maintain'"
-                    >
-                      {{ row.recommendation }}
-                    </span>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        <p class="muted field-hint backend-gap-inline">Cost per conversion and a per-channel saturation status aren't shown - both need real fields (a conversion count, a saturation/stability score) the API doesn't return yet.</p>
-      </section>
-    } @else {
-      <app-empty-state title="No channel data yet" message="This model's results didn't include per-channel numbers." />
-    }
-  } @else {
     @if (baselineVsMarketing(); as bm) {
       <section class="card results-section">
         <h2 class="section-title">Is marketing working?</h2>
@@ -331,27 +214,24 @@
       </section>
     }
 
-    @if (contributionBars().length > 0) {
-      <section class="card results-section">
-        <h2 class="section-title">Channel contribution</h2>
-        <app-bar-chart [data]="contributionBars()" [uniform]="true" [colors]="brandChartColors" />
-        <div class="outcome-list">
-          @for (entry of contributionOutcomes(); track entry.label) {
-            <span class="outcome-chip"><strong>{{ entry.label }}:</strong> {{ entry.value }} incremental</span>
-          }
-        </div>
-      </section>
-    }
-
     @if (hasEfficiencyChart()) {
       <section class="card results-section">
         <h2 class="section-title">
-          ROI<app-info-tip term="ROI" [text]="HINTS.roi" /> vs Marginal ROI<app-info-tip term="Marginal ROI" [text]="HINTS.marginalRoi" />
+          Channel ROI ranking<app-info-tip term="ROI" [text]="HINTS.roi" />
         </h2>
+        <p class="muted field-hint">Solid bar: return so far. Light bar: return on the next dollar spent — if it's lower, that channel is nearing its ceiling.</p>
         @if (diminishingReturnsInsight(); as insight) {
           <p class="insight-callout">{{ insight }}</p>
         }
-        <app-grouped-bar-chart [data]="roiGroupedBars()" aLabel="ROI" bLabel="Marginal ROI" [colors]="brandGroupedColors" />
+        <app-grouped-bar-chart [data]="sortedRoiGroupedBars()" aLabel="ROI" bLabel="Marginal ROI" [colors]="brandGroupedColors" />
+        @if (hasLowDataChannels()) {
+          <p class="muted field-hint backend-gap-inline">
+            ⚠ Limited spend history, treat with caution:
+            @for (label of lowDataChannelLabels(); track label; let last = $last) {
+              {{ label }}{{ last ? '' : ', ' }}
+            }
+          </p>
+        }
       </section>
     } @else if (efficiencyFallback().length > 0) {
       <section class="card results-section">
@@ -371,17 +251,68 @@
       </section>
     }
 
+    @if (hasContributionStack()) {
+      <section class="card results-section">
+        <h2 class="section-title">Contribution breakdown</h2>
+        <p class="muted field-hint">A channel can perform well per dollar and still be a small piece of the whole picture.</p>
+        <div class="stack-bar">
+          @for (segment of contributionStackSegments(); track segment.label) {
+            <div class="stack-segment" [style.width.%]="segment.pct" [style.background]="segment.color"></div>
+          }
+        </div>
+        <ul class="stack-legend">
+          @for (segment of contributionStackSegments(); track segment.label) {
+            <li>
+              <span class="donut-swatch" [style.background]="segment.color"></span>
+              <span class="donut-legend-label">{{ segment.label }}</span>
+              <span class="donut-legend-value">{{ segment.display }}</span>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
     @if (hasBudgetChart()) {
       <section class="card results-section" id="budget-recommendation">
-        <h2 class="section-title">Budget recommendation</h2>
+        <h2 class="section-title">Recommended budget shift</h2>
+        <p class="muted field-hint">Same total budget, reallocated toward higher-performing channels.</p>
         @if (budgetHeadline(); as headline) {
           <p class="insight-callout">{{ headline }}</p>
         }
         <app-grouped-bar-chart [data]="budgetGroupedBars()" aLabel="Current spend" bLabel="Optimized spend" [tickFormat]="formatXSpend" [vertical]="true" [colors]="brandBudgetColors" />
+
+        @if (recommendedImpact(); as impact) {
+          <div class="impact-row">
+            <div class="impact-lift" [class.impact-negative]="impact.liftPercent < 0">
+              {{ impact.liftPercent >= 0 ? '+' : '' }}{{ impact.liftPercent | number: '1.0-1' }}%
+            </div>
+            <div class="impact-figures">
+              <span>Current outcome <strong>{{ formatXSpend(impact.currentTotal) }}</strong></span>
+              <span class="impact-arrow">→</span>
+              <span>Expected outcome <strong>{{ formatXSpend(impact.optimizedTotal) }}</strong></span>
+            </div>
+          </div>
+        }
+
+        @if (biggestBudgetChanges().length > 0) {
+          <h3 class="stack-legend-title">Biggest changes</h3>
+          <div class="change-list">
+            @for (entry of biggestBudgetChanges(); track entry.label) {
+              <div class="change-row">
+                <span>{{ entry.label }}</span>
+                <span [class.change-up]="entry.pct > 0" [class.change-down]="entry.pct < 0">
+                  {{ entry.pct >= 0 ? '+' : '' }}{{ entry.pct | number: '1.0-1' }}%
+                </span>
+              </div>
+            }
+          </div>
+        }
+
+        <p class="muted field-hint backend-gap-inline">Return under the recommended split isn't shown yet for each channel — that calculation is still being verified.</p>
       </section>
     } @else if (budgetFallback().length > 0) {
       <section class="card results-section" id="budget-recommendation">
-        <h2 class="section-title">Budget recommendation</h2>
+        <h2 class="section-title">Recommended budget shift</h2>
         <dl class="results-grid">
           @for (entry of budgetFallback(); track entry.label) {
             <dt>{{ entry.label }}</dt>
@@ -391,21 +322,8 @@
       </section>
     }
 
-    @if (hasCurves()) {
-      <section class="card results-section">
-        <h2 class="section-title">Carryover / decay curve<app-info-tip term="Carryover / decay" [text]="HINTS.carryover" /></h2>
-        <p class="muted field-hint">Illustrative — computed from this model's saved carryover values, not a real curve the backend returned.</p>
-        @if (decayPacingInsight(); as insight) {
-          <p class="insight-callout">{{ insight }}</p>
-        }
-        <app-line-chart [series]="carryoverCurves()" xLabel="Week" [formatX]="formatX" [formatY]="formatYPercent" [colors]="brandChartColors" />
-      </section>
-
-      <section class="card results-section">
-        <h2 class="section-title">Saturation curve<app-info-tip term="Saturation" [text]="HINTS.saturation" /></h2>
-        <p class="muted field-hint">Illustrative — computed from this model's saved saturation (gamma) values over an illustrative spend range, not this channel's real spend numbers.</p>
-        <app-line-chart [series]="saturationCurves()" xLabel="Spend" [formatX]="formatXSpend" [formatY]="formatYPercent" [colors]="brandChartColors" />
-      </section>
+    @if (!totalIncrementalOutcome() && !baselineVsMarketing() && !hasEfficiencyChart() && !hasContributionStack() && !hasBudgetChart()) {
+      <app-empty-state title="No insights yet" message="This model's results didn't include the fields these insights are built from." />
     }
   }
 }

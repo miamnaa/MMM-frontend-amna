@@ -11,7 +11,7 @@ import {
   isTerminalTrainingStatus,
 } from '../../core/services/dataset.service';
 import { computeModelStatus } from '../../core/services/model-status';
-import { BarChart, BarDatum } from '../../shared/charts/bar-chart/bar-chart';
+import { BarDatum } from '../../shared/charts/bar-chart/bar-chart';
 import { GroupedBarChart, GroupedBarDatum } from '../../shared/charts/grouped-bar-chart/grouped-bar-chart';
 import { LineChart, LineSeries } from '../../shared/charts/line-chart/line-chart';
 import { EmptyState } from '../../shared/ui/empty-state/empty-state';
@@ -29,42 +29,37 @@ interface DisplayEntry {
   value: string;
 }
 
-const CARRYOVER_WEEKS = 15;
-const SATURATION_POINTS = 30;
-const SATURATION_MAX_SPEND = 100;
-
 /**
  * Two specific green swatches requested directly - a dark green and a
- * light green - used across every chart on this page instead of a
- * multi-hue palette. Single-series charts (channel contribution, the
- * curves) use the dark green as their one solid color; the two grouped
- * charts pair dark + light so their two series stay visually distinct.
- * Every other chart in the app keeps the default accessibility-validated
- * categorical palette (shared/charts/palette.ts) unchanged - this override
- * is scoped to just this page's charts via each chart component's optional
- * `colors` input.
+ * light green - used across the grouped charts on this page (ROI vs
+ * marginal ROI, current vs optimized spend) instead of a multi-hue
+ * palette, so each chart's two series stay visually distinct. Every other
+ * chart in the app keeps the default accessibility-validated categorical
+ * palette (shared/charts/palette.ts) unchanged - this override is scoped
+ * to just this page's charts via each chart component's optional `colors`
+ * input.
  */
 const BRAND_DARK_GREEN = '#00994D';
 const BRAND_LIGHT_GREEN = '#8FCB92';
-const BRAND_CHART_COLORS = [BRAND_DARK_GREEN];
 const BRAND_GROUPED_COLORS: [string, string] = [BRAND_DARK_GREEN, BRAND_LIGHT_GREEN];
 const BRAND_BUDGET_COLORS: [string, string] = [BRAND_LIGHT_GREEN, BRAND_DARK_GREEN];
 
-/** A real categorical set, only for the Marketing Contribution donut - the one chart on this page that genuinely needs several distinguishable colors (one per channel), unlike the others which compare exactly two series. */
+/** A real categorical set for the Insights tab's contribution stack - one distinguishable color per channel, plus a fixed grey for the "Other factors" remainder segment. */
 const DONUT_COLORS = ['#00994D', '#3B82F6', '#F59E0B', '#8FCB92', '#EF4444', '#9CA3AF', '#8B5CF6', '#EC4899'];
 
 /**
  * "View Model" destination from both the Models list and Results & Insights'
  * per-project model list. Fetches this dataset's real training results and
- * renders them - unlike the Models list's old inline panel, this reuses the
- * shared BarChart/LineChart components for the richer visualization layout.
- * As of today (Anas, real policy change), the backend never falls back to
- * fake/mock data anymore - results.mock can no longer come back true, so
- * there's nothing left to distinguish real vs. simulated here.
+ * renders them across two tabs (2026-09-02 redesign): Model Performance for
+ * statistical trust, Insights for money/channel decisions - reusing the
+ * shared GroupedBarChart/LineChart components for the richer visualization
+ * layout. As of today (Anas, real policy change), the backend never falls
+ * back to fake/mock data anymore - results.mock can no longer come back
+ * true, so there's nothing left to distinguish real vs. simulated here.
  */
 @Component({
   selector: 'app-model-results',
-  imports: [DecimalPipe, FormsModule, RouterLink, PageHeader, EmptyState, StatTile, InfoTip, BarChart, GroupedBarChart, LineChart],
+  imports: [DecimalPipe, FormsModule, RouterLink, PageHeader, EmptyState, StatTile, InfoTip, GroupedBarChart, LineChart],
   templateUrl: './model-results.html',
   styleUrl: './model-results.css',
 })
@@ -76,10 +71,16 @@ export class ModelResults implements OnInit {
   readonly projectId = signal('');
   readonly datasetId = signal('');
 
-  /** 'overview' is the at-a-glance summary (KPIs, key takeaways, contribution donut, recommended impact); 'performance' answers "can I trust this model" (the confidence KPIs); 'insights' answers "what should I do about it" (everything channel-level). */
-  readonly activeTab = signal<'overview' | 'performance' | 'channels' | 'insights'>('overview');
+  /**
+   * Two tabs only, per the 2026-09-02 redesign: 'performance' answers "can I
+   * trust this model" (statistical fit - accuracy, residuals, no money
+   * language); 'insights' answers "what should I do about it" (purely
+   * money/channel language - contribution, ROI, budget shift, no stats).
+   * Overview and Channel Performance were folded into these two rather than
+   * kept as separate tabs.
+   */
+  readonly activeTab = signal<'performance' | 'insights'>('performance');
 
-  protected readonly brandChartColors = BRAND_CHART_COLORS;
   protected readonly brandGroupedColors = BRAND_GROUPED_COLORS;
   protected readonly brandBudgetColors = BRAND_BUDGET_COLORS;
   /** Residual bars: dark green for over-performance (actual > predicted), light green for under-performance - matches the brand green pair used everywhere else on this page instead of the old purple. */
@@ -194,90 +195,12 @@ export class ModelResults implements OnInit {
     })),
   );
 
-  readonly contributionOutcomes = computed<DisplayEntry[]>(() =>
-    (this.results()?.channel_contribution ?? []).map((row, i) => ({
-      label: this.channelLabel(row, i),
-      value: this.formatCurrency(row.incremental_outcome),
-    })),
-  );
-
-  /**
-   * Same real channel_contribution data as the bar chart above, reshaped
-   * into donut segments - real percentages normalized to sum to 100 (in
-   * case rounding in the source data leaves them a hair off), each given a
-   * real distinguishable color and a running start/end position around the
-   * ring, computed once here instead of duplicated in the template.
-   */
-  readonly donutSegments = computed(() => {
-    const bars = this.contributionBars();
-    const total = bars.reduce((sum, b) => sum + b.value, 0);
-    if (total <= 0) return [];
-    let cursor = 0;
-    return bars.map((b, i) => {
-      const pct = (b.value / total) * 100;
-      const start = cursor;
-      cursor += pct;
-      return { label: b.label, display: b.display, pct, start, end: cursor, color: DONUT_COLORS[i % DONUT_COLORS.length] };
-    });
-  });
-
-  readonly donutGradient = computed(() => {
-    const segments = this.donutSegments();
-    if (segments.length === 0) return 'none';
-    return `conic-gradient(${segments.map((s) => `${s.color} ${s.start}% ${s.end}%`).join(', ')})`;
-  });
-
-  readonly hasDonut = computed(() => this.donutSegments().length > 0);
-
-  /** Real total incremental outcome across every channel - the sum of the same real per-channel numbers the donut's segments are built from. */
+  /** Real total incremental outcome across every channel - feeds the Insights tab's "Total impact" KPI. */
   readonly totalIncrementalOutcome = computed(() => {
     const rows = this.results()?.channel_contribution ?? [];
     const total = rows.reduce((sum, r) => sum + (typeof r.incremental_outcome === 'number' ? r.incremental_outcome : 0), 0);
     return total > 0 ? total : null;
   });
-
-  /**
-   * A 4-tile snapshot for the Overview card - total/incremental outcome
-   * from the real baseline_vs_marketing split, plus this model's own real
-   * R² and average error already shown on Model Performance. Each tile
-   * only appears when its real source field is present.
-   */
-  readonly executiveTiles = computed(() => {
-    const tiles: { label: string; value: string; caption: string; icon: string }[] = [];
-
-    const bm = this.baselineVsMarketing();
-    if (bm) {
-      tiles.push({
-        label: 'Total outcome',
-        value: this.formatXSpend(bm.baseline_outcome + bm.marketing_outcome),
-        caption: 'In this period',
-        icon: '📦',
-      });
-      tiles.push({
-        label: 'Incremental outcome',
-        value: this.formatXSpend(bm.marketing_outcome),
-        caption: `${Math.round(bm.marketing_percent)}% of total`,
-        icon: '📈',
-      });
-    }
-
-    const confidence = this.confidenceTiles();
-    const rSquared = confidence.find((t) => t.key.toLowerCase().includes('r_squared') && !t.key.toLowerCase().includes('adjusted'));
-    if (rSquared) {
-      tiles.push({
-        label: 'Model accuracy (R²)',
-        value: rSquared.value,
-        caption: Number(rSquared.value) >= 0.7 ? 'Good fit' : 'Needs review',
-        icon: '🎯',
-      });
-    }
-    const avgError = confidence.find((t) => t.key.toLowerCase().includes('average_error') && !t.key.toLowerCase().includes('weighted'));
-    if (avgError) tiles.push({ label: 'Average error', value: avgError.value, caption: 'Average error', icon: '🛡️' });
-
-    return tiles;
-  });
-
-  readonly hasExecutiveTiles = computed(() => this.executiveTiles().length > 0);
 
   private readonly efficiencyRows = computed(() => this.results()?.channel_efficiency ?? []);
 
@@ -414,31 +337,6 @@ export class ModelResults implements OnInit {
     return Array.from(map.values());
   });
 
-  /** Increase/Decrease at +/-5% spend-change - Maintain inside that band, "—" when no budget recommendation covers this channel at all. */
-  private recommendationFor(spendChangePercent: number | undefined): string {
-    if (spendChangePercent === undefined) return '—';
-    if (spendChangePercent >= 5) return 'Increase';
-    if (spendChangePercent <= -5) return 'Decrease';
-    return 'Maintain';
-  }
-
-  readonly scorecardRows = computed(() => {
-    const confidence = this.channelConfidenceMap();
-    return this.channelMap().map((c) => {
-      const range = confidence.get(c.label);
-      return {
-        label: c.label,
-        spend: c.currentSpend !== undefined ? this.formatCurrency(c.currentSpend) : '—',
-        contribution: c.contributionPct !== undefined ? this.formatPercent(c.contributionPct) : '—',
-        roi: c.roi !== undefined ? c.roi.toFixed(2) : '—',
-        roiRange: range ? `likely ${range.low.toFixed(2)}–${range.high.toFixed(2)}` : null,
-        recommendation: this.recommendationFor(c.spendChangePercent),
-      };
-    });
-  });
-
-  readonly hasScorecard = computed(() => this.scorecardRows().length > 0);
-
   /**
    * Best performer, top contributor, and lowest ROI - all real, direct
    * lookups over channelMap, same source as the table below. "Most
@@ -458,11 +356,6 @@ export class ModelResults implements OnInit {
       lowestRoi: withRoi.length > 1 ? withRoi.reduce((a, b) => (b.roi < a.roi ? b : a)) : null,
       topContribution: withContribution.length > 0 ? withContribution.reduce((a, b) => (b.contributionPct > a.contributionPct ? b : a)) : null,
     };
-  });
-
-  readonly hasChannelSummary = computed(() => {
-    const s = this.channelSummary();
-    return s.bestRoi !== null || s.lowestRoi !== null || s.topContribution !== null;
   });
 
   /**
@@ -511,25 +404,6 @@ export class ModelResults implements OnInit {
     if (worst.ratio >= 0.6) return null;
 
     return `${worst.label}'s average ROI (${worst.aDisplay}) is healthy, but marginal ROI (${worst.bDisplay}) is much lower — you're already near this channel's ceiling, more spend won't help much.`;
-  });
-
-  /**
-   * A real pacing story from the same real saved carryover value the decay
-   * curve already plots, just said as a sentence instead of left for
-   * someone to read off the chart: how many weeks until half of this
-   * channel's effect has faded. theta^N = 0.5 solved for N (weeks) - a real
-   * derived number from a real saved value, not a guess.
-   */
-  readonly decayPacingInsight = computed<string | null>(() => {
-    const channels = this.dataset()?.channelHyperparameters ?? [];
-    const withHalfLife = channels
-      .map((ch) => ({ channel: ch.channel, halfLife: Math.log(0.5) / Math.log(ch.carryover) }))
-      .filter((c) => Number.isFinite(c.halfLife) && c.halfLife > 0);
-    if (withHalfLife.length === 0) return null;
-
-    const fastest = withHalfLife.reduce((min, c) => (c.halfLife < min.halfLife ? c : min));
-    const weeks = Math.max(1, Math.round(fastest.halfLife));
-    return `Half of what you spend on ${fastest.channel} stops working within ${weeks} week${weeks === 1 ? '' : 's'} — steady spend beats big spikes here.`;
   });
 
   /**
@@ -649,23 +523,6 @@ export class ModelResults implements OnInit {
   readonly hasPerformanceSummary = computed(() => this.performanceSummaryRows().length > 0);
 
   /**
-   * Real field, added 2026-08-24 - a real ROI range per channel, not just
-   * the single point-estimate channel_efficiency already has. Joined into
-   * the scorecard by channel name so "ROI: 2.10 (likely 1.80–2.40)" sits
-   * next to the same channel's other real numbers, rather than a separate
-   * disconnected table.
-   */
-  private readonly channelConfidenceMap = computed(() => {
-    const map = new Map<string, { low: number; high: number; confidencePercent: number }>();
-    for (const row of this.results()?.channel_confidence ?? []) {
-      map.set(row.channel, { low: row.roi_low, high: row.roi_high, confidencePercent: row.confidence_percent });
-    }
-    return map;
-  });
-
-  readonly hasChannelConfidence = computed(() => this.channelConfidenceMap().size > 0);
-
-  /**
    * Real field, added 2026-08-24 - what would have happened with zero
    * marketing vs. what marketing actually added, as a real split rather
    * than two disconnected outcome numbers. Optional - older completed runs
@@ -673,115 +530,108 @@ export class ModelResults implements OnInit {
    */
   readonly baselineVsMarketing = computed(() => this.results()?.baseline_vs_marketing ?? null);
 
-  /** Plain-English text for the (i) badges next to jargon-heavy section titles - no ROI/marginal ROI/carryover/saturation left unexplained. */
+  /** Plain-English text for the (i) badges next to jargon-heavy section titles - no ROI/marginal ROI left unexplained. */
   protected readonly HINTS = {
     roi: 'Return on investment - for every $1 spent on this channel, how much extra revenue it brought in on average.',
     marginalRoi: 'What the next dollar you spend on this channel would likely bring back - not the average, but what you\'d get right now if you spent a little more.',
-    carryover: 'Ads don\'t stop working the moment they run - some of the effect lingers into following weeks. This shows how quickly that leftover effect fades.',
-    saturation: 'Every channel eventually stops paying off as well the more you spend on it. This shows how close a channel already is to that point.',
   };
 
-/** A takeaway line paired with a real reason it exists - icon/tone are just presentation, chosen by what kind of point the line makes (performance/money/action), not a separate field the backend returns. */
-  readonly storyline = computed<{ text: string; icon: string; tone: 'brand' | 'info' | 'warn' }[]>(() => {
-    const lines: { text: string; icon: string; tone: 'brand' | 'info' | 'warn' }[] = [];
+  /**
+   * Sum of incremental_outcome / sum of spend across every channel that has
+   * both - "spend" only exists on budget_recommendation rows
+   * (current_spend), so this is null whenever that array is empty (no
+   * target_budget was given for this run), same as the budget chart below.
+   */
+  readonly overallReturn = computed<number | null>(() => {
+    const contribution = this.results()?.channel_contribution ?? [];
+    const spendByLabel = new Map<string, number>();
+    this.budgetRows().forEach((row, i) => {
+      const spend = this.numField(row, ['current_spend', 'currentspend']);
+      if (spend !== undefined) spendByLabel.set(this.channelLabel(row, i), spend);
+    });
+    if (spendByLabel.size === 0) return null;
 
-    const contributions = this.contributionBars();
-    const outcomes = this.contributionOutcomes();
-    if (contributions.length > 0) {
-      const top = contributions.reduce((a, b) => (b.value > a.value ? b : a));
-      const outcome = outcomes.find((o) => o.label === top.label);
-      lines.push({
-        text:
-          `${top.label} is your best-performing channel right now` +
-          (outcome ? `, bringing in ${outcome.value} in extra sales that marketing alone is responsible for.` : '.'),
-        icon: '📊',
-        tone: 'brand',
-      });
-    }
-
-    const bm = this.baselineVsMarketing();
-    if (bm) {
-      lines.push({
-        text: `Overall, ${this.formatXSpend(bm.marketing_outcome)} of your results came from marketing - the other ${this.formatXSpend(bm.baseline_outcome)} would likely have happened anyway.`,
-        icon: '💰',
-        tone: 'info',
-      });
-    }
-
-    const entries = this.budgetRows()
-      .map((row, i) => {
-        const key = Object.keys(row).find((k) => ['spend_change_dollars', 'spendchangedollars'].includes(k.toLowerCase()));
-        const change = key ? row[key] : undefined;
-        return typeof change === 'number' ? { label: this.channelLabel(row, i), change } : null;
-      })
-      .filter((e): e is { label: string; change: number } => e !== null);
-    const increase = entries.filter((e) => e.change > 0).sort((a, b) => b.change - a.change)[0];
-    const decrease = entries.filter((e) => e.change < 0).sort((a, b) => a.change - b.change)[0];
-    if (increase && decrease) {
-      lines.push({
-        text: `If you moved some budget from ${decrease.label} into ${increase.label}, you'd likely see a better return - ${increase.label} still has room to grow, while ${decrease.label} is already getting less out of every extra dollar.`,
-        icon: '🔄',
-        tone: 'warn',
-      });
-    } else if (increase) {
-      lines.push({ text: `${increase.label} still has room to grow - spending a bit more there would likely pay off.`, icon: '🔄', tone: 'warn' });
-    } else if (decrease) {
-      lines.push({
-        text: `${decrease.label} is already past the point where extra spend pays off well - consider pulling some budget back.`,
-        icon: '🔄',
-        tone: 'warn',
-      });
-    }
-
-    const impact = this.recommendedImpact();
-    if (impact) {
-      lines.push({
-        text: `Reallocating budget as recommended could change your total outcome by ${impact.liftPercent >= 0 ? '+' : ''}${Math.round(impact.liftPercent * 10) / 10}%.`,
-        icon: '📐',
-        tone: 'brand',
-      });
-    }
-
-    return lines;
+    let totalOutcome = 0;
+    let totalSpend = 0;
+    contribution.forEach((row, i) => {
+      const spend = spendByLabel.get(this.channelLabel(row, i));
+      if (spend !== undefined && typeof row.incremental_outcome === 'number') {
+        totalOutcome += row.incremental_outcome;
+        totalSpend += spend;
+      }
+    });
+    return totalSpend > 0 ? totalOutcome / totalSpend : null;
   });
 
-  readonly hasStoryline = computed(() => this.storyline().length > 0);
+  /** Same real roi/marginal_roi pairs as roiGroupedBars, sorted highest ROI first - the "ranking" the Insights tab's Channel ROI chart is named for. */
+  readonly sortedRoiGroupedBars = computed<GroupedBarDatum[]>(() =>
+    [...this.roiGroupedBars()].sort((x, y) => y.a - x.a),
+  );
 
   /**
-   * Illustrative only, same honesty rule as Hyperparameters' own charts -
-   * computed from this model's real saved carryover/saturation values, not
-   * from a real curve the backend returned (no such endpoint exists).
+   * Real field per Hammad's 2026-09-02 handover - channel names pulled out
+   * of data_quality_flags via the same best-effort name/reason detection
+   * used elsewhere on this page, since the row's exact shape isn't
+   * documented yet. A row only counts as a "low spend" flag when some
+   * string field on it actually mentions spend, so an unrelated flag type
+   * doesn't get mislabeled here.
    */
-  readonly carryoverCurves = computed<LineSeries[]>(() =>
-    (this.dataset()?.channelHyperparameters ?? []).map((ch) => ({
-      name: ch.channel,
-      points: Array.from({ length: CARRYOVER_WEEKS }, (_, w) => ({
-        x: w + 1,
-        y: Math.round(100 * Math.pow(ch.carryover, w) * 10) / 10,
-      })),
-    })),
-  );
+  readonly lowDataChannelLabels = computed<string[]>(() => {
+    const rows = this.results()?.data_quality_flags ?? [];
+    const labels = new Set<string>();
+    rows.forEach((row, i) => {
+      const mentionsLowSpend = Object.values(row).some(
+        (v) => typeof v === 'string' && v.toLowerCase().includes('spend') && v.toLowerCase().includes('low'),
+      );
+      if (mentionsLowSpend) labels.add(this.channelLabel(row, i));
+    });
+    return Array.from(labels);
+  });
 
-  readonly saturationCurves = computed<LineSeries[]>(() =>
-    (this.dataset()?.channelHyperparameters ?? []).map((ch) => {
-      const halfPoint = SATURATION_MAX_SPEND / 2;
-      const gamma = ch.saturation;
-      return {
-        name: ch.channel,
-        points: Array.from({ length: SATURATION_POINTS + 1 }, (_, i) => {
-          const spend = (SATURATION_MAX_SPEND / SATURATION_POINTS) * i;
-          const y = (100 * Math.pow(spend, gamma)) / (Math.pow(halfPoint, gamma) + Math.pow(spend, gamma) || 1);
-          return { x: spend, y: Number.isFinite(y) ? Math.round(y * 10) / 10 : 0 };
-        }),
-      };
-    }),
-  );
+  readonly hasLowDataChannels = computed(() => this.lowDataChannelLabels().length > 0);
 
-  readonly hasCurves = computed(() => (this.dataset()?.channelHyperparameters ?? []).length > 0);
+  /**
+   * Real channel_contribution percentages as stacked-bar segments, plus an
+   * honest "Other factors" segment for whatever's left up to 100% - channel
+   * contributions never sum to 100% on their own (the remainder is
+   * baseline/organic effect), so that gap is shown rather than silently
+   * dropped. Skipped (empty) when contribution is under 100 by less than a
+   * rounding hair, so a real 99.6% doesn't spawn a pointless sliver segment.
+   */
+  readonly contributionStackSegments = computed(() => {
+    const bars = this.contributionBars();
+    if (bars.length === 0) return [];
+    const total = bars.reduce((sum, b) => sum + b.value, 0);
+    const segments = bars.map((b, i) => ({ label: b.label, pct: b.value, display: b.display, color: DONUT_COLORS[i % DONUT_COLORS.length] }));
+    const other = 100 - total;
+    if (other > 0.5) {
+      segments.push({ label: 'Other factors', pct: other, display: this.formatPercent(other), color: '#9ca3af' });
+    }
+    return segments;
+  });
 
-  readonly formatX = (v: number) => `${Math.round(v)}`;
+  readonly hasContributionStack = computed(() => this.contributionStackSegments().length > 0);
+
+  /**
+   * Top 4 channels by |spend_change_percent|, either direction - the
+   * "biggest changes" list under the budget-shift chart. Real
+   * spend_change_percent field, same one recommendationFor's Increase/
+   * Decrease badge used to read before that table was removed.
+   */
+  readonly biggestBudgetChanges = computed(() => {
+    return this.budgetRows()
+      .map((row, i) => {
+        const pct = this.numField(row, ['spend_change_percent', 'spendchangepercent']);
+        return pct !== undefined ? { label: this.channelLabel(row, i), pct } : null;
+      })
+      .filter((e): e is { label: string; pct: number } => e !== null)
+      .sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct))
+      .slice(0, 4);
+  });
+
   readonly formatXSpend = (v: number) => currency(v);
-  readonly formatYPercent = (v: number) => `${Math.round(v)}%`;
+  /** Same currency() formatter, 2 decimal places - for ROI-style ratios (overall return, top channel), where formatXSpend's default 0 digits would round a real "$1.92" down to a meaningless "$2". */
+  readonly formatRatio = (v: number) => currency(v, 2);
 
   ngOnInit(): void {
     this.projectId.set(this.route.snapshot.paramMap.get('projectId') ?? '');
@@ -857,14 +707,8 @@ export class ModelResults implements OnInit {
     });
   }
 
-  setTab(tab: 'overview' | 'performance' | 'channels' | 'insights'): void {
+  setTab(tab: 'performance' | 'insights'): void {
     this.activeTab.set(tab);
-  }
-
-  /** The Budget recommendation section only exists in the DOM once the Insights tab is actually active - switching tabs and scrolling in the same tick would jump at nothing, since Angular hasn't rendered it yet. */
-  goToBudgetPlan(): void {
-    this.setTab('insights');
-    setTimeout(() => document.getElementById('budget-recommendation')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   selectModel(id: string): void {
@@ -905,10 +749,6 @@ export class ModelResults implements OnInit {
 
   private formatDecimal(value: unknown): string {
     return typeof value === 'number' ? value.toFixed(2) : '—';
-  }
-
-  private formatCurrency(value: unknown): string {
-    return typeof value === 'number' ? currency(value) : '—';
   }
 
   private humanizeKey(key: string): string {

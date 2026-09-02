@@ -177,49 +177,6 @@
   margin-bottom: 18px;
 }
 
-.takeaway-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.takeaway-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.takeaway-icon {
-  flex: none;
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  background: var(--brand-50);
-}
-
-.takeaway-icon.tone-info {
-  background: #eff6ff;
-}
-
-.takeaway-icon.tone-warn {
-  background: #fef3c7;
-}
-
-.takeaway-text {
-  margin: 0;
-  font-size: 13.5px;
-  line-height: 1.55;
-  color: var(--text);
-}
-
-.scorecard-wrap {
-  overflow-x: auto;
-}
-
 .scorecard {
   width: 100%;
   border-collapse: collapse;
@@ -246,29 +203,6 @@
 
 .scorecard tbody tr:last-child td {
   border-bottom: none;
-}
-
-.rec-badge {
-  display: inline-block;
-  padding: 3px 9px;
-  border-radius: var(--r-full);
-  font-size: 11.5px;
-  font-weight: 600;
-}
-
-.rec-increase {
-  background: var(--brand-50);
-  color: var(--brand-700);
-}
-
-.rec-decrease {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-.rec-maintain {
-  background: var(--gray-100);
-  color: var(--text-muted);
 }
 
 .tier-badge {
@@ -311,12 +245,6 @@
   font-size: 13px;
   font-weight: 600;
   line-height: 1.5;
-}
-
-.roi-range {
-  font-size: 11.5px;
-  font-weight: 400;
-  white-space: nowrap;
 }
 
 .baseline-bar {
@@ -369,7 +297,6 @@
   font-weight: 600;
 }
 
-.overview-grid,
 .chart-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -446,66 +373,6 @@
   font-size: 10.5px;
 }
 
-.overview-card {
-  margin-bottom: 0;
-}
-
-.donut-row {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-}
-
-.donut {
-  position: relative;
-  flex: none;
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-}
-
-.donut-hole {
-  position: absolute;
-  inset: 18px;
-  border-radius: 50%;
-  background: var(--surface);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.donut-hole strong {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--text);
-  line-height: 1.2;
-}
-
-.donut-hole span {
-  font-size: 10.5px;
-  color: var(--text-muted);
-}
-
-.donut-legend {
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.donut-legend li {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12.5px;
-}
-
 .donut-swatch {
   width: 9px;
   height: 9px;
@@ -533,10 +400,6 @@
   align-items: center;
   gap: 20px;
   flex-wrap: wrap;
-}
-
-.impact-spacer {
-  flex: 1 1 auto;
 }
 
 .impact-lift {
@@ -567,8 +430,70 @@
 }
 
 @media (max-width: 760px) {
-  .overview-grid,
   .chart-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ---------- Insights tab: contribution breakdown stacked bar + budget
+   shift's "biggest changes" list (2026-09-02 redesign) ---------- */
+
+.stack-bar {
+  display: flex;
+  height: 30px;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.stack-legend {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+
+.stack-legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.stack-legend-title {
+  margin: 18px 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.change-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.change-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.change-row:last-child {
+  border-bottom: none;
+}
+
+.change-up {
+  color: var(--brand-700);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.change-down {
+  color: var(--red-600, #b91c1c);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
