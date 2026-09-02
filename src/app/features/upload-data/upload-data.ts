@@ -21,14 +21,21 @@ interface ModelOption {
 }
 
 /**
- * One real option today (Meridian) - built as an array, not a hardcoded
- * label, so a second model later is one new entry here, not a redesign.
+ * Two real engines as of 2026-09-02 (Hammad's handover) - modelType now
+ * accepts 'pymc' alongside 'meridian' on the real create-dataset endpoint.
+ * Built as an array from the start specifically so this day was one new
+ * entry here, not a redesign.
  */
 const MODEL_OPTIONS: ModelOption[] = [
   {
     value: 'meridian',
     label: 'Meridian',
     description: 'Geo-hierarchical Bayesian MMM with reach and frequency support.',
+  },
+  {
+    value: 'pymc',
+    label: 'PyMC-Marketing',
+    description: 'Bayesian MMM built on PyMC - results won\'t include the actual-vs-predicted, channel confidence, or baseline-vs-marketing breakdowns yet.',
   },
 ];
 

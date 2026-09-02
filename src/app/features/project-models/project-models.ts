@@ -198,12 +198,16 @@ export class ProjectModels implements OnInit, OnDestroy {
 
   /**
    * Real change from Anas: `stepNumber`/`totalSteps`/`stepLabel` name which
-   * of the 7 fixed real pipeline steps is running (e.g. "Building the model
-   * configuration"), so the UI can read "Step 3 of 7: ..." instead of the
-   * confusing raw ".3%" `progress` alone produced. All three are optional -
-   * absent on "not_started" or during a transient network hiccup reaching
-   * the engine - so this only ever adds them when the backend actually sent
-   * them, never guesses.
+   * real pipeline step is running (e.g. "Building the model configuration"),
+   * so the UI can read "Step 3 of 7: ..." instead of the confusing raw ".3%"
+   * `progress` alone produced. `totalSteps` isn't a fixed 7 - since Hammad's
+   * 2026-09-02 PyMC handover it varies by which engine the dataset actually
+   * uses (Meridian: 7, PyMC: 5), and GET /status already returns the right
+   * one per dataset, so this always reads it from the response rather than
+   * assuming a number. All three fields are optional - absent on
+   * "not_started" or during a transient network hiccup reaching the engine -
+   * so this only ever adds them when the backend actually sent them, never
+   * guesses.
    */
   private toTrainingState(res: {
     progress?: number;
@@ -286,14 +290,14 @@ export class ProjectModels implements OnInit, OnDestroy {
     return t.phase === 'training' ? (t.progress ?? 0) : t.phase === 'completed' ? 100 : 0;
   }
 
-  /** "Step 3 of 7: Building the model configuration" - null until the backend actually sends the 3 step fields (not_started, or a transient hiccup reaching the engine). */
+  /** "Step 3 of 7: Building the model configuration" (or "of 5" for a PyMC dataset) - null until the backend actually sends the 3 step fields (not_started, or a transient hiccup reaching the engine). */
   stepText(row: ModelRow): string | null {
     const t = row.training;
     if (t.phase !== 'training' || !t.stepNumber || !t.totalSteps || !t.stepLabel) return null;
     return `Step ${t.stepNumber} of ${t.totalSteps}: ${t.stepLabel}`;
   }
 
-  /** Ticks for the 7-step segmented bar - filled up to and including the current step. Only meaningful once stepText() is non-null. */
+  /** Ticks for the segmented step bar - length comes from the real totalSteps for whichever engine this dataset uses (7 for Meridian, 5 for PyMC), filled up to and including the current step. Only meaningful once stepText() is non-null. */
   stepTicks(row: ModelRow): boolean[] {
     const t = row.training;
     if (t.phase !== 'training' || !t.totalSteps) return [];
