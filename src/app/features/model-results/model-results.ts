@@ -11,6 +11,7 @@ import {
   isTerminalTrainingStatus,
 } from '../../core/services/dataset.service';
 import { computeModelStatus } from '../../core/services/model-status';
+import { ModelPerformanceLab } from '../model-performance-lab/model-performance-lab';
 import { BarDatum } from '../../shared/charts/bar-chart/bar-chart';
 import { GroupedBarChart, GroupedBarDatum } from '../../shared/charts/grouped-bar-chart/grouped-bar-chart';
 import { LineChart, LineSeries } from '../../shared/charts/line-chart/line-chart';
@@ -59,7 +60,7 @@ const DONUT_COLORS = ['#00994D', '#3B82F6', '#F59E0B', '#8FCB92', '#EF4444', '#9
  */
 @Component({
   selector: 'app-model-results',
-  imports: [DecimalPipe, FormsModule, RouterLink, PageHeader, EmptyState, StatTile, InfoTip, GroupedBarChart, LineChart],
+  imports: [DecimalPipe, FormsModule, RouterLink, PageHeader, EmptyState, StatTile, InfoTip, GroupedBarChart, LineChart, ModelPerformanceLab],
   templateUrl: './model-results.html',
   styleUrl: './model-results.css',
 })

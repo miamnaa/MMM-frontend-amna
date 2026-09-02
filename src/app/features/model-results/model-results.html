@@ -161,6 +161,8 @@
     } @else {
       <app-empty-state title="No model performance metrics" message="This model's results didn't include a prediction time series." />
     }
+
+    <app-model-performance-lab />
   } @else {
     @if (totalIncrementalOutcome(); as total) {
       <div class="exec-tile-row">

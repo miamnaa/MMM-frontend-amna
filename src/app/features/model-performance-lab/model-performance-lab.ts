@@ -4,16 +4,18 @@ import { FormsModule } from '@angular/forms';
 import { seriesColor } from '../../shared/charts/palette';
 
 /**
- * A brand-new, standalone page (per an explicit design brief, 2026-08-28) -
- * deliberately built separate from the real Results & Insights page rather
- * than replacing its existing four tabs. `model_confidence`,
- * `adstock_decay_curves`, `saturation_curves` and `data_quality_flags` are
- * the field names the brief specifies, but the two curve fields and
- * `data_quality_flags` aren't part of the confirmed real API shape yet
- * (only `overall_accuracy_percent`/`r_squared` are) - the brief explicitly
- * calls for realistic illustrative numbers in that case, so every value on
- * this page is illustrative, not fetched. Swap in a real getResults() call
- * once the backend actually returns these shapes.
+ * Built per a 2026-08-28 design brief as its own standalone page, then
+ * embedded (2026-09-02) into the real Model results page's Model Performance
+ * tab, below the real actual-vs-predicted/residuals/cumulative charts - own
+ * internal tab row removed since the parent page already has one.
+ * `model_confidence`, `adstock_decay_curves`, `saturation_curves` and
+ * `data_quality_flags` are the field names the brief specifies, but the two
+ * curve fields aren't part of the confirmed real API shape yet (only
+ * `overall_accuracy_percent`/`r_squared` are) - the brief explicitly calls
+ * for realistic illustrative numbers in that case, so every value on this
+ * page is illustrative, not fetched (see the `.illustrative-note` in the
+ * template). Swap in a real getResults() call once the backend actually
+ * returns these shapes.
  */
 interface ChannelSpec {
   name: string;
@@ -67,9 +69,6 @@ function saturationEffect(spend: number, gamma: number): number {
   styleUrl: './model-performance-lab.css',
 })
 export class ModelPerformanceLab {
-  readonly activeTab = signal<'performance' | 'insights'>('performance');
-  readonly trainedRangeLabel = 'Trained on data from Jan 2022 to Dec 2024';
-
   // ---- KPI cards ----
   readonly kpis = [
     {

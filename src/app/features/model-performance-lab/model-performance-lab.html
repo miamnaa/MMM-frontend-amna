@@ -1,11 +1,8 @@
 <div class="page">
-  <div class="tab-row">
-    <div class="tabs">
-      <button type="button" class="tab" [class.active]="activeTab() === 'performance'">Model performance</button>
-      <button type="button" class="tab disabled" disabled title="Coming later">Business insights</button>
-    </div>
-    <span class="trained-range">{{ trainedRangeLabel }}</span>
-  </div>
+  <p class="illustrative-note">
+    Illustrative — every number and chart below is shown for design reference, not read from this model's real
+    results, until adstock_decay_curves, saturation_curves and data_quality_flags are returned by the backend.
+  </p>
 
   <div class="kpi-row">
     @for (kpi of kpis; track kpi.label) {
