@@ -3,7 +3,7 @@
   flex-direction: column;
   width: var(--sidebar-w);
   height: 100vh;
-  background: var(--sidebar-bg);
+  background: linear-gradient(160deg, var(--sidebar-bg) 0%, var(--sidebar-bg-darkest) 100%);
   color: #fff;
   border-right: 1px solid rgba(0, 0, 0, 0.08);
 }

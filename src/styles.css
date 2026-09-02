@@ -67,6 +67,7 @@
   /* Brand surface — the sidebar and other brand-filled chrome */
   --sidebar-bg: #00994d;
   --sidebar-bg-deep: #007a3d;
+  --sidebar-bg-darkest: #00301a; /* = --brand-900 (light) - the gradient's dark end, kept as its own token since --brand-900 itself inverts in dark mode below */
 
   /* Chart chrome, so charts follow the theme */
   --chart-grid: var(--gray-200);
@@ -142,6 +143,7 @@
 
   --sidebar-bg: #00b357;
   --sidebar-bg-deep: #00994d;
+  --sidebar-bg-darkest: #123023; /* = --brand-100 above - dark theme's sidebar is brighter, so its gradient tail is too rather than reusing the light theme's near-black value */
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
