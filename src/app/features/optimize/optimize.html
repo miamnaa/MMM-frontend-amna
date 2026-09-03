@@ -172,8 +172,8 @@
       @if (channelHealthOpen()) {
       <p class="muted field-hint">
         Two different problems, one picture: a channel can be redundant with others (high on this
-        chart), too small to trust (left on this chart), or both. Click a channel to see what to do
-        about it.
+        chart), too small to trust (left on this chart), or both. Hover a point for its name, click
+        it to see what to do about it.
       </p>
 
       @if (rowsLoading()) {
@@ -216,9 +216,6 @@
                     tabindex="0"
                     [attr.aria-label]="p.name"
                   />
-                }
-                @for (l of channelHealthLabels(); track l.name) {
-                  <text [attr.x]="l.x" [attr.y]="l.y" [attr.text-anchor]="l.anchor" class="health-point-label">{{ l.displayName }}</text>
                 }
               </svg>
               @if (hoveredHealthPoint(); as t) {

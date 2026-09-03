@@ -25,8 +25,8 @@ const SERIES_COLORS = ['#e0554f', '#1baf7a', '#3b82f6', '#f59e0b', '#8b5cf6', '#
 
 // ---- Channel Health scatter geometry ----
 const HEALTH_W = 560;
-const HEALTH_H = 340;
-const HEALTH_PAD = { top: 20, right: 30, bottom: 56, left: 50 };
+const HEALTH_H = 300;
+const HEALTH_PAD = { top: 20, right: 30, bottom: 46, left: 50 };
 
 function toNumber(value: unknown): number {
   const n = typeof value === 'number' ? value : parseFloat(String(value ?? ''));
@@ -155,14 +155,6 @@ interface ChannelHealthPoint {
   x: number;
   y: number;
   status: 'both' | 'one' | 'healthy';
-}
-
-interface ChannelHealthLabel {
-  name: string;
-  displayName: string;
-  x: number;
-  y: number;
-  anchor: 'start' | 'end';
 }
 
 /** Strips a trailing " Cost" (however it's cased) from a real column name for display only - real uploaded files commonly name spend columns "X Cost", which reads cleaner in a chart label as just "X". Every action (remove/combine) still targets the real, unshortened name. */
@@ -670,55 +662,6 @@ export class Optimize implements OnInit {
   protected displayChannelList(names: string[]): string {
     return names.map((n) => displayName(n)).join(', ');
   }
-
-  /**
-   * Every real channel gets a permanent chart label, laid out through a
-   * real greedy row-packing pass so labels don't run into each other even
-   * though real channel names ("Google Branded Paid Search") are far wider
-   * than the point spacing that produces: points are walked left to right,
-   * each label's real pixel width is estimated from its character count,
-   * and a label only reuses a text row if there's real horizontal room left
-   * in it - otherwise it drops to the next row down. Rows alternate below
-   * then above the point (instead of always stacking downward) so a tight
-   * cluster spreads into the real space on both sides of it rather than
-   * running off the bottom of the chart. Labels within 90 units of the
-   * chart's right edge anchor left instead of right so they don't run off
-   * the plot.
-   */
-  readonly channelHealthLabels = computed<ChannelHealthLabel[]>(() => {
-    const CHAR_WIDTH = 5.6;
-    const LABEL_GAP = 8;
-    const ROW_HEIGHT = 13;
-    const OFFSET = 10;
-
-    const sorted = [...this.channelHealthPoints()].sort((a, b) => a.x - b.x);
-    const rowRightEdge: number[] = [];
-
-    return sorted.map((p) => {
-      const text = displayName(p.name);
-      const anchor: 'start' | 'end' = p.x > HEALTH_W - HEALTH_PAD.right - 90 ? 'end' : 'start';
-      const width = text.length * CHAR_WIDTH + OFFSET;
-      const startX = anchor === 'end' ? p.x - OFFSET - width : p.x + OFFSET;
-      const endX = startX + width;
-
-      let row = 0;
-      while (row < rowRightEdge.length && rowRightEdge[row] + LABEL_GAP > startX) row++;
-      rowRightEdge[row] = endX;
-
-      // Row 0 sits just below the point; odd rows go below, even rows (2, 4, ...) go above.
-      const tier = Math.ceil(row / 2);
-      const goesAbove = row > 0 && row % 2 === 0;
-      const offsetY = row === 0 ? 4 : goesAbove ? -(tier * ROW_HEIGHT) - 2 : tier * ROW_HEIGHT + 4;
-
-      return {
-        name: p.name,
-        displayName: text,
-        x: anchor === 'end' ? p.x - OFFSET : p.x + OFFSET,
-        y: p.y + offsetY,
-        anchor,
-      };
-    });
-  });
 
   /** Explicitly dismissed via the panel's ✕ - cleared again the next time a channel is picked, so the panel doesn't just reappear on its own after being closed but still opens right back up on the next real click. */
   readonly healthPanelClosed = signal(false);
