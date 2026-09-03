@@ -649,6 +649,23 @@ export class Optimize implements OnInit {
 
   readonly hasChannelHealthData = computed(() => this.channelHealthPoints().length > 0);
 
+  /** Points are labeled on hover, not permanently - real channel lists commonly bunch several names into the same low-spend/low-VIF corner, and a permanent label per point overlaps illegibly once more than a handful of channels are close together. */
+  readonly hoveredHealthPoint = signal<{ xPct: number; yPct: number; name: string; spendPct: number; vif: number } | null>(null);
+
+  showHealthTooltip(point: ChannelHealthPoint): void {
+    this.hoveredHealthPoint.set({
+      xPct: (point.x / HEALTH_W) * 100,
+      yPct: (point.y / HEALTH_H) * 100,
+      name: point.name,
+      spendPct: point.spendPct,
+      vif: point.vif,
+    });
+  }
+
+  hideHealthTooltip(): void {
+    this.hoveredHealthPoint.set(null);
+  }
+
   readonly spendCutoffEnabled = signal(true);
   readonly spendCutoffPct = signal(3);
   readonly vifCutoffEnabled = signal(true);

@@ -183,39 +183,49 @@
       } @else if (hasChannelHealthData()) {
         <div class="health-layout">
           <div>
-            <svg class="health-svg" [attr.viewBox]="'0 0 ' + healthW + ' ' + healthH" preserveAspectRatio="xMidYMid meet">
-              @if (spendCutoffEnabled()) {
-                <rect [attr.x]="healthPad.left" [attr.y]="healthPad.top" [attr.width]="healthX(spendCutoffPct()) - healthPad.left" [attr.height]="healthPlotBottom - healthPad.top" class="health-zone health-zone-spend" />
-              }
-              @if (vifCutoffEnabled()) {
-                <rect [attr.x]="healthPad.left" [attr.y]="healthPad.top" [attr.width]="healthW - healthPad.left - healthPad.right" [attr.height]="healthY(vifCutoffValue()) - healthPad.top" class="health-zone health-zone-vif" />
-              }
-              @for (t of healthYTicks(); track t.value) {
-                <line [attr.x1]="healthPad.left" [attr.x2]="healthW - healthPad.right" [attr.y1]="t.y" [attr.y2]="t.y" class="chart-gridline" />
-                <text [attr.x]="healthPad.left - 8" [attr.y]="t.y + 3" text-anchor="end" class="chart-axis-text">{{ t.value }}</text>
-              }
-              <text [attr.x]="16" [attr.y]="healthPlotBottom / 2" text-anchor="middle" class="chart-axis-title" [attr.transform]="'rotate(-90 16 ' + (healthPlotBottom / 2) + ')'">Redundancy (VIF)</text>
-              <line [attr.x1]="healthPad.left" [attr.x2]="healthPad.left" [attr.y1]="healthPad.top" [attr.y2]="healthPlotBottom" class="chart-axis-line" />
-              <line [attr.x1]="healthPad.left" [attr.x2]="healthW - healthPad.right" [attr.y1]="healthPlotBottom" [attr.y2]="healthPlotBottom" class="chart-axis-line" />
-              @for (t of healthXTicks(); track t.value) {
-                <text [attr.x]="t.x" [attr.y]="healthPlotBottom + 16" text-anchor="middle" class="chart-axis-text">{{ t.value }}%</text>
-              }
-              <text [attr.x]="(healthW - healthPad.left - healthPad.right) / 2 + healthPad.left" [attr.y]="healthH - 8" text-anchor="middle" class="chart-axis-title">Share of spend</text>
+            <div class="health-chart-wrap">
+              <svg class="health-svg" [attr.viewBox]="'0 0 ' + healthW + ' ' + healthH" preserveAspectRatio="xMidYMid meet">
+                @if (spendCutoffEnabled()) {
+                  <rect [attr.x]="healthPad.left" [attr.y]="healthPad.top" [attr.width]="healthX(spendCutoffPct()) - healthPad.left" [attr.height]="healthPlotBottom - healthPad.top" class="health-zone health-zone-spend" />
+                }
+                @if (vifCutoffEnabled()) {
+                  <rect [attr.x]="healthPad.left" [attr.y]="healthPad.top" [attr.width]="healthW - healthPad.left - healthPad.right" [attr.height]="healthY(vifCutoffValue()) - healthPad.top" class="health-zone health-zone-vif" />
+                }
+                @for (t of healthYTicks(); track t.value) {
+                  <line [attr.x1]="healthPad.left" [attr.x2]="healthW - healthPad.right" [attr.y1]="t.y" [attr.y2]="t.y" class="chart-gridline" />
+                  <text [attr.x]="healthPad.left - 8" [attr.y]="t.y + 3" text-anchor="end" class="chart-axis-text">{{ t.value }}</text>
+                }
+                <text [attr.x]="16" [attr.y]="healthPlotBottom / 2" text-anchor="middle" class="chart-axis-title" [attr.transform]="'rotate(-90 16 ' + (healthPlotBottom / 2) + ')'">Redundancy (VIF)</text>
+                <line [attr.x1]="healthPad.left" [attr.x2]="healthPad.left" [attr.y1]="healthPad.top" [attr.y2]="healthPlotBottom" class="chart-axis-line" />
+                <line [attr.x1]="healthPad.left" [attr.x2]="healthW - healthPad.right" [attr.y1]="healthPlotBottom" [attr.y2]="healthPlotBottom" class="chart-axis-line" />
+                @for (t of healthXTicks(); track t.value) {
+                  <text [attr.x]="t.x" [attr.y]="healthPlotBottom + 16" text-anchor="middle" class="chart-axis-text">{{ t.value }}%</text>
+                }
+                <text [attr.x]="(healthW - healthPad.left - healthPad.right) / 2 + healthPad.left" [attr.y]="healthH - 8" text-anchor="middle" class="chart-axis-title">Share of spend</text>
 
-              @for (p of channelHealthPoints(); track p.name) {
-                <circle
-                  [attr.cx]="p.x"
-                  [attr.cy]="p.y"
-                  [attr.r]="effectiveSelectedHealthChannel()?.name === p.name ? 9 : 6.5"
-                  [class]="'health-point health-point-' + p.status"
-                  (click)="selectHealthChannel(p.name)"
-                  role="button"
-                  tabindex="0"
-                  [attr.aria-label]="p.name"
-                />
-                <text [attr.x]="p.x + 10" [attr.y]="p.y + 4" class="chart-point-label">{{ p.name }}</text>
+                @for (p of channelHealthPoints(); track p.name) {
+                  <circle
+                    [attr.cx]="p.x"
+                    [attr.cy]="p.y"
+                    [attr.r]="effectiveSelectedHealthChannel()?.name === p.name ? 9 : 6.5"
+                    [class]="'health-point health-point-' + p.status"
+                    (click)="selectHealthChannel(p.name)"
+                    (mouseenter)="showHealthTooltip(p)"
+                    (mouseleave)="hideHealthTooltip()"
+                    role="button"
+                    tabindex="0"
+                    [attr.aria-label]="p.name"
+                  />
+                }
+              </svg>
+              @if (hoveredHealthPoint(); as t) {
+                <div class="chart-tooltip" [style.left.%]="t.xPct" [style.top.%]="t.yPct">
+                  <strong>{{ t.name }}</strong>
+                  <div>Spend share: <strong>{{ t.spendPct }}%</strong></div>
+                  <div>VIF: <strong>{{ t.vif }}</strong></div>
+                </div>
               }
-            </svg>
+            </div>
             <div class="health-legend">
               <span><span class="health-legend-dot health-point-both"></span>Both issues</span>
               <span><span class="health-legend-dot health-point-one"></span>One issue</span>

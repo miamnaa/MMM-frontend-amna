@@ -371,6 +371,14 @@
   }
 }
 
+.health-chart-wrap {
+  position: relative;
+  padding: 12px 12px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--gray-50);
+}
+
 .health-svg {
   display: block;
   width: 100%;
@@ -386,28 +394,27 @@
   fill: var(--red-500, #e0554f);
 }
 
-.chart-point-label {
-  font-size: 10px;
-  font-weight: 600;
-  fill: var(--text);
-}
-
 .health-point {
   cursor: pointer;
   stroke: var(--surface);
   stroke-width: 1.5;
 }
 
+/* Shared by the SVG points (need `fill`) and the plain HTML legend/selector
+   dots (need `background-color`) - each rule only applies where relevant. */
 .health-point-both {
   fill: var(--red-500, #e0554f);
+  background-color: var(--red-500, #e0554f);
 }
 
 .health-point-one {
   fill: #f5b942;
+  background-color: #f5b942;
 }
 
 .health-point-healthy {
   fill: var(--brand-500);
+  background-color: var(--brand-500);
 }
 
 .health-legend {
