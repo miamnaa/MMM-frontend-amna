@@ -6,7 +6,7 @@
 
   <app-page-header
     title="Calibrate Your Results"
-    subtitle="Fine-tune the model results based on your business knowledge and expertise."
+    subtitle="The model flags where it needs your help — you just confirm or provide evidence."
   />
 
   <button class="info-toggle" type="button" (click)="toggleInfo()" [attr.aria-expanded]="infoOpen()">
@@ -18,100 +18,230 @@
   @if (infoOpen()) {
     <div class="info-body">
       <ul>
-        <li><strong>Contribution belief</strong> — roughly how much of your outcome (revenue, signups, etc.) you already believe marketing actually drove, versus everything else (seasonality, word of mouth, pricing). If a past incrementality experiment or lift study told you marketing explains about a third of it, that's 30%.</li>
-        <li><strong>Confidence</strong> — how sure you are about that belief. A guess based on a gut feeling might be 40–50% confident; a belief backed by a real prior study or experiment might be 80%+.</li>
+        <li>Channels with limited real spend history are flagged below automatically - you don't need to know which ones are weak, just answer where you have real evidence (an incrementality experiment or lift test).</li>
+        <li>Each channel's evidence nudges the model's one overall <strong>contribution belief</strong> (roughly how much of your outcome marketing actually drove) and <strong>confidence</strong> (how sure that belief is) - Roivio only ever saves one overall pair for the whole model, not a separate value per channel.</li>
         <li>Prefer not to guess? Leave calibration off below and Roivio uses neutral defaults instead.</li>
       </ul>
     </div>
   }
 
-  <div class="calibrate-grid">
-    <section class="card">
-      <button type="button" class="switch-row" (click)="toggleCalibration()" [attr.aria-pressed]="calibrationEnabled()">
-        <span class="switch" [class.on]="calibrationEnabled()">
-          <span class="switch-thumb"></span>
-        </span>
-        <span class="switch-label">Model Calibration <span class="muted">(Optional)</span></span>
-      </button>
-      <p class="muted field-hint switch-hint">
-        Use your incrementality experiment results to fine-tune the model. Calibration improves
-        accuracy for variables with limited data.
-      </p>
+  <section class="card">
+    <button type="button" class="switch-row" (click)="toggleCalibration()" [attr.aria-pressed]="calibrationEnabled()">
+      <span class="switch" [class.on]="calibrationEnabled()">
+        <span class="switch-thumb"></span>
+      </span>
+      <span class="switch-label">Model Calibration <span class="muted">(Optional)</span></span>
+    </button>
+    <p class="muted field-hint switch-hint">
+      Use your incrementality experiment results to fine-tune the model. Calibration improves
+      accuracy for channels with limited real spend data.
+    </p>
+  </section>
 
-      @if (calibrationEnabled()) {
-        <div class="callout">
-          <span class="callout-icon" aria-hidden="true">💡</span>
-          <div>
-            <p class="callout-title">Why calibrate your model?</p>
-            <p class="callout-body">Apply your marketing expertise by incorporating insights from incrementality experiments or lift studies you've run.</p>
+  @if (calibrationEnabled()) {
+    @if (rowsLoading()) {
+      <p class="muted">Loading your data…</p>
+    } @else if (rowsError(); as err) {
+      <p class="drop-error">{{ err }}</p>
+    } @else {
+      <div class="calibrate-columns">
+        <section class="card">
+          <h2 class="section-title">Channels that could use your input</h2>
+          <p class="muted field-hint">
+            Channels with limited real spend history are flagged automatically - you don't need to
+            know which ones are weak, just answer where you have evidence.
+          </p>
+
+          @if (flaggedChannels().length === 0) {
+            <p class="muted">Every real channel already has enough spend history - nothing needs outside evidence right now.</p>
+          } @else {
+            @for (ch of flaggedChannels(); track ch.name) {
+              @if (calibratedChannels().has(ch.name)) {
+                <div class="flag-row flag-row-done">
+                  <div>
+                    <span class="flag-name">{{ ch.name }}</span>
+                    <span class="muted flag-reason">Calibrated from a lift test</span>
+                  </div>
+                  <span class="flag-badge">✓ Calibrated · {{ calculatedPct(ch.name) }}%</span>
+                </div>
+              } @else if (ch.name === expandedChannel()) {
+                <div class="flag-row">
+                  <div>
+                    <span class="flag-name">{{ ch.name }}</span>
+                    <span class="muted flag-reason">ⓘ Limited spend history — model has low confidence here ({{ ch.pct }}% of budget)</span>
+                  </div>
+                </div>
+
+                <div class="workflow-card">
+                  <div class="stepper">
+                    <span class="stepper-step done">
+                      <span class="stepper-circle">✓</span>Identified
+                    </span>
+                    <span class="stepper-line" [class.done]="hasEvidence(ch.name)"></span>
+                    <span class="stepper-step" [class.done]="hasEvidence(ch.name)">
+                      <span class="stepper-circle">{{ hasEvidence(ch.name) ? '✓' : '2' }}</span>Evidence
+                    </span>
+                    <span class="stepper-line" [class.done]="hasEvidence(ch.name)"></span>
+                    <span class="stepper-step" [class.done]="hasEvidence(ch.name)">
+                      <span class="stepper-circle">{{ hasEvidence(ch.name) ? '✓' : '3' }}</span>Calculated
+                    </span>
+                    <span class="stepper-line" [class.done]="hasEvidence(ch.name)"></span>
+                    <span class="stepper-step stepper-active">
+                      <span class="stepper-circle">4</span>Review
+                    </span>
+                    <span class="stepper-line"></span>
+                    <span class="stepper-step stepper-pending">
+                      <span class="stepper-circle">5</span>Save
+                    </span>
+                  </div>
+
+                  <div class="workflow-detail-row">
+                    <span class="muted">Channel identified</span>
+                    <span>{{ ch.name }} — limited spend history</span>
+                  </div>
+
+                  @if (isEditingEvidence(ch.name)) {
+                    <div class="workflow-detail-row">
+                      <span class="muted">Evidence</span>
+                      <span class="evidence-fields">
+                        <span class="evidence-field">
+                          <label class="muted" [attr.for]="'cal-inc-' + ch.name">Incremental $</label>
+                          <input
+                            [id]="'cal-inc-' + ch.name"
+                            class="input input-sm"
+                            type="number"
+                            min="0"
+                            [ngModel]="evidenceIncremental(ch.name)"
+                            (ngModelChange)="setEvidenceIncremental(ch.name, $event)"
+                            placeholder="e.g. 18500"
+                          />
+                        </span>
+                        <span class="evidence-field">
+                          <label class="muted" [attr.for]="'cal-tot-' + ch.name">Total $</label>
+                          <input
+                            [id]="'cal-tot-' + ch.name"
+                            class="input input-sm"
+                            type="number"
+                            min="0"
+                            [ngModel]="evidenceTotal(ch.name)"
+                            (ngModelChange)="setEvidenceTotal(ch.name, $event)"
+                            placeholder="e.g. 102000"
+                          />
+                        </span>
+                      </span>
+                    </div>
+                  } @else {
+                    <div class="workflow-detail-row">
+                      <span class="muted">Evidence provided</span>
+                      <span>
+                        Lift test · {{ evidenceIncremental(ch.name) | currency: 'USD' : 'symbol' : '1.0-0' }} incremental
+                        / {{ evidenceTotal(ch.name) | currency: 'USD' : 'symbol' : '1.0-0' }} total
+                      </span>
+                    </div>
+
+                    <div class="workflow-detail-row">
+                      <span class="muted">Calculated</span>
+                      <span>{{ evidenceIncremental(ch.name) | currency: 'USD' : 'symbol' : '1.0-0' }} ÷ {{ evidenceTotal(ch.name) | currency: 'USD' : 'symbol' : '1.0-0' }} = {{ calculatedPct(ch.name) }}%</span>
+                    </div>
+
+                    <div class="review-card">
+                      <p class="review-card-title">Review before saving</p>
+                      <div class="review-row">
+                        <span class="flag-name">{{ ch.name }}</span>
+                        <span class="review-pct">{{ currentBelief() }}% → {{ calculatedPct(ch.name) }}%</span>
+                      </div>
+                      <div class="review-bar-track">
+                        <div class="review-bar-before" [style.width.%]="currentBelief()"></div>
+                        <div class="review-bar-after" [style.width.%]="calculatedPct(ch.name)"></div>
+                      </div>
+                      <div class="review-legend">
+                        <span><span class="review-legend-dot review-legend-before"></span>Model's current estimate</span>
+                        <span><span class="review-legend-dot review-legend-after"></span>With this evidence</span>
+                      </div>
+
+                      <div class="review-actions">
+                        <button type="button" class="link-btn-inline" (click)="editEvidence(ch.name)">← Edit evidence</button>
+                        <button class="btn btn-primary btn-sm" type="button" [disabled]="isReadOnly()" (click)="saveChannelCalibration(ch.name)">
+                          Save calibration
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="flag-row">
+                  <div>
+                    <span class="flag-name">{{ ch.name }}</span>
+                    <span class="muted flag-reason">ⓘ Limited spend history — model has low confidence here ({{ ch.pct }}% of budget)</span>
+                  </div>
+                  <button class="btn btn-secondary btn-sm" type="button" [disabled]="isReadOnly()" (click)="expandChannel(ch.name)">
+                    Provide evidence
+                  </button>
+                </div>
+              }
+            }
+          }
+        </section>
+
+        <aside class="card side-panel">
+          <h3 class="side-panel-title">What calibration changes</h3>
+          <p class="muted field-hint">Updates as each channel is reviewed and saved.</p>
+
+          @if (calibrationHistory().length === 0) {
+            @if (hasSavedCalibration()) {
+              <p class="muted no-calibrations">
+                Already saved to this model: contribution belief <strong>{{ currentBelief() }}%</strong>,
+                confidence <strong>{{ currentConfidence() }}%</strong>. Review a channel below to update it.
+              </p>
+            } @else {
+              <p class="muted no-calibrations">Nothing calibrated yet — changes will appear here as you review channels.</p>
+            }
+          } @else {
+            @for (h of calibrationHistory(); track h.channel) {
+              <div class="history-row">
+                <div class="history-row-head">
+                  <span class="flag-name">{{ h.channel }}</span>
+                  <span class="review-pct">{{ h.before }}% → {{ h.after }}%</span>
+                </div>
+                <div class="review-bar-track">
+                  <div class="review-bar-before" [style.width.%]="h.before"></div>
+                  <div class="review-bar-after" [style.width.%]="h.after"></div>
+                </div>
+              </div>
+            }
+            <div class="review-legend">
+              <span><span class="review-legend-dot review-legend-before"></span>Model estimate, before calibration</span>
+              <span><span class="review-legend-dot review-legend-after"></span>With calibration applied</span>
+            </div>
+          }
+
+          <div class="callout callout-star">
+            <span class="callout-icon" aria-hidden="true">⭐</span>
+            <div>
+              <p class="callout-title">Why this order</p>
+              <p class="callout-body">
+                Channels are listed lowest real spend share first, since those are the ones with the
+                least real data behind them - where a bit of outside evidence goes furthest.
+              </p>
+            </div>
           </div>
-        </div>
-
-        <div class="field">
-          <label class="label" for="cal-belief">Contribution belief (%)</label>
-          <input
-            id="cal-belief"
-            class="input"
-            type="number"
-            min="0"
-            max="100"
-            [ngModel]="contributionBeliefPercent()"
-            (ngModelChange)="contributionBeliefPercent.set($event)"
-            placeholder="e.g. 30"
-          />
-        </div>
-
-        <div class="field">
-          <label class="label" for="cal-confidence">Confidence level (%)</label>
-          <input
-            id="cal-confidence"
-            class="input"
-            type="number"
-            min="0"
-            max="100"
-            [ngModel]="confidencePercent()"
-            (ngModelChange)="confidencePercent.set($event)"
-            placeholder="e.g. 80"
-          />
-        </div>
-      }
-    </section>
-
-    <aside class="card side-panel">
-      @if (calibrationEnabled() && hasSavedCalibration() && contributionBeliefPercent() !== null) {
-        <div class="saved-summary">
-          <p class="side-panel-title">Saved to this model</p>
-          Contribution belief <strong>{{ contributionBeliefPercent() }}%</strong> · Confidence <strong>{{ confidencePercent() }}%</strong>
-        </div>
-      } @else {
-        <p class="muted no-calibrations">No calibration saved yet.</p>
-      }
-
-      @if (calibrationEnabled()) {
-        <div class="callout callout-muted">
-          <span class="callout-icon" aria-hidden="true">❓</span>
-          <div>
-            <p class="callout-title">What is confidence level?</p>
-            <p class="callout-body">
-              This represents how certain you are about the calibration value you entered. You can
-              typically find this in your incrementality test or lift study results (e.g., "90%
-              confidence interval"). If unsure, 80–90% is a common range for well-designed experiments.
-            </p>
-          </div>
-        </div>
-      }
-    </aside>
-  </div>
+        </aside>
+      </div>
+    }
+  }
 
   @if (saveError(); as err) {
     <p class="drop-error">{{ err }}</p>
   }
 
   <div class="tunnel-actions">
+    @if (calibrationEnabled() && flaggedChannels().length > 0) {
+      <span class="progress-note">🔒 {{ calibratedChannels().size }} of {{ flaggedChannels().length }} flagged channels calibrated so far.</span>
+    }
     @if (isReadOnly()) {
       <p class="muted read-only-hint">Your role only allows viewing. Ask a Master for Read/Write access to save changes.</p>
     }
-    <button class="btn btn-primary btn-lg" type="button" [disabled]="!canSave() || saving() || isReadOnly()" (click)="save()">
+    <button class="btn btn-primary btn-lg" type="button" [disabled]="saving() || isReadOnly()" (click)="save()">
       {{ saving() ? 'Saving…' : 'Save and continue' }}
     </button>
   </div>
