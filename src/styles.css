@@ -65,7 +65,7 @@
   --shadow-lg: 0 12px 40px rgba(0, 153, 77, 0.12);  /* = --cbt-shadow-deep */
 
   /* Brand surface — the sidebar and other brand-filled chrome */
-  --sidebar-bg: #00994d;
+  --sidebar-bg: #0c8a4c; /* a shade darker than --brand-500 specifically for the gradient's top end, matching the mockup's own --sidebar-from */
   --sidebar-bg-deep: #007a3d;
   --sidebar-bg-darkest: #00301a; /* = --brand-900 (light) - the gradient's dark end, kept as its own token since --brand-900 itself inverts in dark mode below */
 
