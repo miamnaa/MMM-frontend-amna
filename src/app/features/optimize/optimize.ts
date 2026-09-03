@@ -25,8 +25,8 @@ const SERIES_COLORS = ['#e0554f', '#1baf7a', '#3b82f6', '#f59e0b', '#8b5cf6', '#
 
 // ---- Channel Health scatter geometry ----
 const HEALTH_W = 560;
-const HEALTH_H = 300;
-const HEALTH_PAD = { top: 20, right: 30, bottom: 46, left: 50 };
+const HEALTH_H = 340;
+const HEALTH_PAD = { top: 20, right: 30, bottom: 56, left: 50 };
 
 function toNumber(value: unknown): number {
   const n = typeof value === 'number' ? value : parseFloat(String(value ?? ''));
@@ -672,19 +672,18 @@ export class Optimize implements OnInit {
   }
 
   /**
-   * Only flagged channels (plus whichever one is selected) get a permanent
-   * chart label - real channel lists are commonly long enough, with names
-   * long enough ("Google Branded Paid Search"), that labeling every single
-   * point runs labels into each other regardless of layout cleverness.
-   * Healthy, unselected channels still get their real name on hover.
-   *
-   * For whichever points DO get labeled, a real greedy row-packing pass
-   * keeps them from overlapping: points are walked left to right, each
-   * label's real pixel width is estimated from its character count, and a
-   * label only reuses a text row if there's real horizontal room left in
-   * it - otherwise it drops to the next row down. Labels within 90 units of
-   * the chart's right edge anchor left instead of right so they don't run
-   * off the plot.
+   * Every real channel gets a permanent chart label, laid out through a
+   * real greedy row-packing pass so labels don't run into each other even
+   * though real channel names ("Google Branded Paid Search") are far wider
+   * than the point spacing that produces: points are walked left to right,
+   * each label's real pixel width is estimated from its character count,
+   * and a label only reuses a text row if there's real horizontal room left
+   * in it - otherwise it drops to the next row down. Rows alternate below
+   * then above the point (instead of always stacking downward) so a tight
+   * cluster spreads into the real space on both sides of it rather than
+   * running off the bottom of the chart. Labels within 90 units of the
+   * chart's right edge anchor left instead of right so they don't run off
+   * the plot.
    */
   readonly channelHealthLabels = computed<ChannelHealthLabel[]>(() => {
     const CHAR_WIDTH = 5.6;
@@ -692,13 +691,10 @@ export class Optimize implements OnInit {
     const ROW_HEIGHT = 13;
     const OFFSET = 10;
 
-    const selectedName = this.effectiveSelectedHealthChannel()?.name;
-    const labeled = this.channelHealthPoints()
-      .filter((p) => p.status !== 'healthy' || p.name === selectedName)
-      .sort((a, b) => a.x - b.x);
-
+    const sorted = [...this.channelHealthPoints()].sort((a, b) => a.x - b.x);
     const rowRightEdge: number[] = [];
-    return labeled.map((p) => {
+
+    return sorted.map((p) => {
       const text = displayName(p.name);
       const anchor: 'start' | 'end' = p.x > HEALTH_W - HEALTH_PAD.right - 90 ? 'end' : 'start';
       const width = text.length * CHAR_WIDTH + OFFSET;
@@ -709,11 +705,16 @@ export class Optimize implements OnInit {
       while (row < rowRightEdge.length && rowRightEdge[row] + LABEL_GAP > startX) row++;
       rowRightEdge[row] = endX;
 
+      // Row 0 sits just below the point; odd rows go below, even rows (2, 4, ...) go above.
+      const tier = Math.ceil(row / 2);
+      const goesAbove = row > 0 && row % 2 === 0;
+      const offsetY = row === 0 ? 4 : goesAbove ? -(tier * ROW_HEIGHT) - 2 : tier * ROW_HEIGHT + 4;
+
       return {
         name: p.name,
         displayName: text,
         x: anchor === 'end' ? p.x - OFFSET : p.x + OFFSET,
-        y: p.y + 4 + row * ROW_HEIGHT,
+        y: p.y + offsetY,
         anchor,
       };
     });
