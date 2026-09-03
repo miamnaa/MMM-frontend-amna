@@ -7,8 +7,7 @@ import { DatasetService } from '../../core/services/dataset.service';
 import { SessionService } from '../../core/services/notification.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { UploadDraftService } from '../../core/services/upload-draft.service';
-import { PageHeader } from '../../shared/ui/page-header/page-header';
-import { TunnelSteps } from '../../shared/ui/tunnel-steps/tunnel-steps';
+import { WizardTopbar } from '../../shared/ui/wizard-topbar/wizard-topbar';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
 
 const ACCEPTED = ['.csv', '.xlsx', '.parquet'];
@@ -41,7 +40,7 @@ const MODEL_OPTIONS: ModelOption[] = [
 
 @Component({
   selector: 'app-upload-data',
-  imports: [FormsModule, PageHeader, TunnelSteps],
+  imports: [FormsModule, WizardTopbar],
   templateUrl: './upload-data.html',
   styleUrl: './upload-data.css',
 })

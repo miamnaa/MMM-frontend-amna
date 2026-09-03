@@ -22,9 +22,9 @@ export function computeModelStatus(d: ApiProjectDataset): ModelStatus {
 
 /**
  * Loads every saved stage of `dataset` into TunnelService, so route guards
- * and the TunnelSteps sidebar both see it as already in progress - used both
- * when resuming from a list (Projects/Models) and when a context guard
- * rebuilds this state after a page reload wiped it (see stage-context-guard.ts).
+ * see it as already in progress - used both when resuming from a list
+ * (Projects/Models) and when a context guard rebuilds this state after a
+ * page reload wiped it (see stage-context-guard.ts).
  */
 export function loadDatasetIntoTunnel(
   tunnelService: TunnelService,

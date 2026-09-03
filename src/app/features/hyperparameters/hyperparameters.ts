@@ -7,7 +7,7 @@ import { SessionService } from '../../core/services/notification.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
-import { TunnelSteps } from '../../shared/ui/tunnel-steps/tunnel-steps';
+import { WizardTopbar } from '../../shared/ui/wizard-topbar/wizard-topbar';
 
 interface ChannelRow {
   channel: string;
@@ -145,7 +145,7 @@ function saturationPointList(alpha: number, gamma: number): ChartPoint[] {
  */
 @Component({
   selector: 'app-hyperparameters',
-  imports: [FormsModule, PageHeader, TunnelSteps],
+  imports: [FormsModule, PageHeader, WizardTopbar],
   templateUrl: './hyperparameters.html',
   styleUrl: './hyperparameters.css',
 })

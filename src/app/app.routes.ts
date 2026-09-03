@@ -40,8 +40,9 @@ export const routes: Routes = [
     // No layout component here on purpose (2026-08-13) - Projects and the
     // model-build tunnel screens show no left Sidebar or shared top bar.
     // Models moved back under MainLayout below for the left Sidebar. The
-    // tunnel screens' own TunnelSteps sidebar has a "← Back" link (to
-    // /models/:projectId) instead; this is just a guard-only grouping node.
+    // tunnel screens' own WizardTopbar (2026-09-02 - replaced the old
+    // TunnelSteps left sidebar) has a "← Back" link (to /models/:projectId)
+    // instead; this is just a guard-only grouping node.
     canActivateChild: [MsalGuard, otpGuard],
     children: [
       {

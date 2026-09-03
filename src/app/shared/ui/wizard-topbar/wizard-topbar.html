@@ -1,0 +1,19 @@
+<div class="wizard-topbar">
+  <button type="button" class="wizard-back" (click)="back()">
+    <svg class="wizard-back-arrow" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <line x1="19" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+      <polyline points="11 6 5 12 11 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    </svg>
+    Back
+  </button>
+
+  <span class="wizard-crumb">
+    <strong>Step {{ stepNumber() }} of {{ totalSteps }}</strong><span class="wizard-crumb-rule"></span>{{ stepLabel() }}
+  </span>
+
+  @if (isOptional()) {
+    <span class="wizard-optional-pill">Optional</span>
+  } @else {
+    <span class="wizard-spacer"></span>
+  }
+</div>

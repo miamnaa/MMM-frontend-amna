@@ -1,20 +1,7 @@
 .calibrate-page {
   min-height: 100vh;
-}
-
-.tunnel-layout {
   display: flex;
-  min-height: 100vh;
-  align-items: stretch;
-}
-
-.tunnel-side {
-  flex: none;
-  width: 240px;
-  position: sticky;
-  top: 0;
-  align-self: flex-start;
-  height: 100vh;
+  flex-direction: column;
 }
 
 .tunnel-main {
@@ -30,17 +17,6 @@
 }
 
 @media (max-width: 840px) {
-  .tunnel-layout {
-    flex-direction: column;
-    min-height: 0;
-  }
-
-  .tunnel-side {
-    width: 100%;
-    height: auto;
-    position: static;
-  }
-
   .tunnel-main {
     padding: 18px 16px 36px;
   }

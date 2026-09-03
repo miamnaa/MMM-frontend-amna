@@ -1,11 +1,8 @@
 <div class="optimize-page">
-  <div class="tunnel-layout">
-    <aside class="tunnel-side">
-      <app-tunnel-steps [projectId]="projectId()" current="optimize" />
-    </aside>
+  <app-wizard-topbar [projectId]="projectId()" current="optimize" />
 
-    <div class="tunnel-main">
-      <div class="tunnel-main-inner">
+  <div class="tunnel-main">
+    <div class="tunnel-main-inner">
 
   <app-page-header
     title="Optimize"
@@ -476,7 +473,6 @@
     </button>
   </div>
 
-      </div>
     </div>
   </div>
 </div>

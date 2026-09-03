@@ -7,7 +7,7 @@ import { SessionService } from '../../core/services/notification.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
-import { TunnelSteps } from '../../shared/ui/tunnel-steps/tunnel-steps';
+import { WizardTopbar } from '../../shared/ui/wizard-topbar/wizard-topbar';
 
 function inRange(value: number | null): boolean {
   return value !== null && value >= 0 && value <= 100;
@@ -23,7 +23,7 @@ function inRange(value: number | null): boolean {
  */
 @Component({
   selector: 'app-calibrate',
-  imports: [FormsModule, PageHeader, TunnelSteps],
+  imports: [FormsModule, PageHeader, WizardTopbar],
   templateUrl: './calibrate.html',
   styleUrl: './calibrate.css',
 })

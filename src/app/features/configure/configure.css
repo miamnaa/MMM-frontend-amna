@@ -1,20 +1,7 @@
 .configure-page {
   min-height: 100vh;
-}
-
-.tunnel-layout {
   display: flex;
-  min-height: 100vh;
-  align-items: stretch;
-}
-
-.tunnel-side {
-  flex: none;
-  width: 240px;
-  position: sticky;
-  top: 0;
-  align-self: flex-start;
-  height: 100vh;
+  flex-direction: column;
 }
 
 .tunnel-main {
@@ -27,19 +14,6 @@
 .tunnel-main-inner {
   max-width: 1180px;
   margin: 0 auto;
-}
-
-@media (max-width: 840px) {
-  .tunnel-layout {
-    flex-direction: column;
-    min-height: 0;
-  }
-
-  .tunnel-side {
-    width: 100%;
-    height: auto;
-    position: static;
-  }
 }
 
 /* ---- Info accordion - same pattern as Upload Data's ---- */

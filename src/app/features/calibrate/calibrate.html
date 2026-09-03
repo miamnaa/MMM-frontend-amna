@@ -1,11 +1,8 @@
 <div class="calibrate-page">
-  <div class="tunnel-layout">
-    <aside class="tunnel-side">
-      <app-tunnel-steps [projectId]="projectId()" current="calibrate" />
-    </aside>
+  <app-wizard-topbar [projectId]="projectId()" current="calibrate" />
 
-    <div class="tunnel-main">
-      <div class="tunnel-main-inner">
+  <div class="tunnel-main">
+    <div class="tunnel-main-inner">
 
   <app-page-header
     title="Calibrate Your Results"
@@ -119,7 +116,6 @@
     </button>
   </div>
 
-      </div>
     </div>
   </div>
 </div>

@@ -9,7 +9,7 @@ import { SessionService } from '../../core/services/notification.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
-import { TunnelSteps } from '../../shared/ui/tunnel-steps/tunnel-steps';
+import { WizardTopbar } from '../../shared/ui/wizard-topbar/wizard-topbar';
 
 const CHART_WIDTH = 640;
 const CHART_HEIGHT = 220;
@@ -86,7 +86,7 @@ type Row = Record<string, unknown>;
 /** Real backend: PATCH /datasets/:id/optimize, shipped 2026-08-12. */
 @Component({
   selector: 'app-optimize',
-  imports: [FormsModule, DecimalPipe, PageHeader, TunnelSteps],
+  imports: [FormsModule, DecimalPipe, PageHeader, WizardTopbar],
   templateUrl: './optimize.html',
   styleUrl: './optimize.css',
 })

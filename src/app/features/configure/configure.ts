@@ -7,7 +7,7 @@ import { SessionService } from '../../core/services/notification.service';
 import { SavedConfiguration, TunnelDataset, TunnelService } from '../../core/services/tunnel.service';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
-import { TunnelSteps } from '../../shared/ui/tunnel-steps/tunnel-steps';
+import { WizardTopbar } from '../../shared/ui/wizard-topbar/wizard-topbar';
 
 type ColumnField = 'date' | 'target' | 'media' | 'control' | 'organic' | 'geo';
 
@@ -25,7 +25,7 @@ function nonEmpty(values: string[]): string[] {
  */
 @Component({
   selector: 'app-configure',
-  imports: [FormsModule, PageHeader, TunnelSteps],
+  imports: [FormsModule, PageHeader, WizardTopbar],
   templateUrl: './configure.html',
   styleUrl: './configure.css',
 })
