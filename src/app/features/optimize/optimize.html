@@ -217,6 +217,9 @@
                     [attr.aria-label]="p.name"
                   />
                 }
+                @for (l of channelHealthLabels(); track l.name) {
+                  <text [attr.x]="l.x" [attr.y]="l.y" [attr.text-anchor]="l.anchor" class="health-point-label">{{ l.displayName }}</text>
+                }
               </svg>
               @if (hoveredHealthPoint(); as t) {
                 <div class="chart-tooltip" [style.left.%]="t.xPct" [style.top.%]="t.yPct">
@@ -249,7 +252,7 @@
                 Shaded zone on the chart = below this line.
                 @if (spendFlaggedChannels().length > 0) {
                   {{ spendFlaggedChannels().length }} channel{{ spendFlaggedChannels().length === 1 ? '' : 's' }} fall{{ spendFlaggedChannels().length === 1 ? 's' : '' }} in it:
-                  {{ spendFlaggedChannels().join(', ') }} — click one to act on it.
+                  {{ displayChannelList(spendFlaggedChannels()) }} — click one to act on it.
                 } @else {
                   Nothing falls below it right now.
                 }
@@ -273,7 +276,7 @@
                 Shaded zone on the chart = above this line.
                 @if (vifFlaggedChannels().length > 0) {
                   {{ vifFlaggedChannels().length }} channel{{ vifFlaggedChannels().length === 1 ? '' : 's' }} fall{{ vifFlaggedChannels().length === 1 ? 's' : '' }} in it:
-                  {{ vifFlaggedChannels().join(', ') }} — click one to act on it.
+                  {{ displayChannelList(vifFlaggedChannels()) }} — click one to act on it.
                 } @else {
                   Nothing falls above it right now.
                 }
@@ -281,13 +284,15 @@
             }
           </div>
 
-          @if (effectiveSelectedHealthChannel(); as selected) {
+          @if (!healthPanelClosed() && effectiveSelectedHealthChannel(); as selected) {
             <aside class="card side-panel health-panel">
               <div class="health-panel-head">
-                <h3 class="side-panel-title">{{ selected.name }}</h3>
+                <h3 class="side-panel-title">{{ displayChannelName(selected.name) }}</h3>
+                <button type="button" class="health-panel-close" (click)="closeHealthPanel()" aria-label="Close">✕</button>
               </div>
+              <div class="health-diagnosis-box">
+              <span class="health-diagnosis-icon" aria-hidden="true">⚠</span>
               <p class="health-diagnosis">
-                ⚠
                 @if (selected.status === 'both') {
                   Low spend ({{ selected.spendPct }}% of budget) <strong>and</strong> redundant with other channels (VIF {{ selected.vif }}) — the two weakest signals a channel can have at once.
                 } @else if (spendCutoffEnabled() && selected.spendPct < spendCutoffPct()) {
@@ -298,13 +303,14 @@
                   Within both cutoffs right now — spend {{ selected.spendPct }}%, VIF {{ selected.vif }}.
                 }
               </p>
+              </div>
 
               <button class="btn btn-secondary btn-sm side-panel-action" type="button" [disabled]="isReadOnly()" (click)="removeSelectedHealthChannel()">
                 Remove this channel
               </button>
               @if (healthChannelSuggestedPartner(); as partner) {
                 <button class="btn btn-secondary btn-sm side-panel-action" type="button" [disabled]="isReadOnly()" (click)="combineSelectedWithSuggested()">
-                  Combine with {{ partner }} →
+                  Combine with {{ displayChannelName(partner) }} →
                 </button>
               }
 
@@ -317,7 +323,7 @@
               <div class="health-dot-list">
                 @for (p of channelHealthPoints(); track p.name) {
                   <button type="button" class="health-dot-chip" [class.selected]="p.name === selected.name" (click)="selectHealthChannel(p.name)">
-                    <span class="health-legend-dot" [class]="'health-point-' + p.status"></span>{{ p.name }}
+                    <span class="health-legend-dot" [class]="'health-point-' + p.status"></span>{{ displayChannelName(p.name) }}
                   </button>
                 }
               </div>
@@ -325,15 +331,10 @@
               <div class="health-footer-links">
                 <button type="button" class="link-btn-inline" [disabled]="isReadOnly()" (click)="combineEverythingFlagged()">Combine everything flagged</button>
                 <button type="button" class="link-btn-inline" [disabled]="isReadOnly()" (click)="removeEverythingFlagged()">Remove everything flagged</button>
+                <button type="button" class="link-btn-inline" [disabled]="autoCombining() || isReadOnly()" (click)="autoCombineChannels()">
+                  {{ autoCombining() ? 'Checking…' : 'Also check server-side for 90%+ correlated pairs' }}
+                </button>
               </div>
-              <button
-                class="link-btn-inline"
-                type="button"
-                [disabled]="autoCombining() || isReadOnly()"
-                (click)="autoCombineChannels()"
-              >
-                {{ autoCombining() ? 'Checking…' : 'Also check server-side for 90%+ correlated pairs' }}
-              </button>
               @if (autoCombineError(); as err) {
                 <p class="drop-error">{{ err }}</p>
               }

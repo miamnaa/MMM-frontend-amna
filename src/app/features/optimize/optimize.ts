@@ -157,6 +157,20 @@ interface ChannelHealthPoint {
   status: 'both' | 'one' | 'healthy';
 }
 
+interface ChannelHealthLabel {
+  name: string;
+  displayName: string;
+  x: number;
+  y: number;
+  anchor: 'start' | 'end';
+}
+
+/** Strips a trailing " Cost" (however it's cased) from a real column name for display only - real uploaded files commonly name spend columns "X Cost", which reads cleaner in a chart label as just "X". Every action (remove/combine) still targets the real, unshortened name. */
+function displayName(name: string): string {
+  const stripped = name.replace(/\s*cost$/i, '').trim();
+  return stripped.length > 0 ? stripped : name;
+}
+
 type ExposureMode = 'auto' | 'positive' | 'negative';
 type Row = Record<string, unknown>;
 
@@ -649,7 +663,49 @@ export class Optimize implements OnInit {
 
   readonly hasChannelHealthData = computed(() => this.channelHealthPoints().length > 0);
 
-  /** Points are labeled on hover, not permanently - real channel lists commonly bunch several names into the same low-spend/low-VIF corner, and a permanent label per point overlaps illegibly once more than a handful of channels are close together. */
+  protected displayChannelName(name: string): string {
+    return displayName(name);
+  }
+
+  protected displayChannelList(names: string[]): string {
+    return names.map((n) => displayName(n)).join(', ');
+  }
+
+  /**
+   * Real point positions, with a simple real-computed decluttering pass so
+   * labels stay legible when several channels land close together: points
+   * are walked left to right, and any point within 55 SVG units of the
+   * previous one gets its label stacked lower instead of drawn directly on
+   * top of the previous label. Points within 90 units of the chart's right
+   * edge get their label anchored to the left instead of the right, so it
+   * doesn't run off the plot.
+   */
+  readonly channelHealthLabels = computed<ChannelHealthLabel[]>(() => {
+    const sorted = [...this.channelHealthPoints()].sort((a, b) => a.x - b.x);
+    let lastX = -Infinity;
+    let stack = 0;
+    return sorted.map((p) => {
+      stack = p.x - lastX < 55 ? stack + 13 : 0;
+      lastX = p.x;
+      const anchor: 'start' | 'end' = p.x > HEALTH_W - HEALTH_PAD.right - 90 ? 'end' : 'start';
+      return {
+        name: p.name,
+        displayName: displayName(p.name),
+        x: anchor === 'end' ? p.x - 10 : p.x + 10,
+        y: p.y + 4 + stack,
+        anchor,
+      };
+    });
+  });
+
+  /** Explicitly dismissed via the panel's ✕ - cleared again the next time a channel is picked, so the panel doesn't just reappear on its own after being closed but still opens right back up on the next real click. */
+  readonly healthPanelClosed = signal(false);
+
+  closeHealthPanel(): void {
+    this.healthPanelClosed.set(true);
+  }
+
+  /** Points are also labeled on hover with exact figures - the always-on labels above give the name and rough position, the tooltip gives the real spend %/VIF numbers behind it. */
   readonly hoveredHealthPoint = signal<{ xPct: number; yPct: number; name: string; spendPct: number; vif: number } | null>(null);
 
   showHealthTooltip(point: ChannelHealthPoint): void {
@@ -691,6 +747,7 @@ export class Optimize implements OnInit {
 
   selectHealthChannel(name: string): void {
     this.selectedHealthChannelName.set(name);
+    this.healthPanelClosed.set(false);
   }
 
   /** Real most-correlated other channel (same real Pearson math the old correlation table used), surfaced per-channel as the combine suggestion instead of a standalone pair table. */
