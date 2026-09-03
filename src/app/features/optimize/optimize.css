@@ -349,14 +349,7 @@
   flex: none;
 }
 
-/* Channels review */
-
-.correlation-table {
-  margin-top: 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  overflow: hidden;
-}
+/* Channel Health - VIF x spend-share scatter with two optional cutoff sliders */
 
 .correlation-note {
   margin: 14px 0 0;
@@ -364,128 +357,186 @@
   line-height: 1.55;
 }
 
-.correlation-row {
+.health-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr 110px 52px;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
-}
-
-.correlation-row > * {
-  min-width: 0;
-}
-
-.correlation-row > *:last-child {
-  justify-self: center;
-  text-align: center;
-}
-
-.correlation-row:last-child {
-  border-bottom: none;
-}
-
-.correlation-head {
-  background: var(--gray-50);
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  color: var(--text-muted);
-}
-
-.correlation-pct-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.correlation-pct {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.correlation-dot {
-  width: 9px;
-  height: 9px;
-  flex: none;
-  border-radius: 50%;
-  background: #f5b942;
-}
-
-.correlation-dot.high {
-  background: var(--red-500, #e0554f);
-}
-
-.icon-btn {
-  padding: 0;
-  width: 26px;
-  height: 26px;
-  border-radius: var(--r-full);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  line-height: 1;
-}
-
-/* Variable selection review */
-
-.spend-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 20px;
+  align-items: start;
   margin-top: 10px;
 }
 
-.spend-bar-row {
-  display: grid;
-  grid-template-columns: 150px 1fr 44px 32px;
-  align-items: center;
-  gap: 12px;
+@media (max-width: 900px) {
+  .health-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
-.spend-bar-label {
+.health-svg {
+  display: block;
+  width: 100%;
+  height: 300px;
+}
+
+.health-zone {
+  fill: #f5b942;
+  opacity: 0.08;
+}
+
+.health-zone-vif {
+  fill: var(--red-500, #e0554f);
+}
+
+.chart-point-label {
+  font-size: 10px;
+  font-weight: 600;
+  fill: var(--text);
+}
+
+.health-point {
+  cursor: pointer;
+  stroke: var(--surface);
+  stroke-width: 1.5;
+}
+
+.health-point-both {
+  fill: var(--red-500, #e0554f);
+}
+
+.health-point-one {
+  fill: #f5b942;
+}
+
+.health-point-healthy {
+  fill: var(--brand-500);
+}
+
+.health-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.health-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.health-legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.toggle-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.toggle-inline .param-switch-row {
+  margin-bottom: 0;
+}
+
+.health-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.health-slider-label {
+  flex: none;
   font-size: 12.5px;
   font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: var(--text-muted);
 }
 
-.spend-bar-track {
-  height: 10px;
-  border-radius: var(--r-full);
-  background: var(--gray-50);
-  border: 1px solid var(--border);
-  overflow: hidden;
+.health-slider-row input[type='range'] {
+  flex: 1;
+  min-width: 0;
 }
 
-.spend-bar-fill {
-  height: 100%;
-  border-radius: var(--r-full);
-  background: var(--brand-500);
-}
-
-.spend-bar-pct {
+.health-slider-value {
+  flex: none;
+  min-width: 40px;
   font-size: 12.5px;
   font-weight: 700;
-  color: var(--text-muted);
   text-align: right;
+}
+
+.health-slider-hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.health-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.health-panel-head {
+  margin-bottom: 4px;
+}
+
+.health-diagnosis {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.health-dot-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.health-dot-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-full);
+  background: var(--surface);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.health-dot-chip.selected {
+  border-color: var(--brand-500);
+  background: var(--brand-50);
+  color: var(--brand-700);
+}
+
+.health-footer-links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
 }
 
 /* Exposure metrics */
 
-.exposure-list {
+.em-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
   margin-top: 10px;
 }
 
-.exposure-row {
+.em-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -494,6 +545,11 @@
   padding: 10px 14px;
   border: 1px solid var(--border);
   border-radius: var(--r-md);
+}
+
+.em-suggestion {
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .exposure-modes {
@@ -562,29 +618,7 @@
   flex: none;
 }
 
-/* Channels review / Variable selection review - each paired with its own side panel */
-
-.review-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 18px;
-  align-items: start;
-  margin-bottom: 18px;
-}
-
-.review-grid .card {
-  margin-bottom: 0;
-}
-
-.review-grid .card.full-width {
-  grid-column: 1 / -1;
-}
-
-@media (max-width: 900px) {
-  .review-grid {
-    grid-template-columns: 1fr;
-  }
-}
+/* Channel Health's side panel */
 
 .side-panel {
   margin-bottom: 0;

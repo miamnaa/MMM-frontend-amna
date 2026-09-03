@@ -23,6 +23,11 @@ const CHART_Y_TICKS = 5;
 const CHART_X_TICKS = 8;
 const SERIES_COLORS = ['#e0554f', '#1baf7a', '#3b82f6', '#f59e0b', '#8b5cf6', '#0891b2'];
 
+// ---- Channel Health scatter geometry ----
+const HEALTH_W = 560;
+const HEALTH_H = 300;
+const HEALTH_PAD = { top: 20, right: 30, bottom: 46, left: 50 };
+
 function toNumber(value: unknown): number {
   const n = typeof value === 'number' ? value : parseFloat(String(value ?? ''));
   return Number.isFinite(n) ? n : 0;
@@ -63,21 +68,93 @@ function pearson(xs: number[], ys: number[]): number {
   return den === 0 ? 0 : num / den;
 }
 
+/**
+ * Solves A·x = b via Gaussian elimination with partial pivoting. Returns
+ * null for a singular matrix (e.g. two predictor columns that are exact
+ * linear combinations of each other) rather than dividing by ~0.
+ */
+function solveLinearSystem(a: number[][], b: number[]): number[] | null {
+  const n = b.length;
+  const m = a.map((row, i) => [...row, b[i]]);
+  for (let col = 0; col < n; col++) {
+    let pivotRow = col;
+    for (let r = col + 1; r < n; r++) {
+      if (Math.abs(m[r][col]) > Math.abs(m[pivotRow][col])) pivotRow = r;
+    }
+    [m[col], m[pivotRow]] = [m[pivotRow], m[col]];
+    if (Math.abs(m[col][col]) < 1e-9) return null;
+    for (let r = 0; r < n; r++) {
+      if (r === col) continue;
+      const factor = m[r][col] / m[col][col];
+      for (let c = col; c <= n; c++) m[r][c] -= factor * m[col][c];
+    }
+  }
+  return m.map((row, i) => row[n] / row[i]);
+}
+
+/**
+ * R² of a real OLS regression of `y` on every column in `predictors` (each
+ * a same-length array), with an intercept - the "how well do the other
+ * channels' real spend explain this channel's real spend" figure VIF is
+ * built from. Real linear algebra over real per-row values, not an
+ * approximation - solved via the normal equations (X'X)β = X'y, which is
+ * plenty stable at the handful of media channels this ever runs on.
+ */
+function multipleRSquared(y: number[], predictors: number[][]): number {
+  const n = y.length;
+  const k = predictors.length;
+  if (n === 0 || k === 0) return 0;
+
+  const p = k + 1;
+  const xtx: number[][] = Array.from({ length: p }, () => new Array(p).fill(0));
+  const xty: number[] = new Array(p).fill(0);
+
+  for (let r = 0; r < n; r++) {
+    const xRow = [1, ...predictors.map((col) => col[r])];
+    for (let i = 0; i < p; i++) {
+      xty[i] += xRow[i] * y[r];
+      for (let j = 0; j < p; j++) xtx[i][j] += xRow[i] * xRow[j];
+    }
+  }
+
+  const beta = solveLinearSystem(xtx, xty);
+  if (!beta) return 0;
+
+  const meanY = y.reduce((s, v) => s + v, 0) / n;
+  let ssRes = 0;
+  let ssTot = 0;
+  for (let r = 0; r < n; r++) {
+    const xRow = [1, ...predictors.map((col) => col[r])];
+    const predicted = xRow.reduce((s, v, i) => s + v * beta[i], 0);
+    ssRes += (y[r] - predicted) ** 2;
+    ssTot += (y[r] - meanY) ** 2;
+  }
+  return ssTot === 0 ? 0 : Math.max(0, 1 - ssRes / ssTot);
+}
+
+/** VIF = 1 / (1 - R²). Capped at 20 for display - a real VIF can run into the hundreds for a near-exact linear dependency, which would blow out the chart's scale for one point while every other real channel sits under 5. */
+function vifFromRSquared(rSquared: number): number {
+  return Math.round(Math.min(1 / (1 - Math.min(rSquared, 0.999)), 20) * 10) / 10;
+}
+
 interface ChartSeries {
   name: string;
   color: string;
   points: string;
 }
 
-interface CorrelationRow {
-  a: string;
-  b: string;
-  pct: number;
-}
-
 interface SpendShareBar {
   name: string;
   pct: number;
+}
+
+interface ChannelHealthPoint {
+  name: string;
+  spendPct: number;
+  vif: number;
+  x: number;
+  y: number;
+  status: 'both' | 'one' | 'healthy';
 }
 
 type ExposureMode = 'auto' | 'positive' | 'negative';
@@ -130,18 +207,11 @@ export class Optimize implements OnInit {
     this.customTimeframeOpen.update((open) => !open);
   }
 
-  /** Shows/hides the whole "Channels review" card - purely a display toggle. */
-  readonly channelsReviewOpen = signal(true);
+  /** Shows/hides the whole "Channel Health" card - purely a display toggle. */
+  readonly channelHealthOpen = signal(true);
 
-  toggleChannelsReview(): void {
-    this.channelsReviewOpen.update((open) => !open);
-  }
-
-  /** Shows/hides the whole "Variable selection review" card - purely a display toggle. */
-  readonly variableReviewOpen = signal(true);
-
-  toggleVariableReview(): void {
-    this.variableReviewOpen.update((open) => !open);
+  toggleChannelHealth(): void {
+    this.channelHealthOpen.update((open) => !open);
   }
 
   /** Shows/hides the whole "Exposure metrics" card - purely a display toggle. */
@@ -485,49 +555,7 @@ export class Optimize implements OnInit {
     this.hoveredChartPoint.set(null);
   }
 
-  /** Channels Review: real Pearson correlation between every media-channel pair, highest first. */
-  private readonly removedPairs = signal<Set<string>>(new Set());
-
-  readonly correlationRows = computed<CorrelationRow[]>(() => {
-    const channels = this.effectiveChannels();
-    const rows = this.rows();
-    const result: CorrelationRow[] = [];
-    for (let i = 0; i < channels.length; i++) {
-      for (let j = i + 1; j < channels.length; j++) {
-        const xs = rows.map((r) => toNumber(r[channels[i]]));
-        const ys = rows.map((r) => toNumber(r[channels[j]]));
-        result.push({ a: channels[i], b: channels[j], pct: Math.round(Math.abs(pearson(xs, ys)) * 100) });
-      }
-    }
-    return result.sort((r1, r2) => r2.pct - r1.pct).slice(0, 8);
-  });
-
-  pairKey(row: CorrelationRow): string {
-    return `${row.a}|${row.b}`;
-  }
-
-  readonly visibleCorrelationRows = computed(() =>
-    this.correlationRows().filter((row) => !this.removedPairs().has(this.pairKey(row))),
-  );
-
-  removePair(row: CorrelationRow): void {
-    this.removedPairs.update((set) => new Set(set).add(this.pairKey(row)));
-  }
-
-  correlationLevel(pct: number): 'high' | 'medium' {
-    return pct >= 80 ? 'high' : 'medium';
-  }
-
-  readonly selectedPairKey = signal('');
-
-  removeSelectedPair(): void {
-    const row = this.visibleCorrelationRows().find((r) => this.pairKey(r) === this.selectedPairKey());
-    if (!row) return;
-    this.removePair(row);
-    this.selectedPairKey.set('');
-  }
-
-  /** Variable Selection Review: real share-of-spend per media channel, summed across every row. */
+  /** Channel Health: real share-of-spend per media channel, summed across every row - the scatter's x-axis. */
   private readonly removedVariables = signal<Set<string>>(new Set());
 
   readonly spendShareBars = computed<SpendShareBar[]>(() => {
@@ -547,21 +575,162 @@ export class Optimize implements OnInit {
     this.spendShareBars().filter((bar) => !this.removedVariables().has(bar.name)),
   );
 
-  readonly maxSpendSharePct = computed(() =>
-    Math.max(1, ...this.visibleSpendShareBars().map((b) => b.pct)),
-  );
-
   removeVariable(name: string): void {
     this.removedVariables.update((set) => new Set(set).add(name));
   }
 
-  readonly selectedVariableToRemove = signal('');
+  /**
+   * Real per-channel VIF - each channel's real spend regressed on every
+   * other real channel's real spend, R² -> VIF - the scatter's y-axis.
+   * Needs at least 2 channels and more real rows than channels (a
+   * well-posed regression needs more data points than parameters); returns
+   * [] otherwise rather than a fabricated number.
+   */
+  readonly vifRows = computed<{ name: string; vif: number }[]>(() => {
+    const channels = this.effectiveChannels();
+    const rows = this.rows();
+    if (channels.length < 2 || rows.length <= channels.length) return [];
+    return channels.map((ch) => {
+      const y = rows.map((r) => toNumber(r[ch]));
+      const predictors = channels.filter((c) => c !== ch).map((other) => rows.map((r) => toNumber(r[other])));
+      return { name: ch, vif: vifFromRSquared(multipleRSquared(y, predictors)) };
+    });
+  });
 
-  removeSelectedVariable(): void {
-    const name = this.selectedVariableToRemove();
-    if (!name) return;
-    this.removeVariable(name);
-    this.selectedVariableToRemove.set('');
+  protected readonly maxVif = computed(() => Math.max(5, ...this.vifRows().map((r) => r.vif)));
+  protected readonly maxSpendPct = computed(() => Math.max(5, ...this.spendShareBars().map((b) => b.pct)));
+
+  protected readonly healthW = HEALTH_W;
+  protected readonly healthH = HEALTH_H;
+  protected readonly healthPad = HEALTH_PAD;
+  private readonly healthPlotW = HEALTH_W - HEALTH_PAD.left - HEALTH_PAD.right;
+  private readonly healthPlotH = HEALTH_H - HEALTH_PAD.top - HEALTH_PAD.bottom;
+  protected readonly healthPlotBottom = HEALTH_H - HEALTH_PAD.bottom;
+
+  protected healthX(pct: number): number {
+    return HEALTH_PAD.left + (pct / this.maxSpendPct()) * this.healthPlotW;
+  }
+
+  protected healthY(vif: number): number {
+    return HEALTH_PAD.top + (1 - vif / this.maxVif()) * this.healthPlotH;
+  }
+
+  readonly healthXTicks = computed(() => {
+    const max = this.maxSpendPct();
+    return Array.from({ length: 5 }, (_, i) => {
+      const value = Math.round(((max / 4) * i) * 10) / 10;
+      return { value, x: this.healthX(value) };
+    });
+  });
+
+  readonly healthYTicks = computed(() => {
+    const max = this.maxVif();
+    return Array.from({ length: 5 }, (_, i) => {
+      const value = Math.round(((max / 4) * i) * 10) / 10;
+      return { value, y: this.healthY(value) };
+    });
+  });
+
+  /** Real channel points on the scatter - joins the same real spend-share and VIF figures above by channel name, classified against whichever cutoff sliders are currently on. */
+  readonly channelHealthPoints = computed<ChannelHealthPoint[]>(() => {
+    const vifMap = new Map(this.vifRows().map((r) => [r.name, r.vif]));
+    const spendCutoff = this.spendCutoffEnabled() ? this.spendCutoffPct() : -Infinity;
+    const vifCutoff = this.vifCutoffEnabled() ? this.vifCutoffValue() : Infinity;
+    return this.visibleSpendShareBars()
+      .filter((bar) => vifMap.has(bar.name))
+      .map((bar) => {
+        const vif = vifMap.get(bar.name)!;
+        const lowSpend = bar.pct < spendCutoff;
+        const highVif = vif > vifCutoff;
+        const status: ChannelHealthPoint['status'] = lowSpend && highVif ? 'both' : lowSpend || highVif ? 'one' : 'healthy';
+        return { name: bar.name, spendPct: bar.pct, vif, x: this.healthX(bar.pct), y: this.healthY(vif), status };
+      });
+  });
+
+  readonly hasChannelHealthData = computed(() => this.channelHealthPoints().length > 0);
+
+  readonly spendCutoffEnabled = signal(true);
+  readonly spendCutoffPct = signal(3);
+  readonly vifCutoffEnabled = signal(true);
+  readonly vifCutoffValue = signal(3);
+
+  readonly spendFlaggedChannels = computed(() =>
+    this.channelHealthPoints().filter((p) => p.spendPct < this.spendCutoffPct()).map((p) => p.name),
+  );
+  readonly vifFlaggedChannels = computed(() =>
+    this.channelHealthPoints().filter((p) => p.vif > this.vifCutoffValue()).map((p) => p.name),
+  );
+
+  readonly selectedHealthChannelName = signal<string | null>(null);
+
+  /** Falls back to the worst-flagged real channel (both issues, then one issue, then just the first) so the action panel isn't empty before anyone's clicked a point. */
+  readonly effectiveSelectedHealthChannel = computed(() => {
+    const points = this.channelHealthPoints();
+    if (points.length === 0) return null;
+    const explicit = points.find((p) => p.name === this.selectedHealthChannelName());
+    if (explicit) return explicit;
+    return points.find((p) => p.status === 'both') ?? points.find((p) => p.status === 'one') ?? points[0];
+  });
+
+  selectHealthChannel(name: string): void {
+    this.selectedHealthChannelName.set(name);
+  }
+
+  /** Real most-correlated other channel (same real Pearson math the old correlation table used), surfaced per-channel as the combine suggestion instead of a standalone pair table. */
+  readonly healthChannelSuggestedPartner = computed<string | null>(() => {
+    const selected = this.effectiveSelectedHealthChannel();
+    const rows = this.rows();
+    if (!selected || rows.length === 0) return null;
+    const channels = this.effectiveChannels().filter((c) => c !== selected.name);
+    if (channels.length === 0) return null;
+    const ys = rows.map((r) => toNumber(r[selected.name]));
+    let best: { name: string; corr: number } | null = null;
+    for (const ch of channels) {
+      const xs = rows.map((r) => toNumber(r[ch]));
+      const corr = Math.abs(pearson(xs, ys));
+      if (!best || corr > best.corr) best = { name: ch, corr };
+    }
+    return best?.name ?? null;
+  });
+
+  removeSelectedHealthChannel(): void {
+    const selected = this.effectiveSelectedHealthChannel();
+    if (!selected) return;
+    this.removeVariable(selected.name);
+    this.selectedHealthChannelName.set(null);
+  }
+
+  /** Pre-fills the existing real combine form (same combineColumns/combineChannels calls below) rather than combining immediately - Aggregate still needs an explicit click, same as picking channels manually always has. */
+  combineSelectedWithSuggested(): void {
+    const selected = this.effectiveSelectedHealthChannel();
+    const partner = this.healthChannelSuggestedPartner();
+    if (!selected || !partner) return;
+    this.selectedCombineChannels.set([selected.name, partner]);
+    this.newFieldName.set(`${selected.name}_${partner}_combined`.toLowerCase().replace(/[^a-z0-9]+/g, '_'));
+    this.combineFormOpen.set(true);
+    this.combineDropdownOpen.set(false);
+  }
+
+  combineEverythingFlagged(): void {
+    const flagged = Array.from(new Set([...this.spendFlaggedChannels(), ...this.vifFlaggedChannels()]));
+    if (flagged.length < 2) return;
+    this.selectedCombineChannels.set(flagged);
+    this.newFieldName.set('combined_flagged_channels');
+    this.combineFormOpen.set(true);
+    this.combineDropdownOpen.set(false);
+  }
+
+  removeEverythingFlagged(): void {
+    const flagged = new Set([...this.spendFlaggedChannels(), ...this.vifFlaggedChannels()]);
+    flagged.forEach((name) => this.removeVariable(name));
+    this.selectedHealthChannelName.set(null);
+  }
+
+  /** "Or pick channels yourself" - the existing real combine form (Column type/Select variables/New field name/Aggregate), tucked behind a toggle instead of always visible. */
+  readonly combineFormOpen = signal(false);
+
+  toggleCombineForm(): void {
+    this.combineFormOpen.update((open) => !open);
   }
 
   /** Exposure Metrics: per-control-column impact direction - no backend endpoint for this exists yet, still illustrative. */
@@ -569,8 +738,29 @@ export class Optimize implements OnInit {
   readonly exposureToast = signal(false);
   private exposureToastTimer?: ReturnType<typeof setTimeout>;
 
+  /**
+   * Real suggested direction per control column - sign of the real Pearson
+   * correlation between that column's real values and the real target
+   * column's real values ('positive' = tends to coincide with a higher
+   * target value in this dataset, 'negative' the opposite). Falls back to
+   * 'auto' only when there's no real target/rows to check yet - a real
+   * zero correlation still returns 'auto' since there's genuinely no
+   * direction to suggest.
+   */
+  exposureSuggestion(col: string): ExposureMode {
+    const target = this.config()?.targetColumn;
+    const rows = this.rows();
+    if (!target || rows.length === 0) return 'auto';
+    const xs = rows.map((r) => toNumber(r[col]));
+    const ys = rows.map((r) => toNumber(r[target]));
+    const corr = pearson(xs, ys);
+    if (corr === 0) return 'auto';
+    return corr > 0 ? 'positive' : 'negative';
+  }
+
+  /** Explicit user choice if there is one, otherwise the real suggestion above - so a column starts pre-selected on its suggested direction instead of a blank 'auto'. */
   exposureMode(col: string): ExposureMode {
-    return this.exposureModes()[col] ?? 'auto';
+    return this.exposureModes()[col] ?? this.exposureSuggestion(col);
   }
 
   private flashExposureToast(): void {
@@ -581,6 +771,14 @@ export class Optimize implements OnInit {
 
   setExposureMode(col: string, mode: ExposureMode): void {
     this.exposureModes.update((modes) => ({ ...modes, [col]: mode }));
+    this.flashExposureToast();
+  }
+
+  /** Every column to its own real suggestion (not one mode for all - each column can suggest a different direction). */
+  acceptAllSuggestions(): void {
+    const next: Record<string, ExposureMode> = {};
+    for (const col of this.controlColumnsList()) next[col] = this.exposureSuggestion(col);
+    this.exposureModes.set(next);
     this.flashExposureToast();
   }
 

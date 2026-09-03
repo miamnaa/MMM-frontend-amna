@@ -160,226 +160,250 @@
   </section>
 
   @if (hasMediaChannels()) {
-    <div class="review-grid">
-      <section class="card" [class.full-width]="!channelsReviewOpen()">
-        <div class="example-head">
-          <button type="button" class="param-switch-row" (click)="toggleChannelsReview()" [attr.aria-pressed]="channelsReviewOpen()">
-            <span class="switch" [class.on]="channelsReviewOpen()">
-              <span class="switch-thumb"></span>
-            </span>
-            <h2 class="section-title">Channels review</h2>
-          </button>
-        </div>
-        @if (channelsReviewOpen()) {
-        <p class="muted field-hint">
-          Highly correlated channels compete for attribution and can make a model less stable.
-          Correlation is computed from your uploaded file's real values.
-        </p>
+    <section class="card">
+      <div class="example-head">
+        <button type="button" class="param-switch-row" (click)="toggleChannelHealth()" [attr.aria-pressed]="channelHealthOpen()">
+          <span class="switch" [class.on]="channelHealthOpen()">
+            <span class="switch-thumb"></span>
+          </span>
+          <h2 class="section-title">Channel Health</h2>
+        </button>
+      </div>
+      @if (channelHealthOpen()) {
+      <p class="muted field-hint">
+        Two different problems, one picture: a channel can be redundant with others (high on this
+        chart), too small to trust (left on this chart), or both. Click a channel to see what to do
+        about it.
+      </p>
 
-        @if (rowsLoading()) {
-          <p class="muted">Loading your data…</p>
-        } @else if (rowsError(); as err) {
-          <p class="drop-error">{{ err }}</p>
-        } @else if (visibleCorrelationRows().length > 0) {
-          <div class="correlation-table">
-            <div class="correlation-row correlation-head">
-              <span>Channel A</span>
-              <span>Channel B</span>
-              <span>Correlation</span>
-              <span>Action</span>
+      @if (rowsLoading()) {
+        <p class="muted">Loading your data…</p>
+      } @else if (rowsError(); as err) {
+        <p class="drop-error">{{ err }}</p>
+      } @else if (hasChannelHealthData()) {
+        <div class="health-layout">
+          <div>
+            <svg class="health-svg" [attr.viewBox]="'0 0 ' + healthW + ' ' + healthH" preserveAspectRatio="xMidYMid meet">
+              @if (spendCutoffEnabled()) {
+                <rect [attr.x]="healthPad.left" [attr.y]="healthPad.top" [attr.width]="healthX(spendCutoffPct()) - healthPad.left" [attr.height]="healthPlotBottom - healthPad.top" class="health-zone health-zone-spend" />
+              }
+              @if (vifCutoffEnabled()) {
+                <rect [attr.x]="healthPad.left" [attr.y]="healthPad.top" [attr.width]="healthW - healthPad.left - healthPad.right" [attr.height]="healthY(vifCutoffValue()) - healthPad.top" class="health-zone health-zone-vif" />
+              }
+              @for (t of healthYTicks(); track t.value) {
+                <line [attr.x1]="healthPad.left" [attr.x2]="healthW - healthPad.right" [attr.y1]="t.y" [attr.y2]="t.y" class="chart-gridline" />
+                <text [attr.x]="healthPad.left - 8" [attr.y]="t.y + 3" text-anchor="end" class="chart-axis-text">{{ t.value }}</text>
+              }
+              <text [attr.x]="16" [attr.y]="healthPlotBottom / 2" text-anchor="middle" class="chart-axis-title" [attr.transform]="'rotate(-90 16 ' + (healthPlotBottom / 2) + ')'">Redundancy (VIF)</text>
+              <line [attr.x1]="healthPad.left" [attr.x2]="healthPad.left" [attr.y1]="healthPad.top" [attr.y2]="healthPlotBottom" class="chart-axis-line" />
+              <line [attr.x1]="healthPad.left" [attr.x2]="healthW - healthPad.right" [attr.y1]="healthPlotBottom" [attr.y2]="healthPlotBottom" class="chart-axis-line" />
+              @for (t of healthXTicks(); track t.value) {
+                <text [attr.x]="t.x" [attr.y]="healthPlotBottom + 16" text-anchor="middle" class="chart-axis-text">{{ t.value }}%</text>
+              }
+              <text [attr.x]="(healthW - healthPad.left - healthPad.right) / 2 + healthPad.left" [attr.y]="healthH - 8" text-anchor="middle" class="chart-axis-title">Share of spend</text>
+
+              @for (p of channelHealthPoints(); track p.name) {
+                <circle
+                  [attr.cx]="p.x"
+                  [attr.cy]="p.y"
+                  [attr.r]="effectiveSelectedHealthChannel()?.name === p.name ? 9 : 6.5"
+                  [class]="'health-point health-point-' + p.status"
+                  (click)="selectHealthChannel(p.name)"
+                  role="button"
+                  tabindex="0"
+                  [attr.aria-label]="p.name"
+                />
+                <text [attr.x]="p.x + 10" [attr.y]="p.y + 4" class="chart-point-label">{{ p.name }}</text>
+              }
+            </svg>
+            <div class="health-legend">
+              <span><span class="health-legend-dot health-point-both"></span>Both issues</span>
+              <span><span class="health-legend-dot health-point-one"></span>One issue</span>
+              <span><span class="health-legend-dot health-point-healthy"></span>Healthy</span>
             </div>
-            @for (row of visibleCorrelationRows(); track pairKey(row)) {
-              <div class="correlation-row">
-                <span class="column-chip static">{{ row.a }}</span>
-                <span class="column-chip static">{{ row.b }}</span>
-                <span class="correlation-pct-wrap">
-                  <span class="correlation-pct" [class.high]="correlationLevel(row.pct) === 'high'">{{ row.pct }}%</span>
-                  <span class="correlation-dot" [class.high]="correlationLevel(row.pct) === 'high'" aria-hidden="true"></span>
-                </span>
-                <button class="btn btn-ghost btn-sm icon-btn" type="button" (click)="removePair(row)" aria-label="Dismiss this pair" title="Dismiss">✕</button>
+
+            <div class="toggle-inline">
+              <button type="button" class="param-switch-row" (click)="spendCutoffEnabled.set(!spendCutoffEnabled())" [attr.aria-pressed]="spendCutoffEnabled()">
+                <span class="switch" [class.on]="spendCutoffEnabled()"><span class="switch-thumb"></span></span>
+                <strong>Flag by spend cutoff</strong>
+              </button>
+              <span class="muted">(Optional)</span>
+            </div>
+            @if (spendCutoffEnabled()) {
+              <div class="health-slider-row">
+                <label class="health-slider-label" for="o-spend-cutoff">Flag channels below</label>
+                <input id="o-spend-cutoff" type="range" min="0" [attr.max]="maxSpendPct()" step="0.5" [ngModel]="spendCutoffPct()" (ngModelChange)="spendCutoffPct.set($event)" />
+                <span class="health-slider-value">{{ spendCutoffPct() | number: '1.1-1' }}%</span>
               </div>
+              <p class="muted health-slider-hint">
+                Shaded zone on the chart = below this line.
+                @if (spendFlaggedChannels().length > 0) {
+                  {{ spendFlaggedChannels().length }} channel{{ spendFlaggedChannels().length === 1 ? '' : 's' }} fall{{ spendFlaggedChannels().length === 1 ? 's' : '' }} in it:
+                  {{ spendFlaggedChannels().join(', ') }} — click one to act on it.
+                } @else {
+                  Nothing falls below it right now.
+                }
+              </p>
+            }
+
+            <div class="toggle-inline">
+              <button type="button" class="param-switch-row" (click)="vifCutoffEnabled.set(!vifCutoffEnabled())" [attr.aria-pressed]="vifCutoffEnabled()">
+                <span class="switch" [class.on]="vifCutoffEnabled()"><span class="switch-thumb"></span></span>
+                <strong>Flag by VIF cutoff</strong>
+              </button>
+              <span class="muted">(Optional)</span>
+            </div>
+            @if (vifCutoffEnabled()) {
+              <div class="health-slider-row">
+                <label class="health-slider-label" for="o-vif-cutoff">Flag channels above</label>
+                <input id="o-vif-cutoff" type="range" min="1" [attr.max]="maxVif()" step="0.5" [ngModel]="vifCutoffValue()" (ngModelChange)="vifCutoffValue.set($event)" />
+                <span class="health-slider-value">{{ vifCutoffValue() | number: '1.1-1' }}</span>
+              </div>
+              <p class="muted health-slider-hint">
+                Shaded zone on the chart = above this line.
+                @if (vifFlaggedChannels().length > 0) {
+                  {{ vifFlaggedChannels().length }} channel{{ vifFlaggedChannels().length === 1 ? '' : 's' }} fall{{ vifFlaggedChannels().length === 1 ? 's' : '' }} in it:
+                  {{ vifFlaggedChannels().join(', ') }} — click one to act on it.
+                } @else {
+                  Nothing falls above it right now.
+                }
+              </p>
             }
           </div>
-        } @else {
-          <p class="muted">No pairs left to review.</p>
-        }
 
-        <p class="muted correlation-note">
-          Showing every pair among your {{ effectiveChannels().length }} configured media channel{{ effectiveChannels().length === 1 ? '' : 's' }}.
-          @if (effectiveChannels().length < 4) {
-            Add more media columns in Configure to see additional pairs here.
-          }
-        </p>
-        }
-      </section>
+          @if (effectiveSelectedHealthChannel(); as selected) {
+            <aside class="card side-panel health-panel">
+              <div class="health-panel-head">
+                <h3 class="side-panel-title">{{ selected.name }}</h3>
+              </div>
+              <p class="health-diagnosis">
+                ⚠
+                @if (selected.status === 'both') {
+                  Low spend ({{ selected.spendPct }}% of budget) <strong>and</strong> redundant with other channels (VIF {{ selected.vif }}) — the two weakest signals a channel can have at once.
+                } @else if (spendCutoffEnabled() && selected.spendPct < spendCutoffPct()) {
+                  Low spend — only {{ selected.spendPct }}% of budget, under your {{ spendCutoffPct() | number: '1.1-1' }}% cutoff.
+                } @else if (vifCutoffEnabled() && selected.vif > vifCutoffValue()) {
+                  Redundant with other channels — VIF {{ selected.vif }}, over your {{ vifCutoffValue() | number: '1.1-1' }} cutoff.
+                } @else {
+                  Within both cutoffs right now — spend {{ selected.spendPct }}%, VIF {{ selected.vif }}.
+                }
+              </p>
 
-      @if (channelsReviewOpen()) {
-      <aside class="card side-panel">
-        <h3 class="side-panel-title">Why combine similar channels?</h3>
-        <p class="muted field-hint">
-          When channels are highly correlated, they compete for attribution and make results
-          less stable. Combining them into one field creates more reliable insights for your
-          model.
-        </p>
+              <button class="btn btn-secondary btn-sm side-panel-action" type="button" [disabled]="isReadOnly()" (click)="removeSelectedHealthChannel()">
+                Remove this channel
+              </button>
+              @if (healthChannelSuggestedPartner(); as partner) {
+                <button class="btn btn-secondary btn-sm side-panel-action" type="button" [disabled]="isReadOnly()" (click)="combineSelectedWithSuggested()">
+                  Combine with {{ partner }} →
+                </button>
+              }
 
-        @if (effectiveChannels().length >= 2) {
-          <button
-            class="btn btn-secondary btn-sm side-panel-action"
-            type="button"
-            [disabled]="autoCombining() || isReadOnly()"
-            (click)="autoCombineChannels()"
-          >
-            {{ autoCombining() ? 'Checking…' : "Combine what's flagged" }}
-          </button>
+              <p class="muted correlation-note">
+                Or pick channels yourself —
+                <button type="button" class="link-btn-inline" (click)="toggleCombineForm()">open the combine form</button>.
+              </p>
 
-          @if (autoCombineError(); as err) {
-            <p class="drop-error">{{ err }}</p>
-          }
-
-          @if (autoCombineGroups(); as groups) {
-            @if (groups.length === 0) {
-              <p class="muted auto-combine-note">Nothing's correlated enough to need combining.</p>
-            } @else {
-              <div class="auto-combine-note auto-combine-note-success">
-                <strong>Combined:</strong>
-                @for (group of groups; track group.newColumnName) {
-                  <div>{{ group.sourceColumns.join(' + ') }} → {{ group.newColumnName }}</div>
+              <p class="muted correlation-note">Select a different channel:</p>
+              <div class="health-dot-list">
+                @for (p of channelHealthPoints(); track p.name) {
+                  <button type="button" class="health-dot-chip" [class.selected]="p.name === selected.name" (click)="selectHealthChannel(p.name)">
+                    <span class="health-legend-dot" [class]="'health-point-' + p.status"></span>{{ p.name }}
+                  </button>
                 }
               </div>
-            }
-          }
 
-          <p class="muted correlation-note">Or pick a specific pair yourself:</p>
-        }
-
-        @if (effectiveChannels().length >= 2) {
-          <div class="field">
-            <label class="label" for="o-column-type">Column type</label>
-            <select id="o-column-type" class="select" disabled>
-              <option>Media channel</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label class="label" for="o-combine-trigger">Select variables <span class="required">*</span></label>
-            <div class="dropdown-select">
-              <button
-                id="o-combine-trigger"
-                type="button"
-                class="dropdown-trigger"
-                (click)="toggleCombineDropdown()"
-                [attr.aria-expanded]="combineDropdownOpen()"
-              >
-                <span class="dropdown-trigger-text" [class.placeholder]="selectedCombineChannels().length === 0">
-                  {{ combineDropdownLabel() }}
-                </span>
-                <span class="dropdown-chevron" [class.open]="combineDropdownOpen()" aria-hidden="true">⌄</span>
-              </button>
-
-              @if (combineDropdownOpen()) {
-                <div class="dropdown-panel">
-                  @for (ch of effectiveChannels(); track ch) {
-                    <label class="dropdown-option">
-                      <input type="checkbox" [checked]="selectedCombineChannels().includes(ch)" (change)="toggleCombineChannel(ch)" />
-                      {{ ch }}
-                    </label>
-                  }
-                </div>
-              }
-            </div>
-          </div>
-
-          <div class="field">
-            <label class="label" for="o-new-field">New field name</label>
-            <input
-              id="o-new-field"
-              class="input"
-              [ngModel]="newFieldName()"
-              (ngModelChange)="newFieldName.set($event)"
-              placeholder="e.g. tv_combined_spend"
-            />
-          </div>
-
-          @if (aggregateError(); as err) {
-            <p class="drop-error">{{ err }}</p>
-          }
-
-          <button class="btn btn-primary btn-sm side-panel-action" type="button" [disabled]="!canAggregate() || isReadOnly()" (click)="aggregateChannels()">
-            {{ aggregating() ? 'Combining…' : 'Aggregate' }}
-          </button>
-        } @else {
-          <p class="muted">Need at least 2 channels left to combine.</p>
-        }
-      </aside>
-      }
-    </div>
-
-    <div class="review-grid">
-      <section class="card" [class.full-width]="!variableReviewOpen()">
-        <div class="example-head">
-          <button type="button" class="param-switch-row" (click)="toggleVariableReview()" [attr.aria-pressed]="variableReviewOpen()">
-            <span class="switch" [class.on]="variableReviewOpen()">
-              <span class="switch-thumb"></span>
-            </span>
-            <h2 class="section-title">Variable selection review</h2>
-          </button>
-        </div>
-        @if (variableReviewOpen()) {
-        <p class="muted field-hint">
-          Low-spend or redundant channels add noise without adding signal. Share of spend is
-          summed from your uploaded file's real values.
-        </p>
-
-        @if (rowsLoading()) {
-          <p class="muted">Loading your data…</p>
-        } @else if (rowsError(); as err) {
-          <p class="drop-error">{{ err }}</p>
-        } @else if (visibleSpendShareBars().length > 0) {
-          <div class="spend-bars">
-            @for (bar of visibleSpendShareBars(); track bar.name) {
-              <div class="spend-bar-row">
-                <span class="spend-bar-label">{{ bar.name }}</span>
-                <div class="spend-bar-track">
-                  <div class="spend-bar-fill" [style.width.%]="(bar.pct / maxSpendSharePct()) * 100"></div>
-                </div>
-                <span class="spend-bar-pct">{{ bar.pct }}%</span>
-                <button class="btn btn-ghost btn-sm icon-btn" type="button" (click)="removeVariable(bar.name)" aria-label="Remove this variable" title="Remove">✕</button>
+              <div class="health-footer-links">
+                <button type="button" class="link-btn-inline" [disabled]="isReadOnly()" (click)="combineEverythingFlagged()">Combine everything flagged</button>
+                <button type="button" class="link-btn-inline" [disabled]="isReadOnly()" (click)="removeEverythingFlagged()">Remove everything flagged</button>
               </div>
-            }
-          </div>
-        } @else {
-          <p class="muted">No variables left to review.</p>
-        }
-        }
-      </section>
-
-      @if (variableReviewOpen()) {
-      <aside class="card side-panel">
-        <h3 class="side-panel-title">Why remove a variable?</h3>
-        <p class="muted field-hint">
-          Low-spend (under ~3%) or redundant channels can make it harder to isolate true
-          performance drivers. Removing them reduces noise and can improve model accuracy.
-        </p>
-
-        @if (visibleSpendShareBars().length > 0) {
-          <div class="field">
-            <label class="label" for="o-variable-select">Select variable</label>
-            <select id="o-variable-select" class="select" [ngModel]="selectedVariableToRemove()" (ngModelChange)="selectedVariableToRemove.set($event)">
-              <option value="" disabled>Choose a variable…</option>
-              @for (bar of visibleSpendShareBars(); track bar.name) {
-                <option [value]="bar.name">{{ bar.name }} ({{ bar.pct }}%)</option>
+              <button
+                class="link-btn-inline"
+                type="button"
+                [disabled]="autoCombining() || isReadOnly()"
+                (click)="autoCombineChannels()"
+              >
+                {{ autoCombining() ? 'Checking…' : 'Also check server-side for 90%+ correlated pairs' }}
+              </button>
+              @if (autoCombineError(); as err) {
+                <p class="drop-error">{{ err }}</p>
               }
-            </select>
-          </div>
-          <button class="btn btn-secondary btn-sm side-panel-action" type="button" [disabled]="!selectedVariableToRemove()" (click)="removeSelectedVariable()">
-            Remove selected variable
-          </button>
-        } @else {
-          <p class="muted">Nothing left to remove.</p>
-        }
-      </aside>
+              @if (autoCombineGroups(); as groups) {
+                @if (groups.length === 0) {
+                  <p class="muted auto-combine-note">Nothing's correlated enough to need combining.</p>
+                } @else {
+                  <div class="auto-combine-note auto-combine-note-success">
+                    <strong>Combined:</strong>
+                    @for (group of groups; track group.newColumnName) {
+                      <div>{{ group.sourceColumns.join(' + ') }} → {{ group.newColumnName }}</div>
+                    }
+                  </div>
+                }
+              }
+
+              @if (combineFormOpen()) {
+                <div class="field">
+                  <label class="label" for="o-column-type">Column type</label>
+                  <select id="o-column-type" class="select" disabled>
+                    <option>Media channel</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label class="label" for="o-combine-trigger">Select variables <span class="required">*</span></label>
+                  <div class="dropdown-select">
+                    <button
+                      id="o-combine-trigger"
+                      type="button"
+                      class="dropdown-trigger"
+                      (click)="toggleCombineDropdown()"
+                      [attr.aria-expanded]="combineDropdownOpen()"
+                    >
+                      <span class="dropdown-trigger-text" [class.placeholder]="selectedCombineChannels().length === 0">
+                        {{ combineDropdownLabel() }}
+                      </span>
+                      <span class="dropdown-chevron" [class.open]="combineDropdownOpen()" aria-hidden="true">⌄</span>
+                    </button>
+
+                    @if (combineDropdownOpen()) {
+                      <div class="dropdown-panel">
+                        @for (ch of effectiveChannels(); track ch) {
+                          <label class="dropdown-option">
+                            <input type="checkbox" [checked]="selectedCombineChannels().includes(ch)" (change)="toggleCombineChannel(ch)" />
+                            {{ ch }}
+                          </label>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label class="label" for="o-new-field">New field name</label>
+                  <input
+                    id="o-new-field"
+                    class="input"
+                    [ngModel]="newFieldName()"
+                    (ngModelChange)="newFieldName.set($event)"
+                    placeholder="e.g. tv_combined_spend"
+                  />
+                </div>
+
+                @if (aggregateError(); as err) {
+                  <p class="drop-error">{{ err }}</p>
+                }
+
+                <button class="btn btn-primary btn-sm side-panel-action" type="button" [disabled]="!canAggregate() || isReadOnly()" (click)="aggregateChannels()">
+                  {{ aggregating() ? 'Combining…' : 'Aggregate' }}
+                </button>
+              }
+            </aside>
+          }
+        </div>
+      } @else {
+        <p class="muted">Need at least 2 real media channels with enough rows to check.</p>
       }
-    </div>
+      }
+    </section>
   }
 
   @if (hasControlColumns()) {
@@ -391,31 +415,37 @@
           </span>
           <h2 class="section-title">Exposure metrics</h2>
         </button>
-        <span class="example-badge">Example data — not from your uploaded file</span>
       </div>
       @if (exposureMetricsOpen()) {
       <p class="muted field-hint">
-        Control columns like promotions or holidays can push your outcome up or down. This is
-        what setting that direction will look like, shown with your real control columns.
+        Does this column help or hurt your outcome? Suggestions below are computed from your real
+        uploaded data — how each column actually correlates with your target column. Not sure is a
+        safe default; the model will still learn a direction, it just won't be nudged by you.
       </p>
 
-      <div class="exposure-list">
+      <div class="em-list">
         @for (col of controlColumnsList(); track col) {
-          <div class="exposure-row">
+          <div class="em-row">
             <span class="column-chip static">{{ col }}</span>
+            <span class="em-suggestion">
+              @switch (exposureSuggestion(col)) {
+                @case ('positive') { Suggested: <strong>Helps</strong> }
+                @case ('negative') { Suggested: <strong>Hurts</strong> }
+                @default { Suggested: <strong>Not sure</strong> }
+              }
+            </span>
             <div class="exposure-modes">
-              <button type="button" class="pill-toggle sm" [class.active]="exposureMode(col) === 'auto'" (click)="setExposureMode(col, 'auto')">Auto</button>
-              <button type="button" class="pill-toggle sm" [class.active]="exposureMode(col) === 'positive'" (click)="setExposureMode(col, 'positive')">Positive</button>
-              <button type="button" class="pill-toggle sm" [class.active]="exposureMode(col) === 'negative'" (click)="setExposureMode(col, 'negative')">Negative</button>
+              <button type="button" class="pill-toggle sm" [class.active]="exposureMode(col) === 'positive'" (click)="setExposureMode(col, 'positive')">Helps</button>
+              <button type="button" class="pill-toggle sm" [class.active]="exposureMode(col) === 'negative'" (click)="setExposureMode(col, 'negative')">Hurts</button>
+              <button type="button" class="pill-toggle sm" [class.active]="exposureMode(col) === 'auto'" (click)="setExposureMode(col, 'auto')">Not sure</button>
             </div>
           </div>
         }
       </div>
 
       <div class="exposure-bulk">
-        <button type="button" class="link-btn-inline" (click)="setAllExposure('auto')">Set ALL variables on Auto</button>
-        <button type="button" class="link-btn-inline" (click)="setAllExposure('positive')">Set ALL variables on Positive</button>
-        <button type="button" class="link-btn-inline" (click)="setAllExposure('negative')">Set ALL variables on Negative</button>
+        <button type="button" class="link-btn-inline" (click)="acceptAllSuggestions()">Accept all suggestions</button>
+        <button type="button" class="link-btn-inline" (click)="setAllExposure('auto')">Set ALL to Not sure</button>
       </div>
       }
     </section>
