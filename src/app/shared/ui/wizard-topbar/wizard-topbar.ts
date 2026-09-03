@@ -37,6 +37,8 @@ export class WizardTopbar {
 
   readonly projectId = input.required<string>();
   readonly current = input.required<TunnelStepKey>();
+  /** Not needed from Upload Data (its own route has no :datasetId) - required by every other step to build that step's real route. */
+  readonly datasetId = input<string>('');
 
   private readonly currentIndex = computed(() => STEPS.findIndex((s) => s.key === this.current()));
   readonly stepNumber = computed(() => this.currentIndex() + 1);
@@ -44,8 +46,22 @@ export class WizardTopbar {
   readonly stepLabel = computed(() => STEPS[this.currentIndex()]?.label ?? '');
   readonly isOptional = computed(() => STEPS[this.currentIndex()]?.optional ?? false);
 
-  /** Same destination the old TunnelSteps.back() used - this project's own Models list, not all the way out to the Project list. */
+  /**
+   * Goes to the previous tunnel step (2026-09-02 - real per-step back,
+   * replacing the old TunnelSteps.back() which always jumped straight out
+   * to the Models list from every step). Only Upload Data (no step before
+   * it) still exits to this project's own Models list.
+   */
   back(): void {
-    this.router.navigate(['/models', this.projectId()]);
+    const previous = STEPS[this.currentIndex() - 1];
+    if (!previous) {
+      this.router.navigate(['/models', this.projectId()]);
+      return;
+    }
+    if (previous.key === 'upload-data') {
+      this.router.navigate(['/upload-data', this.projectId()]);
+      return;
+    }
+    this.router.navigate([`/${previous.key}`, this.projectId(), this.datasetId()]);
   }
 }
