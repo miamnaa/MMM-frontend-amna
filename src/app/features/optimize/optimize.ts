@@ -672,27 +672,48 @@ export class Optimize implements OnInit {
   }
 
   /**
-   * Real point positions, with a simple real-computed decluttering pass so
-   * labels stay legible when several channels land close together: points
-   * are walked left to right, and any point within 55 SVG units of the
-   * previous one gets its label stacked lower instead of drawn directly on
-   * top of the previous label. Points within 90 units of the chart's right
-   * edge get their label anchored to the left instead of the right, so it
-   * doesn't run off the plot.
+   * Only flagged channels (plus whichever one is selected) get a permanent
+   * chart label - real channel lists are commonly long enough, with names
+   * long enough ("Google Branded Paid Search"), that labeling every single
+   * point runs labels into each other regardless of layout cleverness.
+   * Healthy, unselected channels still get their real name on hover.
+   *
+   * For whichever points DO get labeled, a real greedy row-packing pass
+   * keeps them from overlapping: points are walked left to right, each
+   * label's real pixel width is estimated from its character count, and a
+   * label only reuses a text row if there's real horizontal room left in
+   * it - otherwise it drops to the next row down. Labels within 90 units of
+   * the chart's right edge anchor left instead of right so they don't run
+   * off the plot.
    */
   readonly channelHealthLabels = computed<ChannelHealthLabel[]>(() => {
-    const sorted = [...this.channelHealthPoints()].sort((a, b) => a.x - b.x);
-    let lastX = -Infinity;
-    let stack = 0;
-    return sorted.map((p) => {
-      stack = p.x - lastX < 55 ? stack + 13 : 0;
-      lastX = p.x;
+    const CHAR_WIDTH = 5.6;
+    const LABEL_GAP = 8;
+    const ROW_HEIGHT = 13;
+    const OFFSET = 10;
+
+    const selectedName = this.effectiveSelectedHealthChannel()?.name;
+    const labeled = this.channelHealthPoints()
+      .filter((p) => p.status !== 'healthy' || p.name === selectedName)
+      .sort((a, b) => a.x - b.x);
+
+    const rowRightEdge: number[] = [];
+    return labeled.map((p) => {
+      const text = displayName(p.name);
       const anchor: 'start' | 'end' = p.x > HEALTH_W - HEALTH_PAD.right - 90 ? 'end' : 'start';
+      const width = text.length * CHAR_WIDTH + OFFSET;
+      const startX = anchor === 'end' ? p.x - OFFSET - width : p.x + OFFSET;
+      const endX = startX + width;
+
+      let row = 0;
+      while (row < rowRightEdge.length && rowRightEdge[row] + LABEL_GAP > startX) row++;
+      rowRightEdge[row] = endX;
+
       return {
         name: p.name,
-        displayName: displayName(p.name),
-        x: anchor === 'end' ? p.x - 10 : p.x + 10,
-        y: p.y + 4 + stack,
+        displayName: text,
+        x: anchor === 'end' ? p.x - OFFSET : p.x + OFFSET,
+        y: p.y + 4 + row * ROW_HEIGHT,
         anchor,
       };
     });
