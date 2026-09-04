@@ -68,7 +68,7 @@ const DECAY_PAD = { top: 12, right: 14, bottom: 34, left: 40 };
 // ---- Saturation chart geometry ----
 const SAT_W = 480;
 const SAT_H = 240;
-const SAT_PAD = { top: 12, right: 14, bottom: 34, left: 14 };
+const SAT_PAD = { top: 12, right: 14, bottom: 34, left: 30 };
 
 // ---- Scatter chart geometry ----
 const SCATTER_W = 560;
@@ -238,13 +238,22 @@ export class ModelPerformanceLab {
     return SAT_PAD.top + (1 - effect / maxEffect) * this.satPlotH;
   }
 
+  /** The real max spend_level on the selected channel's real curve, or the fixed illustrative 0-10 scale for the fallback - shared between the plotted path and its x-axis ticks so both agree on the same domain. */
+  readonly satMaxSpend = computed(() => {
+    if (this.hasRealChartData()) {
+      const curve = this.realSaturationCurves().find((c) => c.channel === this.selectedChannel())?.curve ?? [];
+      return curve.length > 0 ? Math.max(...curve.map((p) => p.spend_level), 1) : SATURATION_MAX_SPEND;
+    }
+    return SATURATION_MAX_SPEND;
+  });
+
   readonly saturationPath = computed(() => {
     const selected = this.selectedChannel();
+    const maxSpend = this.satMaxSpend();
 
     if (this.hasRealChartData()) {
       const curve = this.realSaturationCurves().find((c) => c.channel === selected)?.curve ?? [];
       if (curve.length === 0) return '';
-      const maxSpend = Math.max(...curve.map((p) => p.spend_level), 1);
       const maxEffect = Math.max(...curve.map((p) => p.effect), 1) * 1.08;
       return curve
         .map((p) => `${this.satX(p.spend_level, maxSpend).toFixed(1)},${this.satY(p.effect, maxEffect).toFixed(1)}`)
@@ -256,8 +265,13 @@ export class ModelPerformanceLab {
     return Array.from({ length: SATURATION_STEPS + 1 }, (_, i) => {
       const spend = (i / SATURATION_STEPS) * SATURATION_MAX_SPEND;
       const effect = fallbackSaturationEffect(spend, ch.gamma);
-      return `${this.satX(spend, SATURATION_MAX_SPEND).toFixed(1)},${this.satY(effect, maxEffect).toFixed(1)}`;
+      return `${this.satX(spend, maxSpend).toFixed(1)},${this.satY(effect, maxEffect).toFixed(1)}`;
     }).join(' ');
+  });
+
+  readonly satXTicks = computed(() => {
+    const max = this.satMaxSpend();
+    return [0, 0.25, 0.5, 0.75, 1].map((f) => ({ value: Math.round(f * max), x: this.satX(f * max, max) }));
   });
 
   // ---- Scatter chart ("Where each channel sits") ----
@@ -344,6 +358,44 @@ export class ModelPerformanceLab {
     return Array.from({ length: max + 1 }, (_, w) => ({ value: w, x: this.scatterX(w) }));
   });
   readonly scatterYTicks = [0, 25, 50, 75, 100].map((v) => ({ value: v, y: this.scatterY(v) }));
+
+  /**
+   * Real channel names ("Google Generic Paid Search") are far wider than
+   * the point spacing a handful of channels naturally cluster into (several
+   * channels often land within a week of each other on the real x-axis), so
+   * always-on labels drawn right next to each dot collide. A real greedy
+   * row-packing pass, keyed off each label's estimated pixel width, keeps
+   * them legible - a label only reuses a text row if there's actual
+   * horizontal room left in it, otherwise it drops to the next row down,
+   * alternating below/above the point so a tight cluster spreads into the
+   * real space on both sides instead of running off one edge of the chart.
+   */
+  readonly scatterLabels = computed(() => {
+    const CHAR_WIDTH = 5.6;
+    const LABEL_GAP = 8;
+    const ROW_HEIGHT = 13;
+    const OFFSET = 9;
+
+    const sorted = [...this.scatterPoints()].sort((a, b) => a.x - b.x);
+    const rowRightEdge: number[] = [];
+
+    return sorted.map((p) => {
+      const anchor: 'start' | 'end' = p.x > SCATTER_W - SCATTER_PAD.right - 100 ? 'end' : 'start';
+      const width = p.name.length * CHAR_WIDTH + OFFSET;
+      const startX = anchor === 'end' ? p.x - OFFSET - width : p.x + OFFSET;
+      const endX = startX + width;
+
+      let row = 0;
+      while (row < rowRightEdge.length && rowRightEdge[row] + LABEL_GAP > startX) row++;
+      rowRightEdge[row] = endX;
+
+      const tier = Math.ceil(row / 2);
+      const goesAbove = row > 0 && row % 2 === 0;
+      const offsetY = row === 0 ? 3.5 : goesAbove ? -(tier * ROW_HEIGHT) - 2 : tier * ROW_HEIGHT + 3.5;
+
+      return { name: p.name, x: anchor === 'end' ? p.x - OFFSET : p.x + OFFSET, y: p.y + offsetY, anchor };
+    });
+  });
 
   // ---- Bottom info strip ----
   readonly channelCount = computed(() =>

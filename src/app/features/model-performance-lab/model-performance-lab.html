@@ -58,26 +58,28 @@
       <h2 class="chart-title">How long effects last</h2>
       <p class="chart-subtitle">A sale today from a TV ad two weeks ago still counts. This shows how fast that fades.</p>
 
+      <div class="legend">
+        @for (s of decaySeries(); track s.name) {
+          <span class="legend-item"><span class="legend-dash" [style.background]="s.color"></span>{{ s.name }}</span>
+        }
+      </div>
+
       <svg [attr.viewBox]="decayViewBox" class="chart-svg" role="img" aria-label="How each channel's effect fades over time">
         @for (t of decayYTicks; track t.value) {
           <line [attr.x1]="decayPad.left" [attr.x2]="480 - decayPad.right" [attr.y1]="t.y" [attr.y2]="t.y" class="grid-line" />
           <text [attr.x]="decayPad.left - 8" [attr.y]="t.y + 3" text-anchor="end" class="tick">{{ t.value }}%</text>
         }
+        <text [attr.x]="12" [attr.y]="(decayPlotBottom + decayPad.top) / 2" text-anchor="middle" class="axis-caption" [attr.transform]="'rotate(-90 12 ' + (decayPlotBottom + decayPad.top) / 2 + ')'">Effect remaining (%)</text>
         <line [attr.x1]="decayPad.left" [attr.x2]="decayPad.left" [attr.y1]="decayPad.top" [attr.y2]="decayPlotBottom" class="axis-line" />
         <line [attr.x1]="decayPad.left" [attr.x2]="480 - decayPad.right" [attr.y1]="decayPlotBottom" [attr.y2]="decayPlotBottom" class="axis-line" />
         @for (t of decayXTicks(); track t.value) {
           <text [attr.x]="t.x" [attr.y]="decayPlotBottom + 16" text-anchor="middle" class="tick">wk {{ t.value }}</text>
         }
+        <text [attr.x]="(480 - decayPad.left - decayPad.right) / 2 + decayPad.left" [attr.y]="240 - 4" text-anchor="middle" class="axis-caption">Weeks since spend</text>
         @for (s of decaySeries(); track s.name) {
           <polyline [attr.points]="s.points" fill="none" [attr.stroke]="s.color" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
         }
       </svg>
-
-      <div class="legend">
-        @for (s of decaySeries(); track s.name) {
-          <span class="legend-item"><span class="legend-dot" [style.background]="s.color"></span>{{ s.name }}</span>
-        }
-      </div>
     </section>
 
     <section class="chart-card">
@@ -101,8 +103,12 @@
       <svg [attr.viewBox]="satViewBox" class="chart-svg" role="img" aria-label="Saturation curve for the selected channel">
         <line [attr.x1]="satPad.left" [attr.x2]="satPad.left" [attr.y1]="satPad.top" [attr.y2]="satPlotBottom" class="axis-line" />
         <line [attr.x1]="satPad.left" [attr.x2]="480 - satPad.right" [attr.y1]="satPlotBottom" [attr.y2]="satPlotBottom" class="axis-line" />
+        <text [attr.x]="12" [attr.y]="(satPlotBottom + satPad.top) / 2" text-anchor="middle" class="axis-caption" [attr.transform]="'rotate(-90 12 ' + (satPlotBottom + satPad.top) / 2 + ')'">Modeled effect</text>
         <polyline [attr.points]="saturationPath()" fill="none" stroke="var(--brand-500)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-        <text [attr.x]="(480 - satPad.left - satPad.right) / 2 + satPad.left" [attr.y]="satPlotBottom + 20" text-anchor="middle" class="axis-caption">Spend level →</text>
+        @for (t of satXTicks(); track t.value) {
+          <text [attr.x]="t.x" [attr.y]="satPlotBottom + 16" text-anchor="middle" class="tick">{{ t.value }}</text>
+        }
+        <text [attr.x]="(480 - satPad.left - satPad.right) / 2 + satPad.left" [attr.y]="240 - 4" text-anchor="middle" class="axis-caption">Weekly spend ($)</text>
       </svg>
     </section>
   </div>
@@ -110,6 +116,11 @@
   <section class="chart-card scatter-card">
     <h2 class="chart-title">Where each channel sits</h2>
     <p class="chart-subtitle">Bottom-left: quick, but has room to spend more. Top-right: long-lasting, but already close to maxed out.</p>
+
+    <div class="legend">
+      <span class="legend-item"><span class="legend-square" style="background: var(--blue-500);"></span>Enough data</span>
+      <span class="legend-item"><span class="legend-square" style="background: var(--amber-500);"></span>Limited historical data</span>
+    </div>
 
     <svg [attr.viewBox]="scatterViewBox" class="chart-svg scatter-svg" role="img" aria-label="Each channel plotted by how long its effect lasts and how saturated it is">
       @for (t of scatterYTicks; track t.value) {
@@ -126,16 +137,15 @@
 
       @for (p of scatterPoints(); track p.name) {
         <circle [attr.cx]="p.x" [attr.cy]="p.y" r="5.5" [attr.fill]="p.lowData ? 'var(--amber-500)' : 'var(--blue-500)'" />
-        <text [attr.x]="p.x + 9" [attr.y]="p.y + 3.5" class="point-label">{{ p.name }}</text>
+      }
+      @for (l of scatterLabels(); track l.name) {
+        <text [attr.x]="l.x" [attr.y]="l.y" [attr.text-anchor]="l.anchor" class="point-label">{{ l.name }}</text>
       }
     </svg>
-
-    <p class="scatter-legend-note"><span class="legend-dot" style="background: var(--amber-500);"></span>Amber = limited historical data</p>
   </section>
 
   <div class="info-strip">
     <span class="info-item"><span class="info-icon" aria-hidden="true">▤</span>{{ channelCount() }} marketing channels analyzed</span>
     <span class="info-item"><span class="info-icon" aria-hidden="true">◔</span>{{ weeksOfHistory() }} weeks of history</span>
-    <span class="info-item"><span class="legend-dot" style="background: var(--amber-500);"></span>Amber = limited historical data</span>
   </div>
 </div>
