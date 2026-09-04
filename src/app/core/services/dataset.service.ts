@@ -234,17 +234,63 @@ export function isFailedTrainingStatus(status: string): boolean {
 export interface ModelConfidence extends Record<string, unknown> {
   overall_accuracy_percent?: number;
   r_squared?: number;
+  /** Per Hammad's Model Performance Developer Reference (2026-09-02+) - already a percent, display directly. Not yet confirmed present on a live response. */
+  average_error_percent?: number;
+  /** Per the same reference - arrives 0-1 like r_squared, multiply by 100. UI label must read "Trust-checked score," never "Adjusted R-squared." Not yet confirmed present on a live response. */
+  adjusted_r_squared?: number;
 }
 
 export interface ChannelContributionRow extends Record<string, unknown> {
   pct_of_contribution?: number;
   incremental_outcome?: number;
+  /** Real field per the Business Insights Developer Reference v2 (2026-09-04) - this channel's real spend, same figure combine/VIF math elsewhere reads from getRows(), just pre-aggregated server-side here. */
+  spend?: number;
+  /** Real field, same reference - this channel's spend as a % of total real spend across every channel in this array. */
+  pct_of_spend?: number;
 }
 
-export type ChannelEfficiencyRow = Record<string, unknown>;
+/** roi/marginal_roi confirmed as the real field names by the Business Insights Developer Reference v2 (2026-09-04) - kept open-ended beyond those two since the rest of the row's shape still isn't fully documented. */
+export interface ChannelEfficiencyRow extends Record<string, unknown> {
+  roi?: number;
+  marginal_roi?: number;
+}
 
-/** Real field per Hammad's 2026-09-02 handover, same for both engines - exact shape still undocumented beyond "flags a channel," so kept as loosely-typed as channel_efficiency above until a real response confirms its fields. */
-export type DataQualityFlagRow = Record<string, unknown>;
+/**
+ * Real field per Hammad's 2026-09-02 handover, same for both engines. The
+ * Business Insights Developer Reference v2 additionally confirms a real
+ * `columns_involved: string[]` field on each flag row - the list of channel
+ * names that flag covers - used to warn a channel is low-spend/limited
+ * history. Kept as a loosely-typed record beyond that one confirmed field,
+ * since the rest of the row's shape isn't documented.
+ */
+export interface DataQualityFlagRow extends Record<string, unknown> {
+  columns_involved?: string[];
+}
+
+/** Real field per both Developer References (Model Performance + Business Insights) - shared context about the dataset itself, not any one chart. */
+export interface DataUsed {
+  media_columns: string[];
+  row_count: number;
+}
+
+/**
+ * Per Hammad's Model Performance Developer Reference - the exact shape
+ * specified for the decay/saturation charts, but NOT yet part of a
+ * confirmed live response (unlike model_confidence's two original fields).
+ * Optional and speculative until a real response actually includes them -
+ * model-performance-lab falls back to illustrative data whenever either is
+ * absent.
+ */
+export interface AdstockDecayCurve {
+  channel: string;
+  curve: { weeks_since_spend: number; effect_remaining_percent: number }[];
+}
+
+export interface SaturationCurve {
+  channel: string;
+  curve: { spend_level: number; effect: number }[];
+  historical_spend_distribution?: unknown;
+}
 
 /** Real field, added 2026-08-24 - one point per real date in the dataset, so the model's fit can be charted against what actually happened instead of just summarized in a single accuracy percent. */
 export interface ActualVsPredictedPoint {
@@ -282,6 +328,12 @@ export interface TrainingResults extends Record<string, unknown> {
   baseline_vs_marketing?: BaselineVsMarketing;
   /** Real field per Hammad's 2026-09-02 handover - present for both Meridian and PyMC runs. */
   data_quality_flags?: DataQualityFlagRow[];
+  /** Real field per both Developer References - optional, not yet confirmed on a live response. */
+  data_used?: DataUsed;
+  /** Per Hammad's Model Performance Developer Reference - speculative, see AdstockDecayCurve. */
+  adstock_decay_curves?: AdstockDecayCurve[];
+  /** Per Hammad's Model Performance Developer Reference - speculative, see SaturationCurve. */
+  saturation_curves?: SaturationCurve[];
 }
 
 /**

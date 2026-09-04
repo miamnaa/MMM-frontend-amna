@@ -49,121 +49,33 @@
       [attr.aria-selected]="activeTab() === 'insights'"
       (click)="setTab('insights')"
     >
-      Insights
+      Business Insights
     </button>
   </div>
 
   @if (activeTab() === 'performance') {
-    @if (hasActualVsPredicted()) {
+    <app-model-performance-lab [results]="r" />
+  } @else {
+    <h3 class="section-title">Where the money goes</h3>
+
+    <div class="kpi-row-2">
+      @if (totalSpend(); as spend) {
+        <app-stat-tile label="Total spend" [value]="formatXSpend(spend)" />
+      }
+      @if (channelsAnalyzedCount(); as count) {
+        <app-stat-tile label="Channels analyzed" [value]="count.toString()" />
+      }
+    </div>
+
+    @if (hasSpendByChannel()) {
       <section class="card results-section">
-        <h2 class="section-title">Actual vs predicted</h2>
-        <p class="muted field-hint">How closely the model's fit tracks what actually happened, over time.</p>
-        <app-line-chart
-          [series]="actualVsPredictedSeries()"
-          xLabel="Date"
-          [formatX]="formatDateAxis"
-          [formatY]="formatXSpend"
-          [colors]="brandGroupedColors"
-        />
-        <p class="muted field-hint backend-gap-inline">A shaded confidence band around this line would need real per-date upper/lower bounds — not part of the results data yet.</p>
+        <h2 class="section-title">Spend by channel</h2>
+        <app-bar-chart [data]="spendByChannelBars()" [uniform]="true" [colors]="[brandGroupedColors[0]]" />
       </section>
-
-      @if (modelFitReadout(); as fit) {
-        <div class="chart-grid explain-grid">
-          <section class="card results-section explain-card">
-            <h2 class="section-title">What does this mean?</h2>
-            <p class="explain-line"><span class="explain-swatch" style="background: var(--brand-500);"></span>The dark green line is what actually happened.</p>
-            <p class="explain-line"><span class="explain-swatch" style="background: var(--brand-500); opacity: 0.55;"></span>The light green line is what the model predicted.</p>
-            <p class="explain-line">The closer they are, the better the model.</p>
-          </section>
-          <section class="card results-section">
-            <div class="explain-stats">
-              @if (fit.rSquared) {
-                <div class="explain-stat">
-                  <span class="explain-stat-label">Model fit (R²)</span>
-                  <span class="explain-stat-value">{{ fit.rSquared }}</span>
-                </div>
-              }
-              @if (fit.avgError) {
-                <div class="explain-stat">
-                  <span class="explain-stat-label">Average error</span>
-                  <span class="explain-stat-value">{{ fit.avgError }}</span>
-                </div>
-              }
-            </div>
-          </section>
-        </div>
-      }
-
-      @if (residualBars(); as chart) {
-        <section class="card results-section">
-          <h2 class="section-title">Residuals (Actual − Predicted)</h2>
-          <p class="muted field-hint">The gap between what happened and what the model guessed, at each real date.</p>
-          <svg [attr.viewBox]="'0 0 ' + chart.W + ' ' + chart.H" preserveAspectRatio="xMidYMid meet" class="residual-svg" role="img" aria-label="Residuals bar chart">
-            @for (t of chart.yTicks; track t.value) {
-              <line [attr.x1]="chart.PAD.left" [attr.x2]="chart.W - chart.PAD.right" [attr.y1]="t.y" [attr.y2]="t.y" class="grid-line" />
-              <text [attr.x]="chart.PAD.left - 8" [attr.y]="t.y + 4" text-anchor="end" class="tick">{{ t.label }}</text>
-            }
-            @for (t of chart.xTicks; track t.label) {
-              <text [attr.x]="t.x" [attr.y]="chart.H - 6" text-anchor="middle" class="tick">{{ t.label }}</text>
-            }
-            @for (bar of chart.bars; track $index) {
-              <rect
-                [attr.x]="bar.x"
-                [attr.y]="bar.y"
-                [attr.width]="bar.width"
-                [attr.height]="bar.height"
-                [attr.fill]="bar.positive ? residualPositiveColor : residualNegativeColor"
-              />
-            }
-          </svg>
-          <p class="muted field-hint backend-gap-inline">Residuals should be randomly scattered around zero. That's what we want to see.</p>
-        </section>
-      }
-
-      <div class="chart-grid">
-        <section class="card results-section">
-          <h2 class="section-title">Cumulative actual vs predicted</h2>
-          <p class="muted field-hint">Running total over time - a real, growing gap here means the model is consistently over- or under-estimating, not just off on individual weeks.</p>
-          <app-line-chart
-            [series]="cumulativeSeries()"
-            xLabel="Date"
-            [formatX]="formatDateAxis"
-            [formatY]="formatXSpend"
-            [colors]="brandGroupedColors"
-          />
-        </section>
-
-        @if (hasPerformanceSummary()) {
-          <section class="card results-section">
-            <h2 class="section-title">Performance summary</h2>
-            <table class="scorecard">
-              <thead>
-                <tr>
-                  <th>Metric</th>
-                  <th>Value</th>
-                  <th>Read</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (row of performanceSummaryRows(); track row.label) {
-                  <tr>
-                    <td>{{ row.label }}</td>
-                    <td>{{ row.value }}</td>
-                    <td><span class="tier-badge" [class]="'tier-' + row.tier">{{ TIER_LABELS[row.tier] }}</span></td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </section>
-        }
-      </div>
-    } @else {
-      <app-empty-state title="No model performance metrics" message="This model's results didn't include a prediction time series." />
     }
 
-    <app-model-performance-lab />
-  } @else {
+    <h3 class="section-title">What it's getting you</h3>
+
     @if (totalIncrementalOutcome(); as total) {
       <div class="exec-tile-row">
         <app-stat-tile
@@ -184,147 +96,69 @@
             icon="💰"
           />
         }
-        @if (channelSummary().bestRoi; as best) {
-          <app-stat-tile
-            label="Top channel"
-            [value]="best.label"
-            [caption]="formatRatio(best.roi) + ' back for every $1 spent — your best-performing channel right now'"
-            [large]="true"
-            [wide]="true"
-            icon="🏆"
-          />
-        }
       </div>
     }
 
-    @if (baselineVsMarketing(); as bm) {
+    @if (hasSpendVsResult()) {
       <section class="card results-section">
-        <h2 class="section-title">Is marketing working?</h2>
-        <p class="muted field-hint">What would have happened with zero marketing, vs. what marketing actually added.</p>
-        <div class="baseline-bar">
-          <div class="baseline-segment baseline-segment-base" [style.width.%]="bm.baseline_percent">
-            <span class="baseline-segment-label">Baseline {{ bm.baseline_percent | number: '1.0-1' }}%</span>
-          </div>
-          <div class="baseline-segment baseline-segment-marketing" [style.width.%]="bm.marketing_percent">
-            <span class="baseline-segment-label">Marketing {{ bm.marketing_percent | number: '1.0-1' }}%</span>
-          </div>
-        </div>
-        <div class="baseline-legend">
-          <span><strong>{{ formatXSpend(bm.baseline_outcome) }}</strong> would have happened anyway</span>
-          <span><strong>{{ formatXSpend(bm.marketing_outcome) }}</strong> came from marketing</span>
-        </div>
+        <h2 class="section-title">Share of spend vs. share of results</h2>
+        <p class="muted field-hint">Sorted by the biggest gap between what a channel costs and what it delivers.</p>
+        <app-grouped-bar-chart [data]="spendVsResultBars()" aLabel="Share of spend" bLabel="Share of results" [colors]="brandGroupedColors" [hideAxis]="true" />
       </section>
     }
 
-    @if (hasEfficiencyChart()) {
+    @if (hasRoiPayoff()) {
       <section class="card results-section">
         <h2 class="section-title">
-          Channel ROI ranking<app-info-tip term="ROI" [text]="HINTS.roi" />
+          Which channels are paying off<app-info-tip term="ROI" [text]="HINTS.roi" />
         </h2>
-        <p class="muted field-hint">Solid bar: return so far. Light bar: return on the next dollar spent — if it's lower, that channel is nearing its ceiling.</p>
-        @if (diminishingReturnsInsight(); as insight) {
-          <p class="insight-callout">{{ insight }}</p>
-        }
-        <app-grouped-bar-chart [data]="sortedRoiGroupedBars()" aLabel="ROI" bLabel="Marginal ROI" [colors]="brandGroupedColors" />
-        @if (hasLowDataChannels()) {
-          <p class="muted field-hint backend-gap-inline">
-            ⚠ Limited spend history, treat with caution:
-            @for (label of lowDataChannelLabels(); track label; let last = $last) {
-              {{ label }}{{ last ? '' : ', ' }}
-            }
-          </p>
-        }
+        <p class="muted field-hint">Solid bar: return so far. Light bar: return on the next dollar spent. ⚠ marks a channel with limited spend history.</p>
+        <app-grouped-bar-chart [data]="roiPayoffBars()" aLabel="Return so far" bLabel="Next dollar" [colors]="brandGroupedColors" [hideAxis]="true" />
       </section>
-    } @else if (efficiencyFallback().length > 0) {
+    }
+
+    <h3 class="section-title">What could change</h3>
+
+    @if (biggestOpportunity(); as opp) {
+      <section class="card results-section opportunity-card">
+        <p class="opportunity-label">Biggest opportunity, per {{ opp.shiftDisplay }} shifted</p>
+        <p class="opportunity-value">+{{ opp.gainDisplay }}</p>
+        <p class="muted field-hint">
+          Moving budget from {{ opp.fromLabel }} ({{ opp.fromDisplay }} next-dollar return) toward
+          {{ opp.toLabel }} ({{ opp.toDisplay }} next-dollar return).
+        </p>
+      </section>
+    }
+
+    @if (hasMarginalRanked()) {
       <section class="card results-section">
-        <h2 class="section-title">Channel efficiency</h2>
-        <div class="efficiency-list">
-          @for (row of efficiencyFallback(); track row.name) {
-            <div class="efficiency-row">
-              <span class="efficiency-name">{{ row.name }}</span>
-              <div class="efficiency-metrics">
-                @for (entry of row.entries; track entry.label) {
-                  <span class="efficiency-metric"><strong>{{ entry.label }}:</strong> {{ entry.value }}</span>
-                }
-              </div>
-            </div>
-          }
+        <h2 class="section-title">
+          Every channel, ranked by next-dollar return<app-info-tip term="next-dollar return" [text]="HINTS.marginalRoi" />
+        </h2>
+        <p class="muted field-hint">No channel left out — this is the full picture, not just the extremes.</p>
+        <div class="rank-legend">
+          <span><span class="rank-swatch" [style.background]="'#1BAF7A'"></span>Highest return</span>
+          <span><span class="rank-swatch" [style.background]="'#C3C2B7'"></span>Everyone else</span>
+          <span><span class="rank-swatch" [style.background]="'#E34948'"></span>Lowest return</span>
         </div>
+        <app-bar-chart [data]="marginalRoiRanked()" [colors]="marginalRankedColors()" />
       </section>
     }
 
-    @if (hasContributionStack()) {
-      <section class="card results-section">
-        <h2 class="section-title">Contribution breakdown</h2>
-        <p class="muted field-hint">A channel can perform well per dollar and still be a small piece of the whole picture.</p>
-        <div class="stack-bar">
-          @for (segment of contributionStackSegments(); track segment.label) {
-            <div class="stack-segment" [style.width.%]="segment.pct" [style.background]="segment.color"></div>
-          }
-        </div>
-        <ul class="stack-legend">
-          @for (segment of contributionStackSegments(); track segment.label) {
-            <li>
-              <span class="donut-swatch" [style.background]="segment.color"></span>
-              <span class="donut-legend-label">{{ segment.label }}</span>
-              <span class="donut-legend-value">{{ segment.display }}</span>
-            </li>
-          }
-        </ul>
-      </section>
+    <div class="planner-strip">
+      <span class="planner-icon" aria-hidden="true">✨</span>
+      <p>
+        Illustrative, based on a small shift, not a full plan. Real reallocation involves diminishing returns as
+        amounts grow.
+        <button type="button" class="planner-link" (click)="openBudgetPlanner()">Move to Budget Planner</button>
+        for a plan built around your exact budget.
+      </p>
+    </div>
+    @if (plannerClicked()) {
+      <p class="muted field-hint backend-gap-inline">The Budget Planner module doesn't exist yet — this link isn't wired to a real destination.</p>
     }
 
-    @if (hasBudgetChart()) {
-      <section class="card results-section" id="budget-recommendation">
-        <h2 class="section-title">Recommended budget shift</h2>
-        <p class="muted field-hint">Same total budget, reallocated toward higher-performing channels.</p>
-        @if (budgetHeadline(); as headline) {
-          <p class="insight-callout">{{ headline }}</p>
-        }
-        <app-grouped-bar-chart [data]="budgetGroupedBars()" aLabel="Current spend" bLabel="Optimized spend" [tickFormat]="formatXSpend" [vertical]="true" [colors]="brandBudgetColors" />
-
-        @if (recommendedImpact(); as impact) {
-          <div class="impact-row">
-            <div class="impact-lift" [class.impact-negative]="impact.liftPercent < 0">
-              {{ impact.liftPercent >= 0 ? '+' : '' }}{{ impact.liftPercent | number: '1.0-1' }}%
-            </div>
-            <div class="impact-figures">
-              <span>Current outcome <strong>{{ formatXSpend(impact.currentTotal) }}</strong></span>
-              <span class="impact-arrow">→</span>
-              <span>Expected outcome <strong>{{ formatXSpend(impact.optimizedTotal) }}</strong></span>
-            </div>
-          </div>
-        }
-
-        @if (biggestBudgetChanges().length > 0) {
-          <h3 class="stack-legend-title">Biggest changes</h3>
-          <div class="change-list">
-            @for (entry of biggestBudgetChanges(); track entry.label) {
-              <div class="change-row">
-                <span>{{ entry.label }}</span>
-                <span [class.change-up]="entry.pct > 0" [class.change-down]="entry.pct < 0">
-                  {{ entry.pct >= 0 ? '+' : '' }}{{ entry.pct | number: '1.0-1' }}%
-                </span>
-              </div>
-            }
-          </div>
-        }
-
-        <p class="muted field-hint backend-gap-inline">Return under the recommended split isn't shown yet for each channel — that calculation is still being verified.</p>
-      </section>
-    } @else if (budgetFallback().length > 0) {
-      <section class="card results-section" id="budget-recommendation">
-        <h2 class="section-title">Recommended budget shift</h2>
-        <dl class="results-grid">
-          @for (entry of budgetFallback(); track entry.label) {
-            <dt>{{ entry.label }}</dt>
-            <dd>{{ entry.value }}</dd>
-          }
-        </dl>
-      </section>
-    }
-
-    @if (!totalIncrementalOutcome() && !baselineVsMarketing() && !hasEfficiencyChart() && !hasContributionStack() && !hasBudgetChart()) {
+    @if (!hasAnyInsights()) {
       <app-empty-state title="No insights yet" message="This model's results didn't include the fields these insights are built from." />
     }
   }

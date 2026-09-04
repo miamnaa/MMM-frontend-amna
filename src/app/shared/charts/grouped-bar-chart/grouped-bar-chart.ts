@@ -82,12 +82,14 @@ const ROW_LABEL_FONT = '10.5px "DM Sans", sans-serif';
       </svg>
     } @else {
       <svg [attr.viewBox]="'0 0 ' + HW + ' ' + height()" preserveAspectRatio="xMidYMid meet" role="img" [attr.aria-label]="ariaLabel()">
-        @for (t of xTicks(); track t.value) {
-          <line [attr.x1]="t.x" [attr.x2]="t.x" [attr.y1]="HPAD.top" [attr.y2]="plotBottom()" class="grid-line" />
-          <text [attr.x]="t.x" [attr.y]="plotBottom() + 16" text-anchor="middle" class="tick">{{ t.label }}</text>
+        @if (!hideAxis()) {
+          @for (t of xTicks(); track t.value) {
+            <line [attr.x1]="t.x" [attr.x2]="t.x" [attr.y1]="HPAD.top" [attr.y2]="plotBottom()" class="grid-line" />
+            <text [attr.x]="t.x" [attr.y]="plotBottom() + 16" text-anchor="middle" class="tick">{{ t.label }}</text>
+          }
+          <line [attr.x1]="HPAD.left" [attr.x2]="HPAD.left" [attr.y1]="HPAD.top" [attr.y2]="plotBottom()" class="axis-line" />
+          <line [attr.x1]="HPAD.left" [attr.x2]="HW - HPAD.right" [attr.y1]="plotBottom()" [attr.y2]="plotBottom()" class="axis-line" />
         }
-        <line [attr.x1]="HPAD.left" [attr.x2]="HPAD.left" [attr.y1]="HPAD.top" [attr.y2]="plotBottom()" class="axis-line" />
-        <line [attr.x1]="HPAD.left" [attr.x2]="HW - HPAD.right" [attr.y1]="plotBottom()" [attr.y2]="plotBottom()" class="axis-line" />
 
         @for (row of rows(); track row.label) {
           <text [attr.x]="HPAD.left - 10" [attr.y]="row.centerY + 4" text-anchor="end" class="row-label">{{ row.label }}</text>
@@ -157,6 +159,8 @@ export class GroupedBarChart {
   readonly bLabel = input<string>('B');
   readonly vertical = input<boolean>(false);
   readonly tickFormat = input<(v: number) => string>((v) => (v >= 1000 ? `${Math.round(v / 100) / 10}K` : `${Math.round(v * 100) / 100}`));
+  /** Hides the value-axis gridlines/ticks on the horizontal layout, keeping just the bars and their own end labels - some pages want the number read directly off each bar rather than cross-referenced against a shared axis. */
+  readonly hideAxis = input<boolean>(false);
 
   protected readonly HW = HW;
   protected readonly HPAD = HPAD;

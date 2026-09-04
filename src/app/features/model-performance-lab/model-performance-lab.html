@@ -1,11 +1,13 @@
 <div class="page">
-  <p class="illustrative-note">
-    Illustrative — every number and chart below is shown for design reference, not read from this model's real
-    results, until adstock_decay_curves, saturation_curves and data_quality_flags are returned by the backend.
-  </p>
+  @if (hasAnyIllustrativeKpi()) {
+    <p class="illustrative-note">
+      Illustrative — any card below marked "Illustrative" is shown for design reference, not read from this
+      model's real results yet. Unmarked cards are real.
+    </p>
+  }
 
   <div class="kpi-row">
-    @for (kpi of kpis; track kpi.label) {
+    @for (kpi of kpis(); track kpi.label) {
       <div class="kpi-card">
         <span class="kpi-icon" aria-hidden="true">
           @switch (kpi.label) {
@@ -35,11 +37,21 @@
           }
         </span>
         <span class="kpi-label">{{ kpi.label }}</span>
+        @if (!kpi.real) {
+          <span class="kpi-illustrative-tag">Illustrative</span>
+        }
         <span class="kpi-value">{{ kpi.value }}</span>
         <p class="kpi-explain">{{ kpi.explanation }}</p>
       </div>
     }
   </div>
+
+  @if (!hasRealChartData()) {
+    <p class="illustrative-note">
+      Illustrative — the three charts below are shown for design reference, not read from this model's real
+      results, until adstock_decay_curves, saturation_curves and data_used are all returned by the backend.
+    </p>
+  }
 
   <div class="chart-row">
     <section class="chart-card">
@@ -53,16 +65,16 @@
         }
         <line [attr.x1]="decayPad.left" [attr.x2]="decayPad.left" [attr.y1]="decayPad.top" [attr.y2]="decayPlotBottom" class="axis-line" />
         <line [attr.x1]="decayPad.left" [attr.x2]="480 - decayPad.right" [attr.y1]="decayPlotBottom" [attr.y2]="decayPlotBottom" class="axis-line" />
-        @for (t of decayXTicks; track t.value) {
+        @for (t of decayXTicks(); track t.value) {
           <text [attr.x]="t.x" [attr.y]="decayPlotBottom + 16" text-anchor="middle" class="tick">wk {{ t.value }}</text>
         }
-        @for (s of decaySeries; track s.name) {
+        @for (s of decaySeries(); track s.name) {
           <polyline [attr.points]="s.points" fill="none" [attr.stroke]="s.color" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
         }
       </svg>
 
       <div class="legend">
-        @for (s of decaySeries; track s.name) {
+        @for (s of decaySeries(); track s.name) {
           <span class="legend-item"><span class="legend-dot" [style.background]="s.color"></span>{{ s.name }}</span>
         }
       </div>
@@ -77,10 +89,10 @@
         <select
           class="channel-select"
           [ngModel]="selectedChannel()"
-          (ngModelChange)="selectedChannel.set($event)"
+          (ngModelChange)="setSelectedChannel($event)"
           aria-label="Choose a channel"
         >
-          @for (name of channelNames; track name) {
+          @for (name of channelNames(); track name) {
             <option [value]="name">{{ name }}</option>
           }
         </select>
@@ -106,13 +118,13 @@
       }
       <line [attr.x1]="scatterPad.left" [attr.x2]="scatterPad.left" [attr.y1]="scatterPad.top" [attr.y2]="scatterPlotBottom" class="axis-line" />
       <line [attr.x1]="scatterPad.left" [attr.x2]="560 - scatterPad.right" [attr.y1]="scatterPlotBottom" [attr.y2]="scatterPlotBottom" class="axis-line" />
-      @for (t of scatterXTicks; track t.value) {
+      @for (t of scatterXTicks(); track t.value) {
         <text [attr.x]="t.x" [attr.y]="scatterPlotBottom + 16" text-anchor="middle" class="tick">{{ t.value }}</text>
       }
       <text [attr.x]="(560 - scatterPad.left - scatterPad.right) / 2 + scatterPad.left" [attr.y]="scatterPlotBottom + 34" text-anchor="middle" class="axis-caption">Weeks until effect fades to half</text>
       <text [attr.x]="16" [attr.y]="(scatterPlotBottom + scatterPad.top) / 2" text-anchor="middle" class="axis-caption" [attr.transform]="'rotate(-90 16 ' + (scatterPlotBottom + scatterPad.top) / 2 + ')'">How close to maxed out (%)</text>
 
-      @for (p of scatterPoints; track p.name) {
+      @for (p of scatterPoints(); track p.name) {
         <circle [attr.cx]="p.x" [attr.cy]="p.y" r="5.5" [attr.fill]="p.lowData ? 'var(--amber-500)' : 'var(--blue-500)'" />
         <text [attr.x]="p.x + 9" [attr.y]="p.y + 3.5" class="point-label">{{ p.name }}</text>
       }
@@ -122,8 +134,8 @@
   </section>
 
   <div class="info-strip">
-    <span class="info-item"><span class="info-icon" aria-hidden="true">▤</span>{{ channelCount }} marketing channels analyzed</span>
-    <span class="info-item"><span class="info-icon" aria-hidden="true">◔</span>{{ weeksOfHistory }} weeks of history</span>
+    <span class="info-item"><span class="info-icon" aria-hidden="true">▤</span>{{ channelCount() }} marketing channels analyzed</span>
+    <span class="info-item"><span class="info-icon" aria-hidden="true">◔</span>{{ weeksOfHistory() }} weeks of history</span>
     <span class="info-item"><span class="legend-dot" style="background: var(--amber-500);"></span>Amber = limited historical data</span>
   </div>
 </div>
