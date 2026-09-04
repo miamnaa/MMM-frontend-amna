@@ -361,40 +361,56 @@ export class ModelPerformanceLab {
 
   /**
    * Real channel names ("Google Generic Paid Search") are far wider than
-   * the point spacing a handful of channels naturally cluster into (several
-   * channels often land within a week of each other on the real x-axis), so
-   * always-on labels drawn right next to each dot collide. A real greedy
-   * row-packing pass, keyed off each label's estimated pixel width, keeps
-   * them legible - a label only reuses a text row if there's actual
-   * horizontal room left in it, otherwise it drops to the next row down,
-   * alternating below/above the point so a tight cluster spreads into the
-   * real space on both sides instead of running off one edge of the chart.
+   * the point spacing a handful of channels naturally cluster into - and
+   * real channels often share a similarly close real half-life AND a
+   * similarly close real saturation %, so points commonly cluster in a
+   * tight column (near-identical x, several close y values), not spread
+   * evenly across the chart. A row-packing scheme keyed only off
+   * horizontal position doesn't catch that: two labels can land in
+   * different "rows" and still collide if those rows sit only a few real
+   * pixels apart vertically. This instead does real 2D box placement -
+   * each label is tried at increasing vertical offsets from its own point
+   * (alternating below/above), and only accepted once its real bounding
+   * box doesn't overlap any label already placed, checking every previous
+   * label, not just ones assumed to share its row.
    */
   readonly scatterLabels = computed(() => {
     const CHAR_WIDTH = 5.6;
-    const LABEL_GAP = 8;
-    const ROW_HEIGHT = 13;
+    const TEXT_HEIGHT = 12;
     const OFFSET = 9;
-
-    const sorted = [...this.scatterPoints()].sort((a, b) => a.x - b.x);
-    const rowRightEdge: number[] = [];
-
-    return sorted.map((p) => {
-      const anchor: 'start' | 'end' = p.x > SCATTER_W - SCATTER_PAD.right - 100 ? 'end' : 'start';
-      const width = p.name.length * CHAR_WIDTH + OFFSET;
-      const startX = anchor === 'end' ? p.x - OFFSET - width : p.x + OFFSET;
-      const endX = startX + width;
-
-      let row = 0;
-      while (row < rowRightEdge.length && rowRightEdge[row] + LABEL_GAP > startX) row++;
-      rowRightEdge[row] = endX;
-
-      const tier = Math.ceil(row / 2);
-      const goesAbove = row > 0 && row % 2 === 0;
-      const offsetY = row === 0 ? 3.5 : goesAbove ? -(tier * ROW_HEIGHT) - 2 : tier * ROW_HEIGHT + 3.5;
-
-      return { name: p.name, x: anchor === 'end' ? p.x - OFFSET : p.x + OFFSET, y: p.y + offsetY, anchor };
+    const STEP = 13;
+    const CANDIDATE_OFFSETS = Array.from({ length: 8 }, (_, i) => {
+      const tier = Math.ceil((i + 1) / 2);
+      return i % 2 === 0 ? tier * STEP + 3.5 : -(tier * STEP) + 3.5;
     });
+    CANDIDATE_OFFSETS.unshift(3.5);
+
+    const boxesOverlap = (a: { x0: number; x1: number; y: number }, b: { x0: number; x1: number; y: number }) =>
+      Math.abs(a.y - b.y) < TEXT_HEIGHT && a.x0 < b.x1 && b.x0 < a.x1;
+
+    const placed: { x0: number; x1: number; y: number }[] = [];
+
+    return [...this.scatterPoints()]
+      .sort((a, b) => a.y - b.y)
+      .map((p) => {
+        const anchor: 'start' | 'end' = p.x > SCATTER_W - SCATTER_PAD.right - 100 ? 'end' : 'start';
+        const width = p.name.length * CHAR_WIDTH + OFFSET;
+        const baseX = anchor === 'end' ? p.x - OFFSET - width : p.x + OFFSET;
+        const box = { x0: baseX, x1: baseX + width, y: p.y };
+
+        let chosenY = p.y + CANDIDATE_OFFSETS[0];
+        for (const dy of CANDIDATE_OFFSETS) {
+          const candidate = { ...box, y: p.y + dy };
+          if (!placed.some((other) => boxesOverlap(candidate, other))) {
+            chosenY = candidate.y;
+            break;
+          }
+          chosenY = candidate.y;
+        }
+
+        placed.push({ ...box, y: chosenY });
+        return { name: p.name, x: anchor === 'end' ? p.x - OFFSET : p.x + OFFSET, y: chosenY, anchor };
+      });
   });
 
   // ---- Bottom info strip ----
