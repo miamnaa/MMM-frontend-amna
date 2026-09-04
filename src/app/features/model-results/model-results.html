@@ -121,11 +121,12 @@
 
     @if (biggestOpportunity(); as opp) {
       <section class="card results-section opportunity-card">
-        <p class="opportunity-label">Biggest opportunity, per {{ opp.shiftDisplay }} shifted</p>
+        <p class="opportunity-label">Biggest opportunity, moving {{ opp.shiftPctDisplay }} of the lowest channel's spend</p>
         <p class="opportunity-value">+{{ opp.gainDisplay }}</p>
         <p class="muted field-hint">
-          Moving budget from {{ opp.fromLabel }} ({{ opp.fromDisplay }} next-dollar return) toward
-          {{ opp.toLabel }} ({{ opp.toDisplay }} next-dollar return).
+          Moving {{ opp.shiftDisplay }} ({{ opp.shiftPctDisplay }} of {{ opp.fromLabel }}'s real spend) from
+          {{ opp.fromLabel }} ({{ opp.fromDisplay }} next-dollar return) toward {{ opp.toLabel }}
+          ({{ opp.toDisplay }} next-dollar return).
         </p>
       </section>
     }

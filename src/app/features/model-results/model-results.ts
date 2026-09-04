@@ -23,13 +23,8 @@ import { currency } from '../../shared/utils/format';
 /** Common field names the real backend might use for a channel's display name - checked in order, first match wins. */
 const CHANNEL_NAME_KEYS = ['channel', 'channel_name', 'name', 'variable', 'media_channel'];
 
-/**
- * Fixed illustrative shift amount for the "Biggest opportunity" headline,
- * per the Business Insights Developer Reference v2 - not derived from any
- * real field, a hardcoded constant. If this ever becomes user-configurable,
- * it belongs as a UI input, not a data field read from results.
- */
-const ILLUSTRATIVE_SHIFT_AMOUNT = 10000;
+/** The "Biggest opportunity" headline shifts this fixed percentage of the lowest-return channel's real spend - not a data field, a fixed UI constant. If this ever becomes user-configurable, it belongs as a real input, not something read from results. */
+const SHIFT_PCT = 0.05;
 
 /**
  * Two specific green swatches requested directly - a dark green and a
@@ -222,9 +217,14 @@ export class ModelResults implements OnInit {
 
   /**
    * Highest real marginal_roi minus lowest, among channels NOT flagged for
-   * low spend history, x a fixed illustrative $10,000 shift - per the
-   * Business Insights Developer Reference v2. Only the exclusion applies to
-   * this headline card; the ranked chart below includes every channel.
+   * low spend history, x a real shift amount - a fixed 5% of the LOWEST
+   * channel's own real spend (from channel_contribution), not an
+   * illustrative flat dollar figure. Grounding the shift in that channel's
+   * real spend means the headline number is real math on real data, not
+   * just a made-up round number applied uniformly regardless of how big or
+   * small that channel's real budget actually is. Only the low-spend
+   * exclusion applies to this headline card; the ranked chart below
+   * includes every channel.
    */
   readonly biggestOpportunity = computed(() => {
     const eligible = this.efficiencyRows()
@@ -236,15 +236,16 @@ export class ModelResults implements OnInit {
     const lowest = eligible.reduce((a, b) => (b.marginal < a.marginal ? b : a));
     if (highest.label === lowest.label) return null;
 
-    // gap is a $-per-$1 ratio (e.g. 3.39 - 0.50 = 2.89); the illustrative
-    // shift amount is a real dollar figure ($10,000) per every $10,000 of
-    // spend actually moved from the lowest to the highest channel, that gap
-    // is roughly what you'd expect back.
+    const lowestSpend = this.channelContribution().find((row, i) => this.channelLabel(row, i) === lowest.label)?.spend;
+    if (typeof lowestSpend !== 'number' || lowestSpend <= 0) return null;
+
+    const shiftAmount = lowestSpend * SHIFT_PCT;
     const gapPerDollar = highest.marginal - lowest.marginal;
-    const gain = gapPerDollar * ILLUSTRATIVE_SHIFT_AMOUNT;
+    const gain = gapPerDollar * shiftAmount;
     return {
       gainDisplay: currency(gain),
-      shiftDisplay: currency(ILLUSTRATIVE_SHIFT_AMOUNT),
+      shiftDisplay: currency(shiftAmount),
+      shiftPctDisplay: `${Math.round(SHIFT_PCT * 100)}%`,
       fromLabel: lowest.label,
       fromDisplay: currency(lowest.marginal, 2),
       toLabel: highest.label,
