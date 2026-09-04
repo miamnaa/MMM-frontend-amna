@@ -1,5 +1,4 @@
-import { Component, computed, input, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, computed, input } from '@angular/core';
 
 import { AdstockDecayCurve, SaturationCurve, TrainingResults } from '../../core/services/dataset.service';
 import { seriesColor } from '../../shared/charts/palette';
@@ -91,11 +90,12 @@ interface ScatterPoint {
   x: number;
   y: number;
   lowData: boolean;
+  title: string;
 }
 
 @Component({
   selector: 'app-model-performance-lab',
-  imports: [FormsModule],
+  imports: [],
   templateUrl: './model-performance-lab.html',
   styleUrl: './model-performance-lab.css',
 })
@@ -190,20 +190,21 @@ export class ModelPerformanceLab {
 
   readonly decaySeries = computed(() => {
     if (this.hasRealChartData()) {
-      return this.realDecayCurves().map((ch, i) => ({
-        name: ch.channel,
-        color: seriesColor(i),
-        points: ch.curve
-          .map((p) => `${this.decayX(p.weeks_since_spend).toFixed(1)},${this.decayY(p.effect_remaining_percent).toFixed(1)}`)
-          .join(' '),
-      }));
+      return this.realDecayCurves().map((ch, i) => {
+        const pts = ch.curve.map((p) => ({
+          x: this.decayX(p.weeks_since_spend),
+          y: this.decayY(p.effect_remaining_percent),
+          title: `${ch.channel}: week ${p.weeks_since_spend}, ${Math.round(p.effect_remaining_percent)}% effect remaining`,
+        }));
+        return { name: ch.channel, color: seriesColor(i), points: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '), pts };
+      });
     }
     return FALLBACK_CHANNELS.map((ch, i) => {
-      const points = Array.from({ length: DECAY_WEEKS + 1 }, (_, week) => {
+      const pts = Array.from({ length: DECAY_WEEKS + 1 }, (_, week) => {
         const percent = 100 * Math.pow(ch.theta, week);
-        return `${this.decayX(week).toFixed(1)},${this.decayY(percent).toFixed(1)}`;
-      }).join(' ');
-      return { name: ch.name, color: seriesColor(i), points };
+        return { x: this.decayX(week), y: this.decayY(percent), title: `${ch.name}: week ${week}, ${Math.round(percent)}% effect remaining` };
+      });
+      return { name: ch.name, color: seriesColor(i), points: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '), pts };
     });
   });
 
@@ -220,16 +221,6 @@ export class ModelPerformanceLab {
   private readonly satPlotH = SAT_H - SAT_PAD.top - SAT_PAD.bottom;
   protected readonly satPlotBottom = SAT_H - SAT_PAD.bottom;
 
-  readonly channelNames = computed(() =>
-    this.hasRealChartData() ? this.realDecayCurves().map((c) => c.channel) : FALLBACK_CHANNELS.map((c) => c.name),
-  );
-  private readonly explicitSelectedChannel = signal<string | null>(null);
-  readonly selectedChannel = computed(() => this.explicitSelectedChannel() ?? this.channelNames()[0] ?? '');
-
-  setSelectedChannel(name: string): void {
-    this.explicitSelectedChannel.set(name);
-  }
-
   private satX(spend: number, maxSpend: number): number {
     return SAT_PAD.left + (spend / maxSpend) * this.satPlotW;
   }
@@ -238,35 +229,47 @@ export class ModelPerformanceLab {
     return SAT_PAD.top + (1 - effect / maxEffect) * this.satPlotH;
   }
 
-  /** The real max spend_level on the selected channel's real curve, or the fixed illustrative 0-10 scale for the fallback - shared between the plotted path and its x-axis ticks so both agree on the same domain. */
+  /** The real max spend_level and effect across every real channel's real curve, or the fixed illustrative 0-10/gamma-based scale for the fallback - shared by every plotted series and the x-axis ticks so they all agree on the same domain, the same way the decay chart's channels all share one scale. */
   readonly satMaxSpend = computed(() => {
     if (this.hasRealChartData()) {
-      const curve = this.realSaturationCurves().find((c) => c.channel === this.selectedChannel())?.curve ?? [];
-      return curve.length > 0 ? Math.max(...curve.map((p) => p.spend_level), 1) : SATURATION_MAX_SPEND;
+      const spends = this.realSaturationCurves().flatMap((c) => c.curve.map((p) => p.spend_level));
+      return spends.length > 0 ? Math.max(...spends) : SATURATION_MAX_SPEND;
     }
     return SATURATION_MAX_SPEND;
   });
 
-  readonly saturationPath = computed(() => {
-    const selected = this.selectedChannel();
+  private readonly satMaxEffect = computed(() => {
+    if (this.hasRealChartData()) {
+      const effects = this.realSaturationCurves().flatMap((c) => c.curve.map((p) => p.effect));
+      return (effects.length > 0 ? Math.max(...effects) : 1) * 1.08;
+    }
+    return Math.max(...FALLBACK_CHANNELS.map((ch) => fallbackSaturationEffect(SATURATION_MAX_SPEND, ch.gamma))) * 1.08;
+  });
+
+  /** Every real channel's real saturation curve plotted together, same shared scale and per-channel color as the decay chart above it, per Hammad's reference design. */
+  readonly saturationSeries = computed(() => {
     const maxSpend = this.satMaxSpend();
+    const maxEffect = this.satMaxEffect();
 
     if (this.hasRealChartData()) {
-      const curve = this.realSaturationCurves().find((c) => c.channel === selected)?.curve ?? [];
-      if (curve.length === 0) return '';
-      const maxEffect = Math.max(...curve.map((p) => p.effect), 1) * 1.08;
-      return curve
-        .map((p) => `${this.satX(p.spend_level, maxSpend).toFixed(1)},${this.satY(p.effect, maxEffect).toFixed(1)}`)
-        .join(' ');
+      return this.realSaturationCurves().map((ch, i) => {
+        const pts = ch.curve.map((p) => ({
+          x: this.satX(p.spend_level, maxSpend),
+          y: this.satY(p.effect, maxEffect),
+          title: `${ch.channel}: $${Math.round(p.spend_level).toLocaleString()} weekly spend, ${p.effect.toFixed(2)} modeled effect`,
+        }));
+        return { name: ch.channel, color: seriesColor(i), points: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '), pts };
+      });
     }
 
-    const ch = FALLBACK_CHANNELS.find((c) => c.name === selected) ?? FALLBACK_CHANNELS[4];
-    const maxEffect = fallbackSaturationEffect(SATURATION_MAX_SPEND, ch.gamma) * 1.08;
-    return Array.from({ length: SATURATION_STEPS + 1 }, (_, i) => {
-      const spend = (i / SATURATION_STEPS) * SATURATION_MAX_SPEND;
-      const effect = fallbackSaturationEffect(spend, ch.gamma);
-      return `${this.satX(spend, maxSpend).toFixed(1)},${this.satY(effect, maxEffect).toFixed(1)}`;
-    }).join(' ');
+    return FALLBACK_CHANNELS.map((ch, i) => {
+      const pts = Array.from({ length: SATURATION_STEPS + 1 }, (_, s) => {
+        const spend = (s / SATURATION_STEPS) * SATURATION_MAX_SPEND;
+        const effect = fallbackSaturationEffect(spend, ch.gamma);
+        return { x: this.satX(spend, maxSpend), y: this.satY(effect, maxEffect), title: `${ch.name}: modeled effect ${effect.toFixed(1)}` };
+      });
+      return { name: ch.name, color: seriesColor(i), points: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '), pts };
+    });
   });
 
   readonly satXTicks = computed(() => {
@@ -344,12 +347,19 @@ export class ModelPerformanceLab {
         x: this.scatterX(p.weeks),
         y: this.scatterY(p.pct),
         lowData: p.lowData,
+        title: `${p.name}: fades to half in ${p.weeks} wks, ${p.pct}% toward max`,
       }));
     }
     return FALLBACK_CHANNELS.map((ch) => {
       const weeks = ModelPerformanceLab.fallbackHalfLifeWeeks(ch.theta);
       const pct = ModelPerformanceLab.fallbackPctMaxedOut(ch);
-      return { name: ch.name, x: this.scatterX(weeks), y: this.scatterY(pct), lowData: ch.lowData };
+      return {
+        name: ch.name,
+        x: this.scatterX(weeks),
+        y: this.scatterY(pct),
+        lowData: ch.lowData,
+        title: `${ch.name}: fades to half in ${weeks} wks, ${pct}% toward max`,
+      };
     });
   });
 

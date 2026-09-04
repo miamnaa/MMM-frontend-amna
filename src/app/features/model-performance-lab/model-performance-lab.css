@@ -96,13 +96,6 @@
   border-radius: 10px;
 }
 
-.chart-head-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
 .chart-title {
   font-family: var(--font);
   font-size: 16px;
@@ -120,27 +113,14 @@
   max-width: 48ch;
 }
 
-.channel-select {
-  font-family: var(--font);
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 6px 10px;
-  flex: none;
-}
-
 .chart-svg {
   width: 100%;
   height: auto;
   display: block;
 }
 
-.grid-line {
-  stroke: var(--border);
-  stroke-width: 1;
+.chart-point {
+  cursor: pointer;
 }
 
 .axis-line {
@@ -185,13 +165,6 @@
 }
 
 /* Scatter legend swatch - a small square, matching the categorical (not line) nature of the points it labels. */
-.legend-square {
-  width: 9px;
-  height: 9px;
-  border-radius: 2px;
-  flex: none;
-}
-
 /* ---------- Scatter ---------- */
 
 .scatter-card {

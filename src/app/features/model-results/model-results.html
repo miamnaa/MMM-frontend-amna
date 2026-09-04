@@ -112,7 +112,7 @@
         <h2 class="section-title">
           Which channels are paying off<app-info-tip term="ROI" [text]="HINTS.roi" />
         </h2>
-        <p class="muted field-hint">Solid bar: return so far. Light bar: return on the next dollar spent. ⚠ marks a channel with limited spend history.</p>
+        <p class="muted field-hint">Solid bar: return so far. Light bar: return on the next dollar spent.</p>
         <app-grouped-bar-chart [data]="roiPayoffBars()" aLabel="Return so far" bLabel="Next dollar" [colors]="brandGroupedColors" [hideAxis]="true" />
       </section>
     }

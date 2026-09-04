@@ -66,7 +66,6 @@
 
       <svg [attr.viewBox]="decayViewBox" class="chart-svg" role="img" aria-label="How each channel's effect fades over time">
         @for (t of decayYTicks; track t.value) {
-          <line [attr.x1]="decayPad.left" [attr.x2]="480 - decayPad.right" [attr.y1]="t.y" [attr.y2]="t.y" class="grid-line" />
           <text [attr.x]="decayPad.left - 8" [attr.y]="t.y + 3" text-anchor="end" class="tick">{{ t.value }}%</text>
         }
         <text [attr.x]="12" [attr.y]="(decayPlotBottom + decayPad.top) / 2" text-anchor="middle" class="axis-caption" [attr.transform]="'rotate(-90 12 ' + (decayPlotBottom + decayPad.top) / 2 + ')'">Effect remaining (%)</text>
@@ -78,37 +77,41 @@
         <text [attr.x]="(480 - decayPad.left - decayPad.right) / 2 + decayPad.left" [attr.y]="240 - 4" text-anchor="middle" class="axis-caption">Weeks since spend</text>
         @for (s of decaySeries(); track s.name) {
           <polyline [attr.points]="s.points" fill="none" [attr.stroke]="s.color" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          @for (pt of s.pts; track $index) {
+            <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="3" [attr.fill]="s.color" class="chart-point">
+              <title>{{ pt.title }}</title>
+            </circle>
+          }
         }
       </svg>
     </section>
 
     <section class="chart-card">
-      <div class="chart-head-row">
-        <div>
-          <h2 class="chart-title">Room left to grow</h2>
-          <p class="chart-subtitle">As spend rises, the extra return eventually flattens out — this shows roughly where.</p>
-        </div>
-        <select
-          class="channel-select"
-          [ngModel]="selectedChannel()"
-          (ngModelChange)="setSelectedChannel($event)"
-          aria-label="Choose a channel"
-        >
-          @for (name of channelNames(); track name) {
-            <option [value]="name">{{ name }}</option>
-          }
-        </select>
+      <h2 class="chart-title">Room left to grow</h2>
+      <p class="chart-subtitle">As spend rises, the extra return eventually flattens out — this shows roughly where.</p>
+
+      <div class="legend">
+        @for (s of saturationSeries(); track s.name) {
+          <span class="legend-item"><span class="legend-dash" [style.background]="s.color"></span>{{ s.name }}</span>
+        }
       </div>
 
-      <svg [attr.viewBox]="satViewBox" class="chart-svg" role="img" aria-label="Saturation curve for the selected channel">
+      <svg [attr.viewBox]="satViewBox" class="chart-svg" role="img" aria-label="Saturation curve per channel">
         <line [attr.x1]="satPad.left" [attr.x2]="satPad.left" [attr.y1]="satPad.top" [attr.y2]="satPlotBottom" class="axis-line" />
         <line [attr.x1]="satPad.left" [attr.x2]="480 - satPad.right" [attr.y1]="satPlotBottom" [attr.y2]="satPlotBottom" class="axis-line" />
         <text [attr.x]="12" [attr.y]="(satPlotBottom + satPad.top) / 2" text-anchor="middle" class="axis-caption" [attr.transform]="'rotate(-90 12 ' + (satPlotBottom + satPad.top) / 2 + ')'">Modeled effect</text>
-        <polyline [attr.points]="saturationPath()" fill="none" stroke="var(--brand-500)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
         @for (t of satXTicks(); track t.value) {
           <text [attr.x]="t.x" [attr.y]="satPlotBottom + 16" text-anchor="middle" class="tick">{{ t.value }}</text>
         }
         <text [attr.x]="(480 - satPad.left - satPad.right) / 2 + satPad.left" [attr.y]="240 - 4" text-anchor="middle" class="axis-caption">Weekly spend ($)</text>
+        @for (s of saturationSeries(); track s.name) {
+          <polyline [attr.points]="s.points" fill="none" [attr.stroke]="s.color" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          @for (pt of s.pts; track $index) {
+            <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="3" [attr.fill]="s.color" class="chart-point">
+              <title>{{ pt.title }}</title>
+            </circle>
+          }
+        }
       </svg>
     </section>
   </div>
@@ -117,14 +120,8 @@
     <h2 class="chart-title">Where each channel sits</h2>
     <p class="chart-subtitle">Bottom-left: quick, but has room to spend more. Top-right: long-lasting, but already close to maxed out.</p>
 
-    <div class="legend">
-      <span class="legend-item"><span class="legend-square" style="background: var(--blue-500);"></span>Enough data</span>
-      <span class="legend-item"><span class="legend-square" style="background: var(--amber-500);"></span>Limited historical data</span>
-    </div>
-
     <svg [attr.viewBox]="scatterViewBox" class="chart-svg scatter-svg" role="img" aria-label="Each channel plotted by how long its effect lasts and how saturated it is">
       @for (t of scatterYTicks; track t.value) {
-        <line [attr.x1]="scatterPad.left" [attr.x2]="560 - scatterPad.right" [attr.y1]="t.y" [attr.y2]="t.y" class="grid-line" />
         <text [attr.x]="scatterPad.left - 8" [attr.y]="t.y + 3" text-anchor="end" class="tick">{{ t.value }}%</text>
       }
       <line [attr.x1]="scatterPad.left" [attr.x2]="scatterPad.left" [attr.y1]="scatterPad.top" [attr.y2]="scatterPlotBottom" class="axis-line" />
@@ -136,7 +133,9 @@
       <text [attr.x]="16" [attr.y]="(scatterPlotBottom + scatterPad.top) / 2" text-anchor="middle" class="axis-caption" [attr.transform]="'rotate(-90 16 ' + (scatterPlotBottom + scatterPad.top) / 2 + ')'">How close to maxed out (%)</text>
 
       @for (p of scatterPoints(); track p.name) {
-        <circle [attr.cx]="p.x" [attr.cy]="p.y" r="5.5" [attr.fill]="p.lowData ? 'var(--amber-500)' : 'var(--blue-500)'" />
+        <circle [attr.cx]="p.x" [attr.cy]="p.y" r="5.5" [attr.fill]="p.lowData ? 'var(--amber-500)' : 'var(--blue-500)'" class="chart-point">
+          <title>{{ p.title }}</title>
+        </circle>
       }
       @for (l of scatterLabels(); track l.name) {
         <text [attr.x]="l.x" [attr.y]="l.y" [attr.text-anchor]="l.anchor" class="point-label">{{ l.name }}</text>
