@@ -514,12 +514,30 @@ export class Optimize implements OnInit {
       next: ({ channels }) => {
         this.channelHealthLoading.set(false);
         this.channelHealthData.set(channels);
+        if (!this.spendCutoffTouched()) {
+          this.spendCutoffPct.set(this.defaultSpendCutoffPct(channels.length));
+        }
       },
       error: (err: unknown) => {
         this.channelHealthLoading.set(false);
         this.channelHealthError.set(backendErrorMessage(err, "Couldn't load Channel Health for this dataset."));
       },
     });
+  }
+
+  /**
+   * There's no statistical convention for "too small a channel to trust" -
+   * unlike VIF, it's a business judgment call with nothing to derive it
+   * from. This at least grounds the *default* in this dataset's real
+   * channel count instead of a flat guess: half of what an equal split of
+   * spend across all real channels would give each one. E.g. 5 channels ->
+   * an equal split is 20% each -> default cutoff flags anything under 10%.
+   * Still just a starting point - the slider is there because there's no
+   * "correct" number.
+   */
+  private defaultSpendCutoffPct(channelCount: number): number {
+    if (channelCount <= 0) return 0;
+    return Math.round((50 / channelCount) * 10) / 10;
   }
 
   private readonly visibleChannelHealthData = computed(() =>
@@ -634,9 +652,16 @@ export class Optimize implements OnInit {
   }
 
   readonly spendCutoffEnabled = signal(true);
+  /** Real default, not a guess - see defaultSpendCutoffPct(). Overwritten once real channel data loads, unless the user has already touched the slider. */
   readonly spendCutoffPct = signal(3);
+  readonly spendCutoffTouched = signal(false);
+  setSpendCutoffPct(value: number): void {
+    this.spendCutoffTouched.set(true);
+    this.spendCutoffPct.set(value);
+  }
   readonly vifCutoffEnabled = signal(true);
-  readonly vifCutoffValue = signal(3);
+  /** 5 = the standard textbook threshold for "moderate multicollinearity concern" (10 is the usual "severe" line) - the one cutoff here that actually comes from a real statistical convention, not a guess. */
+  readonly vifCutoffValue = signal(5);
 
   readonly spendFlaggedChannels = computed(() =>
     this.channelHealthPoints().filter((p) => p.spendPct < this.spendCutoffPct()).map((p) => p.name),

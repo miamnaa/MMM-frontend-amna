@@ -249,10 +249,12 @@
             @if (spendCutoffEnabled()) {
               <div class="health-slider-row">
                 <label class="health-slider-label" for="o-spend-cutoff">Flag channels below</label>
-                <input id="o-spend-cutoff" type="range" min="0" [attr.max]="maxSpendPct()" step="0.5" [ngModel]="spendCutoffPct()" (ngModelChange)="spendCutoffPct.set($event)" />
+                <input id="o-spend-cutoff" type="range" min="0" [attr.max]="maxSpendPct()" step="0.5" [ngModel]="spendCutoffPct()" (ngModelChange)="setSpendCutoffPct($event)" />
                 <span class="health-slider-value">{{ spendCutoffPct() | number: '1.1-1' }}%</span>
               </div>
               <p class="muted health-slider-hint">
+                Default is half of an equal spend split across your channels - there's no statistical
+                convention for this one, so adjust it to whatever "too small to trust" means for you.
                 Shaded zone on the chart = below this line.
                 @if (spendFlaggedChannels().length > 0) {
                   {{ spendFlaggedChannels().length }} channel{{ spendFlaggedChannels().length === 1 ? '' : 's' }} fall{{ spendFlaggedChannels().length === 1 ? 's' : '' }} in it:
@@ -277,7 +279,8 @@
                 <span class="health-slider-value">{{ vifCutoffValue() | number: '1.1-1' }}</span>
               </div>
               <p class="muted health-slider-hint">
-                Shaded zone on the chart = above this line.
+                Default is 5 - the standard statistical threshold for moderate multicollinearity concern
+                (10 is usually where it's called severe). Shaded zone on the chart = above this line.
                 @if (vifFlaggedChannels().length > 0) {
                   {{ vifFlaggedChannels().length }} channel{{ vifFlaggedChannels().length === 1 ? '' : 's' }} fall{{ vifFlaggedChannels().length === 1 ? 's' : '' }} in it:
                   {{ displayChannelList(vifFlaggedChannels()) }} — click one to act on it.
