@@ -141,6 +141,31 @@ export interface ChannelHealthResponse {
   channels: ChannelHealthApiRow[];
 }
 
+/**
+ * Real endpoint: GET /datasets/:id/exposure-metrics, added 2026-09-07 -
+ * requires Configuration to already be saved. Covers every real control
+ * AND organic column from Configure, not just control - one call for both
+ * groups. `suggestedDirection` is already computed backend-side from a
+ * real correlation against the target column ('not_sure' when the real
+ * correlation is weaker than 0.1 in either direction) - `correlation` is
+ * only there if a caller wants to show the raw strength, not required for
+ * the pre-selected pill.
+ */
+export interface ExposureMetricRow {
+  column: string;
+  correlation: number;
+  suggestedDirection: 'helps' | 'hurts' | 'not_sure';
+}
+
+export interface ExposureMetricsResponse {
+  metrics: ExposureMetricRow[];
+}
+
+export interface ExposureDirection {
+  column: string;
+  direction: 'helps' | 'hurts' | 'not_sure';
+}
+
 /** The columnMapping shape GET /datasets/:id actually returns - same fields as SavedConfiguration, minus kpiType/revenuePerKpiValue, which come back as siblings instead. */
 export interface SavedColumnMapping {
   dateColumn: string;
@@ -457,6 +482,23 @@ export class DatasetService {
   /** Real endpoint, added 2026-09-07 - requires Configuration to already be saved (400s otherwise). See ChannelHealthResponse for the real null-handling rule on vif/mostCorrelatedWith/mostCorrelatedValue. */
   getChannelHealth(datasetId: string): Observable<ChannelHealthResponse> {
     return this.http.get<ChannelHealthResponse>(`${environment.apiBaseUrl}/datasets/${datasetId}/channel-health`);
+  }
+
+  /** Real endpoint, added 2026-09-07 - requires Configuration to already be saved (400s otherwise), covers every real control + organic column in one call. */
+  getExposureMetrics(datasetId: string): Observable<ExposureMetricsResponse> {
+    return this.http.get<ExposureMetricsResponse>(`${environment.apiBaseUrl}/datasets/${datasetId}/exposure-metrics`);
+  }
+
+  /**
+   * Real endpoint, added 2026-09-07. Must include every real control +
+   * organic column from Configure, exactly once each - same "exactly
+   * these, no more no fewer" rule Hyperparameterization already enforces
+   * for media channels. Doesn't yet change a real training run's outcome
+   * (a real open question for Hammad, per Anas) - it only records the
+   * user's choice for now.
+   */
+  saveExposureDirections(datasetId: string, directions: ExposureDirection[]): Observable<unknown> {
+    return this.http.patch(`${environment.apiBaseUrl}/datasets/${datasetId}/exposure-directions`, { directions });
   }
 
   /**

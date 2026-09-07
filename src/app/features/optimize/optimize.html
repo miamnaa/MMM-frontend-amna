@@ -440,24 +440,31 @@
       <p class="muted field-hint">
         Does this column help or hurt your outcome? Suggestions below are computed from your real
         uploaded data — how each column actually correlates with your target column. Not sure is a
-        safe default; the model will still learn a direction, it just won't be nudged by you.
+        safe default; the model will still learn a direction, it just won't be nudged by you. Saving
+        your choice records it for now — it doesn't yet change how a training run behaves.
       </p>
 
+      @if (exposureMetricsLoading()) {
+        <p class="muted">Loading Exposure Metrics…</p>
+      } @else if (exposureMetricsError(); as err) {
+        <p class="drop-error">{{ err }}</p>
+      }
+
       <div class="em-list">
-        @for (col of controlColumnsList(); track col) {
+        @for (col of exposureColumnsList(); track col) {
           <div class="em-row">
             <span class="column-chip static">{{ col }}</span>
             <span class="em-suggestion">
               @switch (exposureSuggestion(col)) {
-                @case ('positive') { Suggested: <strong>Helps</strong> }
-                @case ('negative') { Suggested: <strong>Hurts</strong> }
+                @case ('helps') { Suggested: <strong>Helps</strong> }
+                @case ('hurts') { Suggested: <strong>Hurts</strong> }
                 @default { Suggested: <strong>Not sure</strong> }
               }
             </span>
             <div class="exposure-modes">
-              <button type="button" class="pill-toggle sm" [class.active]="exposureMode(col) === 'positive'" (click)="setExposureMode(col, 'positive')">Helps</button>
-              <button type="button" class="pill-toggle sm" [class.active]="exposureMode(col) === 'negative'" (click)="setExposureMode(col, 'negative')">Hurts</button>
-              <button type="button" class="pill-toggle sm" [class.active]="exposureMode(col) === 'auto'" (click)="setExposureMode(col, 'auto')">Not sure</button>
+              <button type="button" class="pill-toggle sm" [class.active]="exposureMode(col) === 'helps'" (click)="setExposureMode(col, 'helps')">Helps</button>
+              <button type="button" class="pill-toggle sm" [class.active]="exposureMode(col) === 'hurts'" (click)="setExposureMode(col, 'hurts')">Hurts</button>
+              <button type="button" class="pill-toggle sm" [class.active]="exposureMode(col) === 'not_sure'" (click)="setExposureMode(col, 'not_sure')">Not sure</button>
             </div>
           </div>
         }
@@ -465,7 +472,7 @@
 
       <div class="exposure-bulk">
         <button type="button" class="link-btn-inline" (click)="acceptAllSuggestions()">Accept all suggestions</button>
-        <button type="button" class="link-btn-inline" (click)="setAllExposure('auto')">Set ALL to Not sure</button>
+        <button type="button" class="link-btn-inline" (click)="setAllExposure('not_sure')">Set ALL to Not sure</button>
       </div>
       }
     </section>

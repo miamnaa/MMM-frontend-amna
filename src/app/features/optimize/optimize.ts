@@ -2,9 +2,9 @@ import { DecimalPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 
-import { AutoCombinedGroup, ChannelHealthApiRow, DatasetService, HyperparameterChannel, SavedColumnMapping } from '../../core/services/dataset.service';
+import { AutoCombinedGroup, ChannelHealthApiRow, DatasetService, ExposureDirection, ExposureMetricRow, HyperparameterChannel, SavedColumnMapping } from '../../core/services/dataset.service';
 import { SessionService } from '../../core/services/notification.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
@@ -48,26 +48,6 @@ function formatAxisDate(raw: string): string {
   return `${day} ${month} ${d.getFullYear()}`;
 }
 
-/** Standard Pearson correlation coefficient, -1..1. */
-function pearson(xs: number[], ys: number[]): number {
-  const n = xs.length;
-  if (n === 0) return 0;
-  const meanX = xs.reduce((s, v) => s + v, 0) / n;
-  const meanY = ys.reduce((s, v) => s + v, 0) / n;
-  let num = 0;
-  let denX = 0;
-  let denY = 0;
-  for (let i = 0; i < n; i++) {
-    const dx = xs[i] - meanX;
-    const dy = ys[i] - meanY;
-    num += dx * dy;
-    denX += dx * dx;
-    denY += dy * dy;
-  }
-  const den = Math.sqrt(denX * denY);
-  return den === 0 ? 0 : num / den;
-}
-
 interface ChartSeries {
   name: string;
   color: string;
@@ -92,7 +72,7 @@ function displayName(name: string): string {
   return stripped.length > 0 ? stripped : name;
 }
 
-type ExposureMode = 'auto' | 'positive' | 'negative';
+type ExposureMode = 'helps' | 'hurts' | 'not_sure';
 type Row = Record<string, unknown>;
 
 /** Real backend: PATCH /datasets/:id/optimize, shipped 2026-08-12. */
@@ -174,9 +154,12 @@ export class Optimize implements OnInit {
   private readonly config = computed(() => this.tunnelService.configuration());
   private readonly mediaChannels = computed(() => this.config()?.mediaColumns ?? []);
   readonly controlColumnsList = computed(() => this.config()?.controlColumns ?? []);
+  private readonly organicColumnsList = computed(() => this.config()?.organicColumns ?? []);
+  /** Real GET /datasets/:id/exposure-metrics covers both groups in one call - Exposure Metrics shows them together as a single list. */
+  readonly exposureColumnsList = computed(() => [...this.controlColumnsList(), ...this.organicColumnsList()]);
 
   readonly hasMediaChannels = computed(() => this.mediaChannels().length > 0);
-  readonly hasControlColumns = computed(() => this.controlColumnsList().length > 0);
+  readonly hasControlColumns = computed(() => this.exposureColumnsList().length > 0);
 
   readonly rows = signal<Row[]>([]);
   readonly rowsLoading = signal(false);
@@ -269,6 +252,7 @@ export class Optimize implements OnInit {
       geoColumns: mapping.geoColumns,
     });
     this.loadChannelHealth();
+    this.loadExposureMetrics();
   }
 
   /** Merges a real per-date series (from combineColumns' chart-preview call) into `rows` under the given field name, same as any other real column. */
@@ -729,32 +713,46 @@ export class Optimize implements OnInit {
     this.combineFormOpen.update((open) => !open);
   }
 
-  /** Exposure Metrics: per-control-column impact direction - no backend endpoint for this exists yet, still illustrative. */
+  /**
+   * Exposure Metrics: real per-column suggested direction and explicit
+   * user choice, from GET /datasets/:id/exposure-metrics (added
+   * 2026-09-07) - replaces the client-side Pearson correlation this used
+   * to compute itself. Covers every real control + organic column in one
+   * call. Saving a direction (PATCH /datasets/:id/exposure-directions,
+   * called from save() below) doesn't yet change a real training run's
+   * outcome - that's a separate real open question for Hammad (does his
+   * engine support a sign-constrained prior per column) - so nothing here
+   * should imply this does more than record the choice.
+   */
+  readonly exposureMetricsData = signal<ExposureMetricRow[]>([]);
+  readonly exposureMetricsLoading = signal(false);
+  readonly exposureMetricsError = signal<string | null>(null);
   readonly exposureModes = signal<Record<string, ExposureMode>>({});
   readonly exposureToast = signal(false);
   private exposureToastTimer?: ReturnType<typeof setTimeout>;
 
-  /**
-   * Real suggested direction per control column - sign of the real Pearson
-   * correlation between that column's real values and the real target
-   * column's real values ('positive' = tends to coincide with a higher
-   * target value in this dataset, 'negative' the opposite). Falls back to
-   * 'auto' only when there's no real target/rows to check yet - a real
-   * zero correlation still returns 'auto' since there's genuinely no
-   * direction to suggest.
-   */
-  exposureSuggestion(col: string): ExposureMode {
-    const target = this.config()?.targetColumn;
-    const rows = this.rows();
-    if (!target || rows.length === 0) return 'auto';
-    const xs = rows.map((r) => toNumber(r[col]));
-    const ys = rows.map((r) => toNumber(r[target]));
-    const corr = pearson(xs, ys);
-    if (corr === 0) return 'auto';
-    return corr > 0 ? 'positive' : 'negative';
+  private loadExposureMetrics(): void {
+    if (this.exposureColumnsList().length === 0) return;
+    this.exposureMetricsLoading.set(true);
+    this.exposureMetricsError.set(null);
+    this.datasetService.getExposureMetrics(this.datasetId()).subscribe({
+      next: ({ metrics }) => {
+        this.exposureMetricsLoading.set(false);
+        this.exposureMetricsData.set(metrics);
+      },
+      error: (err: unknown) => {
+        this.exposureMetricsLoading.set(false);
+        this.exposureMetricsError.set(backendErrorMessage(err, "Couldn't load Exposure Metrics for this dataset."));
+      },
+    });
   }
 
-  /** Explicit user choice if there is one, otherwise the real suggestion above - so a column starts pre-selected on its suggested direction instead of a blank 'auto'. */
+  /** Real suggested direction from the backend - 'not_sure' (a safe default, not a real correlation-backed answer) until the real data has loaded. */
+  exposureSuggestion(col: string): ExposureMode {
+    return this.exposureMetricsData().find((m) => m.column === col)?.suggestedDirection ?? 'not_sure';
+  }
+
+  /** Explicit user choice if there is one, otherwise the real suggestion above - so a column starts pre-selected on its suggested direction instead of a blank 'not_sure'. */
   exposureMode(col: string): ExposureMode {
     return this.exposureModes()[col] ?? this.exposureSuggestion(col);
   }
@@ -773,14 +771,14 @@ export class Optimize implements OnInit {
   /** Every column to its own real suggestion (not one mode for all - each column can suggest a different direction). */
   acceptAllSuggestions(): void {
     const next: Record<string, ExposureMode> = {};
-    for (const col of this.controlColumnsList()) next[col] = this.exposureSuggestion(col);
+    for (const col of this.exposureColumnsList()) next[col] = this.exposureSuggestion(col);
     this.exposureModes.set(next);
     this.flashExposureToast();
   }
 
   setAllExposure(mode: ExposureMode): void {
     const next: Record<string, ExposureMode> = {};
-    for (const col of this.controlColumnsList()) next[col] = mode;
+    for (const col of this.exposureColumnsList()) next[col] = mode;
     this.exposureModes.set(next);
     this.flashExposureToast();
   }
@@ -821,6 +819,7 @@ export class Optimize implements OnInit {
     });
 
     this.loadChannelHealth();
+    this.loadExposureMetrics();
   }
 
   /**
@@ -869,7 +868,23 @@ export class Optimize implements OnInit {
     this.saving.set(true);
     this.saveError.set(null);
 
-    this.datasetService.saveOptimize(this.datasetId(), body).subscribe({
+    // Real PATCH /datasets/:id/exposure-directions - must include every
+    // real control + organic column exactly once, same rule
+    // Hyperparameterization already enforces for media channels. Skipped
+    // entirely when there are none, rather than sending an empty array.
+    const exposureColumns = this.exposureColumnsList();
+    const exposureSave =
+      exposureColumns.length > 0
+        ? this.datasetService.saveExposureDirections(
+            this.datasetId(),
+            exposureColumns.map((column): ExposureDirection => ({ column, direction: this.exposureMode(column) })),
+          )
+        : of(null);
+
+    forkJoin({
+      optimize: this.datasetService.saveOptimize(this.datasetId(), body),
+      exposure: exposureSave,
+    }).subscribe({
       next: () => {
         this.saving.set(false);
         this.tunnelService.setOptimize(body);
