@@ -184,17 +184,6 @@
   border-top: 1px solid var(--border);
 }
 
-/* Custom Timeframe now sits first (above the date fields) - no top border/
-   spacing needed since there's nothing above it to separate from. */
-.example-section-first {
-  margin-top: 0;
-  padding-top: 0;
-  border-top: none;
-  margin-bottom: 18px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--border);
-}
-
 .date-range-row {
   display: flex;
   gap: 16px;
