@@ -18,10 +18,41 @@
   @if (infoOpen()) {
     <div class="info-body">
       <ul>
-        <li><strong>Carryover (AdStock):</strong> Controls how much of this week's spend still influences next week — higher values keep the impact around longer.</li>
-        <li><strong>Alpha (Diminishing Returns):</strong> Controls how much spend is needed before a channel starts saturating — higher values delay saturation. Shapes the preview chart only.</li>
-        <li><strong>Gamma (Diminishing Returns):</strong> Shapes the curve of diminishing returns — a lower gamma means performance flattens sooner as spend increases. This is the real "saturation" value that gets saved.</li>
-        <li>Channels are taken from what you saved in Configure. Carryover must be 0–1; gamma must be 0 or above.</li>
+        <li>
+          <strong>Theta / Carryover — "how long an ad's impact lingers":</strong> When you spend on a
+          channel this week, does its effect disappear right away, or does some of it carry over into
+          next week and the week after? Theta is a number from <strong>0 to 1</strong>. Close to 0 means
+          the effect is basically gone by next week (typical of a direct-response channel like paid
+          search — someone searches, clicks, converts, done). Close to 1 means the effect fades very
+          slowly, week after week (more typical of brand/TV spend, which people keep remembering after
+          the ad stops running). This is a real number sent to the model.
+        </li>
+        <li>
+          <strong>Alpha — "how much spend it takes before a channel starts to saturate":</strong> Every
+          channel eventually hits a point of diminishing returns — the 10th dollar of daily spend
+          rarely does as much as the 1st. Alpha (0.05 to 1 in this preview) controls roughly where that
+          point sits along the spend axis. A higher alpha pushes that point further out, so the channel
+          looks "un-saturated" over a wider spend range. <em>Alpha only shapes the chart on this page —
+          there's no real "alpha" field saved to the model. Only Gamma below is actually sent and used
+          for training.</em>
+        </li>
+        <li>
+          <strong>Gamma — "how sharply returns flatten out after that point":</strong> Once a channel
+          starts saturating, how abrupt is the flattening? A low gamma flattens quickly and sharply
+          right after the half-saturation point; a high gamma bends more gradually, so the channel keeps
+          giving a little more for a while longer before it truly flattens. This is the real "saturation"
+          value that gets saved. The slider here goes from 0 to 3 (a practical range for realistic
+          curves) — the model itself has no hard upper limit, so a value above 3 is technically valid,
+          it's just not reachable from this slider.
+        </li>
+        <li>
+          <strong>Automatic Optimization:</strong> Draws a random value within your chosen % variance
+          range around the current number, right in your browser, so you can quickly see a few nearby
+          options on the chart. It is <em>not</em> a real trained/optimized value from the model — that
+          would require an actual training run, which isn't wired up yet. Values it sets are marked
+          "Estimated" for that reason.
+        </li>
+        <li>Channels are taken from what you saved in Configure. Valid ranges: Theta (carryover) 0–1, Gamma (saturation) 0 and above.</li>
       </ul>
     </div>
   }
