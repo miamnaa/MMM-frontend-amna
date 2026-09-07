@@ -427,10 +427,37 @@
   background-color: var(--brand-500);
 }
 
-/* Real null VIF - only one real media channel, or a genuinely non-unique regression. Never styled as "healthy" (green) - that would read as a confirmed low-redundancy result it isn't. */
+/* Real null VIF - only one real media channel, or fewer real rows than channels. Never styled as "healthy" (green) - that would read as a confirmed low-redundancy result it isn't. */
 .health-point-unknown {
   fill: var(--text-subtle, var(--border-strong));
   background-color: var(--text-subtle, var(--border-strong));
+}
+
+/* Real ridge-regularized VIF (exact collinearity between two other channels) - still a real, computed number and keeps its normal status color/fill, just gets a dashed ring on top as a softer visual caveat than a plain VIF. */
+.health-point-approx {
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 2 2;
+}
+
+.health-legend-dot-approx {
+  border-radius: 50%;
+  border: 1.5px dashed var(--text-muted);
+  background-color: transparent;
+}
+
+.health-approx-note {
+  display: block;
+  margin-top: 2px;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.health-approx-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .health-legend {

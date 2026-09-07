@@ -122,17 +122,25 @@ export interface DataQualityResponse {
  * Real endpoint: GET /datasets/:id/channel-health, added 2026-09-07 -
  * replaces the client-side VIF/correlation math Optimize's Channel Health
  * used to compute itself. Requires Configuration to already be saved (400s
- * otherwise, same pattern as getDateRange). `vif`/`mostCorrelatedWith`/
- * `mostCorrelatedValue` can all be real `null` - either there's only one
- * real media channel (nothing to compare against) or the regression
- * genuinely has no unique answer (exact collinearity between two other
- * channels) - null must be shown as "not enough data to tell," never
- * treated as zero/healthy.
+ * otherwise, same pattern as getDateRange).
+ *
+ * `vif` was originally null for two different real reasons - as of Anas's
+ * 2026-09-07 update, one of those got a real fix: exact collinearity
+ * between two other channels (a plain regression has no unique answer)
+ * now returns a real ridge-regularized VIF instead, flagged via
+ * `vifIsApproximate: true` so the UI can give it a slightly softer real
+ * caveat than a plain VIF gets. `vif` is still genuinely `null` for the
+ * two structural cases regularizing can't fix: only one real media
+ * channel exists (nothing to compare against), or fewer real rows than
+ * channels (not enough data for a stable fit at all) - still "not enough
+ * data to tell," never treated as zero/healthy.
  */
 export interface ChannelHealthApiRow {
   channel: string;
   shareOfSpendPercent: number;
   vif: number | null;
+  /** True when `vif` came from the real ridge-regularized fallback, not the plain textbook formula - still a real, computed number. */
+  vifIsApproximate: boolean;
   mostCorrelatedWith: string | null;
   mostCorrelatedValue: number | null;
 }

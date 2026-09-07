@@ -215,6 +215,7 @@
                     [attr.cy]="p.y"
                     [attr.r]="effectiveSelectedHealthChannel()?.name === p.name ? 9 : 6.5"
                     [class]="'health-point health-point-' + p.status"
+                    [class.health-point-approx]="p.vifIsApproximate"
                     (click)="selectHealthChannel(p.name)"
                     (mouseenter)="showHealthTooltip(p)"
                     (mouseleave)="hideHealthTooltip()"
@@ -228,7 +229,12 @@
                 <div class="chart-tooltip" [style.left.%]="t.xPct" [style.top.%]="t.yPct">
                   <strong>{{ t.name }}</strong>
                   <div>Spend share: <strong>{{ t.spendPct }}%</strong></div>
-                  <div>VIF: <strong>{{ t.vif === null ? 'not enough data to tell' : t.vif }}</strong></div>
+                  <div>
+                    VIF: <strong>{{ t.vif === null ? 'not enough data to tell' : t.vif }}</strong>
+                    @if (t.vifIsApproximate) {
+                      <span class="health-approx-note">(approximate — estimated from a regularized fit, two other channels are exactly collinear)</span>
+                    }
+                  </div>
                 </div>
               }
             </div>
@@ -237,6 +243,7 @@
               <span><span class="health-legend-dot health-point-one"></span>One issue</span>
               <span><span class="health-legend-dot health-point-healthy"></span>Healthy</span>
               <span><span class="health-legend-dot health-point-unknown"></span>Not enough data</span>
+              <span><span class="health-legend-dot health-legend-dot-approx"></span>Approximate VIF</span>
             </div>
 
             <div class="toggle-inline">
@@ -301,17 +308,24 @@
               <span class="health-diagnosis-icon" aria-hidden="true">⚠</span>
               <p class="health-diagnosis">
                 @if (selected.status === 'unknown') {
-                  Not enough real data to tell how redundant this channel is — either it's the only real media channel, or the real math genuinely has no unique answer. Real spend share: {{ selected.spendPct }}% of budget.
+                  Not enough real data to tell how redundant this channel is — either it's the only real media channel, or there are fewer real rows than channels to fit against. Real spend share: {{ selected.spendPct }}% of budget.
                 } @else if (selected.status === 'both') {
-                  Low spend ({{ selected.spendPct }}% of budget) <strong>and</strong> redundant with other channels (VIF {{ selected.vif }}) — the two weakest signals a channel can have at once.
+                  Low spend ({{ selected.spendPct }}% of budget) <strong>and</strong> redundant with other channels (VIF {{ selected.vif }}{{ selected.vifIsApproximate ? ', approximate' : '' }}) — the two weakest signals a channel can have at once.
                 } @else if (spendCutoffEnabled() && selected.spendPct < spendCutoffPct()) {
                   Low spend — only {{ selected.spendPct }}% of budget, under your {{ spendCutoffPct() | number: '1.1-1' }}% cutoff.
                 } @else if (vifCutoffEnabled() && selected.vif !== null && selected.vif > vifCutoffValue()) {
-                  Redundant with other channels — VIF {{ selected.vif }}, over your {{ vifCutoffValue() | number: '1.1-1' }} cutoff.
+                  Redundant with other channels — VIF {{ selected.vif }}{{ selected.vifIsApproximate ? ' (approximate)' : '' }}, over your {{ vifCutoffValue() | number: '1.1-1' }} cutoff.
                 } @else {
-                  Within both cutoffs right now — spend {{ selected.spendPct }}%, VIF {{ selected.vif }}.
+                  Within both cutoffs right now — spend {{ selected.spendPct }}%, VIF {{ selected.vif }}{{ selected.vifIsApproximate ? ' (approximate)' : '' }}.
                 }
               </p>
+              @if (selected.vifIsApproximate) {
+                <p class="muted health-approx-hint">
+                  This VIF is estimated from a regularized fit, not the plain formula — two other channels in your
+                  data are exactly collinear, which leaves the plain calculation with no unique answer. Still a
+                  real, computed number, just a softer estimate than a normal VIF.
+                </p>
+              }
               </div>
 
               <button class="btn btn-secondary btn-sm side-panel-action" type="button" [disabled]="isReadOnly()" (click)="removeSelectedHealthChannel()">

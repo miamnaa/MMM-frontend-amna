@@ -57,8 +57,10 @@ interface ChartSeries {
 interface ChannelHealthPoint {
   name: string;
   spendPct: number;
-  /** Real, but can be null - either only one real media channel exists (nothing to compare against) or the regression genuinely has no unique answer. Never treated as zero. */
+  /** Real, but can still be null - only one real media channel exists (nothing to compare against), or fewer real rows than channels (not enough data for a stable fit). Never treated as zero. */
   vif: number | null;
+  /** True when `vif` came from the real ridge-regularized fallback (exact collinearity case) rather than the plain formula - still a real, computed number, just worth a softer caveat. */
+  vifIsApproximate: boolean;
   mostCorrelatedWith: string | null;
   mostCorrelatedValue: number | null;
   x: number;
@@ -574,10 +576,12 @@ export class Optimize implements OnInit {
   /**
    * Real channel points on the scatter, classified against whichever
    * cutoff sliders are currently on. A real null VIF (only one real media
-   * channel, or a genuinely non-unique regression) gets its own 'unknown'
+   * channel, or fewer real rows than channels) gets its own 'unknown'
    * status - it's never treated as healthy (0) or flagged, and is plotted
    * at the very bottom of the VIF axis with a visually distinct marker so
-   * it doesn't read as "confirmed low redundancy" it isn't.
+   * it doesn't read as "confirmed low redundancy" it isn't. An approximate
+   * (ridge-regularized) VIF still classifies normally against the cutoff -
+   * it's a real number, just flagged for a softer caveat in the UI.
    */
   readonly channelHealthPoints = computed<ChannelHealthPoint[]>(() => {
     const spendCutoff = this.spendCutoffEnabled() ? this.spendCutoffPct() : -Infinity;
@@ -592,6 +596,7 @@ export class Optimize implements OnInit {
         name: row.channel,
         spendPct: row.shareOfSpendPercent,
         vif,
+        vifIsApproximate: row.vifIsApproximate,
         mostCorrelatedWith: row.mostCorrelatedWith,
         mostCorrelatedValue: row.mostCorrelatedValue,
         x: this.healthX(row.shareOfSpendPercent),
@@ -619,7 +624,7 @@ export class Optimize implements OnInit {
   }
 
   /** Points are also labeled on hover with exact figures - the always-on labels above give the name and rough position, the tooltip gives the real spend %/VIF numbers behind it. */
-  readonly hoveredHealthPoint = signal<{ xPct: number; yPct: number; name: string; spendPct: number; vif: number | null } | null>(null);
+  readonly hoveredHealthPoint = signal<{ xPct: number; yPct: number; name: string; spendPct: number; vif: number | null; vifIsApproximate: boolean } | null>(null);
 
   showHealthTooltip(point: ChannelHealthPoint): void {
     this.hoveredHealthPoint.set({
@@ -628,6 +633,7 @@ export class Optimize implements OnInit {
       name: point.name,
       spendPct: point.spendPct,
       vif: point.vif,
+      vifIsApproximate: point.vifIsApproximate,
     });
   }
 
