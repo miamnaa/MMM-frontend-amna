@@ -180,9 +180,9 @@
         it to see what to do about it.
       </p>
 
-      @if (rowsLoading()) {
-        <p class="muted">Loading your data…</p>
-      } @else if (rowsError(); as err) {
+      @if (channelHealthLoading()) {
+        <p class="muted">Loading Channel Health…</p>
+      } @else if (channelHealthError(); as err) {
         <p class="drop-error">{{ err }}</p>
       } @else if (hasChannelHealthData()) {
         <div class="health-layout">
@@ -226,7 +226,7 @@
                 <div class="chart-tooltip" [style.left.%]="t.xPct" [style.top.%]="t.yPct">
                   <strong>{{ t.name }}</strong>
                   <div>Spend share: <strong>{{ t.spendPct }}%</strong></div>
-                  <div>VIF: <strong>{{ t.vif }}</strong></div>
+                  <div>VIF: <strong>{{ t.vif === null ? 'not enough data to tell' : t.vif }}</strong></div>
                 </div>
               }
             </div>
@@ -234,6 +234,7 @@
               <span><span class="health-legend-dot health-point-both"></span>Both issues</span>
               <span><span class="health-legend-dot health-point-one"></span>One issue</span>
               <span><span class="health-legend-dot health-point-healthy"></span>Healthy</span>
+              <span><span class="health-legend-dot health-point-unknown"></span>Not enough data</span>
             </div>
 
             <div class="toggle-inline">
@@ -294,11 +295,13 @@
               <div class="health-diagnosis-box">
               <span class="health-diagnosis-icon" aria-hidden="true">⚠</span>
               <p class="health-diagnosis">
-                @if (selected.status === 'both') {
+                @if (selected.status === 'unknown') {
+                  Not enough real data to tell how redundant this channel is — either it's the only real media channel, or the real math genuinely has no unique answer. Real spend share: {{ selected.spendPct }}% of budget.
+                } @else if (selected.status === 'both') {
                   Low spend ({{ selected.spendPct }}% of budget) <strong>and</strong> redundant with other channels (VIF {{ selected.vif }}) — the two weakest signals a channel can have at once.
                 } @else if (spendCutoffEnabled() && selected.spendPct < spendCutoffPct()) {
                   Low spend — only {{ selected.spendPct }}% of budget, under your {{ spendCutoffPct() | number: '1.1-1' }}% cutoff.
-                } @else if (vifCutoffEnabled() && selected.vif > vifCutoffValue()) {
+                } @else if (vifCutoffEnabled() && selected.vif !== null && selected.vif > vifCutoffValue()) {
                   Redundant with other channels — VIF {{ selected.vif }}, over your {{ vifCutoffValue() | number: '1.1-1' }} cutoff.
                 } @else {
                   Within both cutoffs right now — spend {{ selected.spendPct }}%, VIF {{ selected.vif }}.

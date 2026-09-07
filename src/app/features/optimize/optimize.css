@@ -417,6 +417,12 @@
   background-color: var(--brand-500);
 }
 
+/* Real null VIF - only one real media channel, or a genuinely non-unique regression. Never styled as "healthy" (green) - that would read as a confirmed low-redundancy result it isn't. */
+.health-point-unknown {
+  fill: var(--text-subtle, var(--border-strong));
+  background-color: var(--text-subtle, var(--border-strong));
+}
+
 .health-legend {
   display: flex;
   flex-wrap: wrap;

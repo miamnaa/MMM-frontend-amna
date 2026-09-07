@@ -2,7 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { DatasetService } from '../../core/services/dataset.service';
+import { DataQualityFlag, DatasetService } from '../../core/services/dataset.service';
 import { SessionService } from '../../core/services/notification.service';
 import { SavedConfiguration, TunnelDataset, TunnelService } from '../../core/services/tunnel.service';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
@@ -66,17 +66,61 @@ export class Configure implements OnInit {
     this.infoOpen.update((open) => !open);
   }
 
+  /**
+   * Real endpoint, added 2026-09-07 - runs the same real checks that used
+   * to only ever surface at Train ("193 data error(s) found... No dates
+   * match the required format"), the moment a file is uploaded instead.
+   * Callable before Configure is even saved (runs against the suggested
+   * mapping until a real one is saved, then the real one) - fetched here on
+   * load and again after every successful save, since the real mapping
+   * just changed.
+   */
+  readonly dataQualityFlags = signal<DataQualityFlag[]>([]);
+  readonly dataQualityLoading = signal(false);
+  private readonly dismissedWarnings = signal<Set<string>>(new Set());
+
+  readonly errorFlags = computed(() => this.dataQualityFlags().filter((f) => f.severity === 'error'));
+  readonly warningFlags = computed(() =>
+    this.dataQualityFlags()
+      .filter((f) => f.severity === 'warning')
+      .filter((f) => !this.dismissedWarnings().has(f.message)),
+  );
+  /** A real blocker - nothing past Configure should be reachable while a real data error still exists. */
+  readonly hasBlockingErrors = computed(() => this.errorFlags().length > 0);
+
+  dismissWarning(message: string): void {
+    this.dismissedWarnings.update((set) => new Set(set).add(message));
+  }
+
+  private loadDataQuality(): void {
+    this.dataQualityLoading.set(true);
+    this.datasetService.getDataQuality(this.datasetId()).subscribe({
+      next: ({ flags }) => {
+        this.dataQualityLoading.set(false);
+        this.dataQualityFlags.set(flags);
+      },
+      // Best-effort - a failure here shouldn't block a screen that worked
+      // fine before this endpoint existed; it just means no early warning.
+      error: () => {
+        this.dataQualityLoading.set(false);
+      },
+    });
+  }
+
   readonly canSave = computed(
     () =>
       this.dateColumn().trim().length > 0 &&
       this.kpiColumn().trim().length > 0 &&
       nonEmpty(this.mediaColumns()).length > 0 && // backend requires at least one media column
-      (this.isRevenue() || (this.revenuePerKpiValue() ?? 0) > 0), // required whenever the KPI isn't already in dollars
+      (this.isRevenue() || (this.revenuePerKpiValue() ?? 0) > 0) && // required whenever the KPI isn't already in dollars
+      !this.hasBlockingErrors(),
   );
 
   ngOnInit(): void {
     this.projectId.set(this.route.snapshot.paramMap.get('projectId') ?? '');
     this.datasetId.set(this.route.snapshot.paramMap.get('datasetId') ?? '');
+
+    this.loadDataQuality();
 
     this.columnsLoading.set(true);
     this.datasetService.getColumns(this.datasetId()).subscribe({

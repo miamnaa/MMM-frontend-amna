@@ -27,6 +27,47 @@
     </div>
   }
 
+  @if (dataQualityLoading()) {
+    <p class="muted loading-note">Checking your file for real data problems…</p>
+  }
+
+  @if (errorFlags().length > 0) {
+    <div class="quality-card quality-card-error">
+      <h2 class="quality-title">Fix these before continuing</h2>
+      <p class="muted field-hint">These are real problems with your uploaded file that will stop training later — fix them in your source file and re-upload.</p>
+      @for (flag of errorFlags(); track flag.message) {
+        <div class="quality-row">
+          <span class="quality-icon" aria-hidden="true">✕</span>
+          <div>
+            <p class="quality-message">{{ flag.message }}</p>
+            @if (flag.columnsInvolved.length > 0) {
+              <p class="quality-columns">{{ flag.columnsInvolved.join(', ') }}</p>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @if (warningFlags().length > 0) {
+    <div class="quality-card quality-card-warning">
+      <h2 class="quality-title">Worth a look</h2>
+      <p class="muted field-hint">These aren't blocking — you can proceed with them left as-is.</p>
+      @for (flag of warningFlags(); track flag.message) {
+        <div class="quality-row">
+          <span class="quality-icon" aria-hidden="true">⚠</span>
+          <div>
+            <p class="quality-message">{{ flag.message }}</p>
+            @if (flag.columnsInvolved.length > 0) {
+              <p class="quality-columns">{{ flag.columnsInvolved.join(', ') }}</p>
+            }
+          </div>
+          <button class="btn btn-ghost btn-sm icon-btn" type="button" (click)="dismissWarning(flag.message)" aria-label="Dismiss">✕</button>
+        </div>
+      }
+    </div>
+  }
+
   @if (dataset(); as ds) {
     @if (columnsUnavailable() && columnsNotice()) {
       <div class="notice">{{ columnsNotice() }}</div>
@@ -279,6 +320,8 @@
   <div class="tunnel-actions">
     @if (isReadOnly()) {
       <p class="muted read-only-hint">Your role only allows viewing. Ask a Master for Read/Write access to save changes.</p>
+    } @else if (hasBlockingErrors()) {
+      <p class="muted read-only-hint">Fix the problem(s) listed above before you can save this configuration.</p>
     }
     <button class="btn btn-primary btn-lg" type="button" [disabled]="!canSave() || saving() || isReadOnly()" (click)="save()">
       {{ saving() ? 'Saving…' : 'Save configuration' }}

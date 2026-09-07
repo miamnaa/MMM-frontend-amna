@@ -98,6 +98,49 @@ export interface DateRangeResponse {
   maxDate: string;
 }
 
+/**
+ * Real endpoint: GET /datasets/:id/data-quality, added 2026-09-07 - the fix
+ * for real data problems (a bad date format, blank cells, negative spend)
+ * only ever surfacing at Train, after every earlier step was already
+ * filled in. Callable before Configure is even saved (runs against the
+ * suggested column mapping until a real one is saved, then the real one) -
+ * an `error` flag is a real blocker (nothing past Configure should be
+ * reachable while one exists), a `warning` is a dismissible real notice,
+ * not a hard stop.
+ */
+export interface DataQualityFlag {
+  severity: 'error' | 'warning';
+  message: string;
+  columnsInvolved: string[];
+}
+
+export interface DataQualityResponse {
+  flags: DataQualityFlag[];
+}
+
+/**
+ * Real endpoint: GET /datasets/:id/channel-health, added 2026-09-07 -
+ * replaces the client-side VIF/correlation math Optimize's Channel Health
+ * used to compute itself. Requires Configuration to already be saved (400s
+ * otherwise, same pattern as getDateRange). `vif`/`mostCorrelatedWith`/
+ * `mostCorrelatedValue` can all be real `null` - either there's only one
+ * real media channel (nothing to compare against) or the regression
+ * genuinely has no unique answer (exact collinearity between two other
+ * channels) - null must be shown as "not enough data to tell," never
+ * treated as zero/healthy.
+ */
+export interface ChannelHealthApiRow {
+  channel: string;
+  shareOfSpendPercent: number;
+  vif: number | null;
+  mostCorrelatedWith: string | null;
+  mostCorrelatedValue: number | null;
+}
+
+export interface ChannelHealthResponse {
+  channels: ChannelHealthApiRow[];
+}
+
 /** The columnMapping shape GET /datasets/:id actually returns - same fields as SavedConfiguration, minus kpiType/revenuePerKpiValue, which come back as siblings instead. */
 export interface SavedColumnMapping {
   dateColumn: string;
@@ -404,6 +447,16 @@ export class DatasetService {
    */
   getColumns(datasetId: string): Observable<ColumnsResponse> {
     return this.http.get<ColumnsResponse>(`${environment.apiBaseUrl}/datasets/${datasetId}/columns`);
+  }
+
+  /** Real endpoint, added 2026-09-07 - callable right after upload, before Configure is even saved (runs against the suggested mapping until a real one exists). See DataQualityResponse for what a caller must do with `error` vs `warning` flags. */
+  getDataQuality(datasetId: string): Observable<DataQualityResponse> {
+    return this.http.get<DataQualityResponse>(`${environment.apiBaseUrl}/datasets/${datasetId}/data-quality`);
+  }
+
+  /** Real endpoint, added 2026-09-07 - requires Configuration to already be saved (400s otherwise). See ChannelHealthResponse for the real null-handling rule on vif/mostCorrelatedWith/mostCorrelatedValue. */
+  getChannelHealth(datasetId: string): Observable<ChannelHealthResponse> {
+    return this.http.get<ChannelHealthResponse>(`${environment.apiBaseUrl}/datasets/${datasetId}/channel-health`);
   }
 
   /**

@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
-import { AutoCombinedGroup, DatasetService, HyperparameterChannel, SavedColumnMapping } from '../../core/services/dataset.service';
+import { AutoCombinedGroup, ChannelHealthApiRow, DatasetService, HyperparameterChannel, SavedColumnMapping } from '../../core/services/dataset.service';
 import { SessionService } from '../../core/services/notification.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
@@ -68,93 +68,22 @@ function pearson(xs: number[], ys: number[]): number {
   return den === 0 ? 0 : num / den;
 }
 
-/**
- * Solves A·x = b via Gaussian elimination with partial pivoting. Returns
- * null for a singular matrix (e.g. two predictor columns that are exact
- * linear combinations of each other) rather than dividing by ~0.
- */
-function solveLinearSystem(a: number[][], b: number[]): number[] | null {
-  const n = b.length;
-  const m = a.map((row, i) => [...row, b[i]]);
-  for (let col = 0; col < n; col++) {
-    let pivotRow = col;
-    for (let r = col + 1; r < n; r++) {
-      if (Math.abs(m[r][col]) > Math.abs(m[pivotRow][col])) pivotRow = r;
-    }
-    [m[col], m[pivotRow]] = [m[pivotRow], m[col]];
-    if (Math.abs(m[col][col]) < 1e-9) return null;
-    for (let r = 0; r < n; r++) {
-      if (r === col) continue;
-      const factor = m[r][col] / m[col][col];
-      for (let c = col; c <= n; c++) m[r][c] -= factor * m[col][c];
-    }
-  }
-  return m.map((row, i) => row[n] / row[i]);
-}
-
-/**
- * R² of a real OLS regression of `y` on every column in `predictors` (each
- * a same-length array), with an intercept - the "how well do the other
- * channels' real spend explain this channel's real spend" figure VIF is
- * built from. Real linear algebra over real per-row values, not an
- * approximation - solved via the normal equations (X'X)β = X'y, which is
- * plenty stable at the handful of media channels this ever runs on.
- */
-function multipleRSquared(y: number[], predictors: number[][]): number {
-  const n = y.length;
-  const k = predictors.length;
-  if (n === 0 || k === 0) return 0;
-
-  const p = k + 1;
-  const xtx: number[][] = Array.from({ length: p }, () => new Array(p).fill(0));
-  const xty: number[] = new Array(p).fill(0);
-
-  for (let r = 0; r < n; r++) {
-    const xRow = [1, ...predictors.map((col) => col[r])];
-    for (let i = 0; i < p; i++) {
-      xty[i] += xRow[i] * y[r];
-      for (let j = 0; j < p; j++) xtx[i][j] += xRow[i] * xRow[j];
-    }
-  }
-
-  const beta = solveLinearSystem(xtx, xty);
-  if (!beta) return 0;
-
-  const meanY = y.reduce((s, v) => s + v, 0) / n;
-  let ssRes = 0;
-  let ssTot = 0;
-  for (let r = 0; r < n; r++) {
-    const xRow = [1, ...predictors.map((col) => col[r])];
-    const predicted = xRow.reduce((s, v, i) => s + v * beta[i], 0);
-    ssRes += (y[r] - predicted) ** 2;
-    ssTot += (y[r] - meanY) ** 2;
-  }
-  return ssTot === 0 ? 0 : Math.max(0, 1 - ssRes / ssTot);
-}
-
-/** VIF = 1 / (1 - R²). Capped at 20 for display - a real VIF can run into the hundreds for a near-exact linear dependency, which would blow out the chart's scale for one point while every other real channel sits under 5. */
-function vifFromRSquared(rSquared: number): number {
-  return Math.round(Math.min(1 / (1 - Math.min(rSquared, 0.999)), 20) * 10) / 10;
-}
-
 interface ChartSeries {
   name: string;
   color: string;
   points: string;
 }
 
-interface SpendShareBar {
-  name: string;
-  pct: number;
-}
-
 interface ChannelHealthPoint {
   name: string;
   spendPct: number;
-  vif: number;
+  /** Real, but can be null - either only one real media channel exists (nothing to compare against) or the regression genuinely has no unique answer. Never treated as zero. */
+  vif: number | null;
+  mostCorrelatedWith: string | null;
+  mostCorrelatedValue: number | null;
   x: number;
   y: number;
-  status: 'both' | 'one' | 'healthy';
+  status: 'both' | 'one' | 'healthy' | 'unknown';
 }
 
 /** Strips a trailing " Cost" (however it's cased) from a real column name for display only - real uploaded files commonly name spend columns "X Cost", which reads cleaner in a chart label as just "X". Every action (remove/combine) still targets the real, unshortened name. */
@@ -326,7 +255,7 @@ export class Optimize implements OnInit {
     () => this.selectedCombineChannels().length >= 2 && this.newFieldName().trim().length > 0 && !this.aggregating(),
   );
 
-/** Pushes a real updated columnMapping into TunnelService so the rest of the tunnel (Hyperparameters' channel list, etc.) reflects the real combined state, not the pre-combine one. */
+/** Pushes a real updated columnMapping into TunnelService so the rest of the tunnel (Hyperparameters' channel list, etc.) reflects the real combined state, not the pre-combine one - and re-fetches real Channel Health, since combining channels for real changes the real VIF/correlation numbers it's built from. */
   private applyRealColumnMapping(mapping: SavedColumnMapping): void {
     const currentConfig = this.tunnelService.configuration();
     if (!currentConfig) return;
@@ -339,6 +268,7 @@ export class Optimize implements OnInit {
       organicColumns: mapping.organicColumns,
       geoColumns: mapping.geoColumns,
     });
+    this.loadChannelHealth();
   }
 
   /** Merges a real per-date series (from combineColumns' chart-preview call) into `rows` under the given field name, same as any other real column. */
@@ -563,50 +493,50 @@ export class Optimize implements OnInit {
     this.hoveredChartPoint.set(null);
   }
 
-  /** Channel Health: real share-of-spend per media channel, summed across every row - the scatter's x-axis. */
+  /**
+   * Channel Health: real per-channel spend share, VIF, and most-correlated
+   * partner, all from the real GET /datasets/:id/channel-health endpoint
+   * (added 2026-09-07) - replaces the client-side VIF/correlation math this
+   * used to compute itself. The spend-cutoff and VIF-cutoff sliders stay
+   * entirely client-side on purpose (see spendCutoffPct/vifCutoffValue
+   * below) - re-flagging on a slider drag re-classifies these same real
+   * numbers instantly, without a network round-trip.
+   */
   private readonly removedVariables = signal<Set<string>>(new Set());
+  readonly channelHealthData = signal<ChannelHealthApiRow[]>([]);
+  readonly channelHealthLoading = signal(false);
+  readonly channelHealthError = signal<string | null>(null);
 
-  readonly spendShareBars = computed<SpendShareBar[]>(() => {
-    const channels = this.effectiveChannels();
-    const rows = this.rows();
-    const raw = channels.map((name) => ({
-      name,
-      raw: rows.reduce((sum, r) => sum + toNumber(r[name]), 0),
-    }));
-    const total = raw.reduce((sum, r) => sum + r.raw, 0) || 1;
-    return raw
-      .map((r) => ({ name: r.name, pct: Math.round((r.raw / total) * 1000) / 10 }))
-      .sort((a, b) => a.pct - b.pct);
-  });
+  private loadChannelHealth(): void {
+    this.channelHealthLoading.set(true);
+    this.channelHealthError.set(null);
+    this.datasetService.getChannelHealth(this.datasetId()).subscribe({
+      next: ({ channels }) => {
+        this.channelHealthLoading.set(false);
+        this.channelHealthData.set(channels);
+      },
+      error: (err: unknown) => {
+        this.channelHealthLoading.set(false);
+        this.channelHealthError.set(backendErrorMessage(err, "Couldn't load Channel Health for this dataset."));
+      },
+    });
+  }
 
-  readonly visibleSpendShareBars = computed(() =>
-    this.spendShareBars().filter((bar) => !this.removedVariables().has(bar.name)),
+  private readonly visibleChannelHealthData = computed(() =>
+    this.channelHealthData().filter((row) => !this.removedVariables().has(row.channel)),
   );
 
   removeVariable(name: string): void {
     this.removedVariables.update((set) => new Set(set).add(name));
   }
 
-  /**
-   * Real per-channel VIF - each channel's real spend regressed on every
-   * other real channel's real spend, R² -> VIF - the scatter's y-axis.
-   * Needs at least 2 channels and more real rows than channels (a
-   * well-posed regression needs more data points than parameters); returns
-   * [] otherwise rather than a fabricated number.
-   */
-  readonly vifRows = computed<{ name: string; vif: number }[]>(() => {
-    const channels = this.effectiveChannels();
-    const rows = this.rows();
-    if (channels.length < 2 || rows.length <= channels.length) return [];
-    return channels.map((ch) => {
-      const y = rows.map((r) => toNumber(r[ch]));
-      const predictors = channels.filter((c) => c !== ch).map((other) => rows.map((r) => toNumber(r[other])));
-      return { name: ch, vif: vifFromRSquared(multipleRSquared(y, predictors)) };
-    });
+  protected readonly maxVif = computed(() => {
+    const real = this.channelHealthData()
+      .map((r) => r.vif)
+      .filter((v): v is number => v !== null);
+    return Math.max(5, ...real);
   });
-
-  protected readonly maxVif = computed(() => Math.max(5, ...this.vifRows().map((r) => r.vif)));
-  protected readonly maxSpendPct = computed(() => Math.max(5, ...this.spendShareBars().map((b) => b.pct)));
+  protected readonly maxSpendPct = computed(() => Math.max(5, ...this.channelHealthData().map((r) => r.shareOfSpendPercent)));
 
   protected readonly healthW = HEALTH_W;
   protected readonly healthH = HEALTH_H;
@@ -639,20 +569,34 @@ export class Optimize implements OnInit {
     });
   });
 
-  /** Real channel points on the scatter - joins the same real spend-share and VIF figures above by channel name, classified against whichever cutoff sliders are currently on. */
+  /**
+   * Real channel points on the scatter, classified against whichever
+   * cutoff sliders are currently on. A real null VIF (only one real media
+   * channel, or a genuinely non-unique regression) gets its own 'unknown'
+   * status - it's never treated as healthy (0) or flagged, and is plotted
+   * at the very bottom of the VIF axis with a visually distinct marker so
+   * it doesn't read as "confirmed low redundancy" it isn't.
+   */
   readonly channelHealthPoints = computed<ChannelHealthPoint[]>(() => {
-    const vifMap = new Map(this.vifRows().map((r) => [r.name, r.vif]));
     const spendCutoff = this.spendCutoffEnabled() ? this.spendCutoffPct() : -Infinity;
     const vifCutoff = this.vifCutoffEnabled() ? this.vifCutoffValue() : Infinity;
-    return this.visibleSpendShareBars()
-      .filter((bar) => vifMap.has(bar.name))
-      .map((bar) => {
-        const vif = vifMap.get(bar.name)!;
-        const lowSpend = bar.pct < spendCutoff;
-        const highVif = vif > vifCutoff;
-        const status: ChannelHealthPoint['status'] = lowSpend && highVif ? 'both' : lowSpend || highVif ? 'one' : 'healthy';
-        return { name: bar.name, spendPct: bar.pct, vif, x: this.healthX(bar.pct), y: this.healthY(vif), status };
-      });
+    return this.visibleChannelHealthData().map((row) => {
+      const vif = row.vif;
+      const lowSpend = row.shareOfSpendPercent < spendCutoff;
+      const highVif = vif !== null && vif > vifCutoff;
+      const status: ChannelHealthPoint['status'] =
+        vif === null ? 'unknown' : lowSpend && highVif ? 'both' : lowSpend || highVif ? 'one' : 'healthy';
+      return {
+        name: row.channel,
+        spendPct: row.shareOfSpendPercent,
+        vif,
+        mostCorrelatedWith: row.mostCorrelatedWith,
+        mostCorrelatedValue: row.mostCorrelatedValue,
+        x: this.healthX(row.shareOfSpendPercent),
+        y: vif === null ? this.healthPlotBottom : this.healthY(vif),
+        status,
+      };
+    });
   });
 
   readonly hasChannelHealthData = computed(() => this.channelHealthPoints().length > 0);
@@ -673,7 +617,7 @@ export class Optimize implements OnInit {
   }
 
   /** Points are also labeled on hover with exact figures - the always-on labels above give the name and rough position, the tooltip gives the real spend %/VIF numbers behind it. */
-  readonly hoveredHealthPoint = signal<{ xPct: number; yPct: number; name: string; spendPct: number; vif: number } | null>(null);
+  readonly hoveredHealthPoint = signal<{ xPct: number; yPct: number; name: string; spendPct: number; vif: number | null } | null>(null);
 
   showHealthTooltip(point: ChannelHealthPoint): void {
     this.hoveredHealthPoint.set({
@@ -698,7 +642,7 @@ export class Optimize implements OnInit {
     this.channelHealthPoints().filter((p) => p.spendPct < this.spendCutoffPct()).map((p) => p.name),
   );
   readonly vifFlaggedChannels = computed(() =>
-    this.channelHealthPoints().filter((p) => p.vif > this.vifCutoffValue()).map((p) => p.name),
+    this.channelHealthPoints().filter((p) => p.vif !== null && p.vif > this.vifCutoffValue()).map((p) => p.name),
   );
 
   readonly selectedHealthChannelName = signal<string | null>(null);
@@ -717,22 +661,8 @@ export class Optimize implements OnInit {
     this.healthPanelClosed.set(false);
   }
 
-  /** Real most-correlated other channel (same real Pearson math the old correlation table used), surfaced per-channel as the combine suggestion instead of a standalone pair table. */
-  readonly healthChannelSuggestedPartner = computed<string | null>(() => {
-    const selected = this.effectiveSelectedHealthChannel();
-    const rows = this.rows();
-    if (!selected || rows.length === 0) return null;
-    const channels = this.effectiveChannels().filter((c) => c !== selected.name);
-    if (channels.length === 0) return null;
-    const ys = rows.map((r) => toNumber(r[selected.name]));
-    let best: { name: string; corr: number } | null = null;
-    for (const ch of channels) {
-      const xs = rows.map((r) => toNumber(r[ch]));
-      const corr = Math.abs(pearson(xs, ys));
-      if (!best || corr > best.corr) best = { name: ch, corr };
-    }
-    return best?.name ?? null;
-  });
+  /** Real most-correlated other channel - read directly off the selected channel's own real channel-health row (mostCorrelatedWith), already computed server-side from the actual uploaded data. No separate calculation needed here. */
+  readonly healthChannelSuggestedPartner = computed<string | null>(() => this.effectiveSelectedHealthChannel()?.mostCorrelatedWith ?? null);
 
   removeSelectedHealthChannel(): void {
     const selected = this.effectiveSelectedHealthChannel();
@@ -864,6 +794,8 @@ export class Optimize implements OnInit {
         this.rowsError.set(backendErrorMessage(err, "Couldn't load this dataset's data."));
       },
     });
+
+    this.loadChannelHealth();
   }
 
   /**
