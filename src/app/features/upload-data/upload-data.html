@@ -197,6 +197,10 @@
       <p class="drop-error">{{ err }}</p>
     }
 
+    @if (dateFormatWarning(); as warning) {
+      <p class="drop-warning">⚠ {{ warning }}</p>
+    }
+
     @if (file()) {
       <button class="preview-toggle" type="button" (click)="togglePreview()" [attr.aria-expanded]="previewOpen()">
         <span class="info-icon" aria-hidden="true">▤</span>

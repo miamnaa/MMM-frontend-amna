@@ -196,6 +196,8 @@ export class Optimize implements OnInit {
   readonly datasetMaxDate = signal('');
   readonly datasetMinDateLabel = computed(() => formatAxisDate(this.datasetMinDate()));
   readonly datasetMaxDateLabel = computed(() => formatAxisDate(this.datasetMaxDate()));
+  /** Real, visible failure when the backend's own real min/max come back malformed or backwards (seen for real: a "clean" test file with non-ISO dates produced a max date earlier than its min date) - rather than silently leaving the Start/End pickers blank with no explanation, same honesty rule as every other real-data failure in this app. */
+  readonly dateRangeError = signal<string | null>(null);
 
   readonly saving = signal(false);
   readonly saveError = signal<string | null>(null);
@@ -880,6 +882,17 @@ export class Optimize implements OnInit {
   private maybeSuggestDateRange(): void {
     this.datasetService.getDateRange(this.datasetId()).subscribe({
       next: ({ minDate, maxDate }) => {
+        const minValid = /^\d{4}-\d{2}-\d{2}$/.test(minDate);
+        const maxValid = /^\d{4}-\d{2}-\d{2}$/.test(maxDate);
+
+        if (!minValid || !maxValid || minDate > maxDate) {
+          this.dateRangeError.set(
+            "Couldn't determine this dataset's real date range - the file's date column doesn't look like " +
+              'YYYY-MM-DD. Fix the date format in your source file and re-upload, or enter Start/End manually below.',
+          );
+          return;
+        }
+
         this.datasetMinDate.set(minDate);
         this.datasetMaxDate.set(maxDate);
         if (this.hasSavedDateRange) return;

@@ -488,6 +488,16 @@
   font-size: 12.5px;
 }
 
+.drop-warning {
+  margin-top: 12px;
+  padding: 9px 12px;
+  border-radius: var(--r-md);
+  background: var(--amber-50);
+  color: var(--amber-700);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
 /* ---- Data preview - same pattern as the info accordion above ---- */
 
 .preview-toggle {

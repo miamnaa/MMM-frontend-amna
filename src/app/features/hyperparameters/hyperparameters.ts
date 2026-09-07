@@ -23,8 +23,10 @@ interface ChannelRow {
   saturationDraft: number;
   adstockOpen: boolean;
   saturationOpen: boolean;
-  /** Automatic Optimization's search range - AdStock only, see below. */
+  /** Automatic Optimization's search range - AdStock. */
   adstockVariance: number;
+  /** Automatic Optimization's search range - Diminishing Returns (Gamma). */
+  saturationVariance: number;
   /**
    * Alpha - the illustrative curve's half-saturation spend point (as a
    * fraction of the illustrative max spend axis). There's no second
@@ -38,10 +40,11 @@ interface ChannelRow {
    * soon as the user touches the slider or Applies a manual edit. Drives
    * the "Estimated" label: real training may pick a different value once
    * that's connected for real, same honesty rule as the mock training
-   * results elsewhere in this app. AdStock only - Diminishing Returns has
-   * no Automatic Optimization button.
+   * results elsewhere in this app.
    */
   carryoverEstimated: boolean;
+  /** Same as carryoverEstimated, for Gamma. */
+  saturationEstimated: boolean;
 }
 
 function validRow(row: ChannelRow): boolean {
@@ -200,8 +203,10 @@ export class Hyperparameters implements OnInit {
         adstockOpen: true,
         saturationOpen: true,
         adstockVariance: DEFAULT_VARIANCE,
+        saturationVariance: DEFAULT_VARIANCE,
         alpha: DEFAULT_ALPHA,
         carryoverEstimated: false,
+        saturationEstimated: false,
       })),
     );
     if (mediaColumns.length > 0) this.expandedIndex.set(0);
@@ -225,6 +230,7 @@ export class Hyperparameters implements OnInit {
                   carryoverDraft: match.carryover,
                   saturationDraft: match.saturation,
                   carryoverEstimated: false,
+                  saturationEstimated: false,
                 }
               : row;
           }),
@@ -249,7 +255,9 @@ export class Hyperparameters implements OnInit {
   }
 
   setSaturationDraft(index: number, value: number): void {
-    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, saturationDraft: value } : r)));
+    this.rows.update((rows) =>
+      rows.map((r, i) => (i === index ? { ...r, saturationDraft: value, saturationEstimated: false } : r)),
+    );
   }
 
   setAlpha(index: number, value: number): void {
@@ -258,6 +266,10 @@ export class Hyperparameters implements OnInit {
 
   setAdstockVariance(index: number, value: number): void {
     this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, adstockVariance: value } : r)));
+  }
+
+  setSaturationVariance(index: number, value: number): void {
+    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, saturationVariance: value } : r)));
   }
 
   /** Commits the current slider position as the real value that gets saved. */
@@ -283,6 +295,24 @@ export class Hyperparameters implements OnInit {
     const next = round2(clamp(base + (Math.random() * 2 - 1) * delta, 0, 1));
     this.rows.update((rows) =>
       rows.map((r, i) => (i === index ? { ...r, carryover: next, carryoverDraft: next, carryoverEstimated: true } : r)),
+    );
+  }
+
+  /**
+   * Same real local randomized search as AdStock's Automatic Optimization,
+   * applied to Gamma instead of Theta - a random draw within +/-variance%
+   * of the current committed saturation value, clamped to Gamma's real
+   * 0-3 range, applied immediately. Still just an honest in-browser random
+   * draw - there's no backend auto-tuner to call for this either.
+   */
+  randomizeSaturation(index: number): void {
+    const row = this.rows()[index];
+    if (!row) return;
+    const base = row.saturation ?? DEFAULT_SATURATION;
+    const delta = (row.saturationVariance / 100) * base;
+    const next = round2(clamp(base + (Math.random() * 2 - 1) * delta, 0, 3));
+    this.rows.update((rows) =>
+      rows.map((r, i) => (i === index ? { ...r, saturation: next, saturationDraft: next, saturationEstimated: true } : r)),
     );
   }
 

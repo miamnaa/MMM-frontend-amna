@@ -12,6 +12,8 @@ import { backendErrorMessage } from '../../shared/utils/backend-error';
 
 const ACCEPTED = ['.csv', '.xlsx', '.parquet'];
 const PREVIEW_ROW_COUNT = 8;
+/** Exactly what the real backend requires (confirmed from a real training failure: "No dates in 'date' match the required format (YYYY-MM-DD, e.g. 2023-11-17)"). */
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 interface ModelOption {
   value: string;
@@ -88,6 +90,22 @@ export class UploadData implements OnInit {
   readonly infoOpen = signal(false);
   readonly needHelpOpen = signal(false);
   readonly dragging = signal(false);
+
+  /**
+   * Real, immediate check of the picked file's own first column (this
+   * screen's own "Need help" copy already states the first column is for
+   * dates) against the exact format the backend actually requires - a real
+   * training run against a real (mislabeled "clean") test file just failed
+   * with "193 data error(s) found. No dates in 'date' match the required
+   * format (YYYY-MM-DD, e.g. 2023-11-17)", and that only surfaced at Train,
+   * after Upload/Configure/Optimize/Calibrate/Hyperparameters were all
+   * already filled in. This can't replace the backend's real validation
+   * (Configure hasn't even confirmed which column is really the date column
+   * yet), so it's a non-blocking warning, not a hard stop - but it catches
+   * the single most common real failure the moment the file is picked,
+   * instead of five screens later.
+   */
+  readonly dateFormatWarning = signal<string | null>(null);
 
   // Everything below is the draft itself - kept in UploadDraftService (not
   // local component state) so it survives navigating away and back. See
@@ -242,7 +260,33 @@ export class UploadData implements OnInit {
       return;
     }
     this.error.set(null);
+    this.dateFormatWarning.set(null);
     this.draft.setFile(picked);
+    if (extension === '.csv') this.checkDateFormat(picked);
+  }
+
+  /** Real check against the real file's own content - see dateFormatWarning's doc comment for why. CSV only, same reason the preview above is CSV-only: reading XLSX/Parquet client-side needs a real parsing library, not worth pulling in for a quick sanity check. */
+  private checkDateFormat(file: File): void {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? '');
+      const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0);
+      if (lines.length < 2) return;
+
+      const dataLines = lines.slice(1);
+      const firstColumnValues = dataLines.map((line) => line.split(',')[0]?.trim() ?? '');
+      const badCount = firstColumnValues.filter((v) => v.length > 0 && !ISO_DATE_RE.test(v)).length;
+      if (badCount === 0) return;
+
+      const firstBadRow = firstColumnValues.findIndex((v) => v.length > 0 && !ISO_DATE_RE.test(v));
+      const example = firstColumnValues[firstBadRow];
+      this.dateFormatWarning.set(
+        `${badCount} of ${firstColumnValues.length} rows in the first column don't look like YYYY-MM-DD ` +
+          `(e.g. row ${firstBadRow + 2}: "${example}"). Training will fail on this later unless it's fixed - ` +
+          `re-export your date column as YYYY-MM-DD before continuing.`,
+      );
+    };
+    reader.readAsText(file);
   }
 
   /**

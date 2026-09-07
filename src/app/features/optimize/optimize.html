@@ -46,6 +46,10 @@
       </p>
     }
 
+    @if (dateRangeError(); as err) {
+      <p class="drop-error">{{ err }}</p>
+    }
+
     <div class="field">
       <label class="label" for="o-start">Start date</label>
       <input
