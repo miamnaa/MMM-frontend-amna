@@ -40,53 +40,8 @@
   <section class="card">
     <h2 class="section-title">Training date range</h2>
 
-    @if (dateRangeAutoFilled()) {
-      <p class="muted field-hint auto-filled-note">
-        Filled in from the earliest and latest dates in your uploaded file — change either field if you want a narrower range.
-      </p>
-    }
-
-    @if (dateRangeError(); as err) {
-      <p class="drop-error">{{ err }}</p>
-    }
-
-    <div class="field">
-      <label class="label" for="o-start">Start date</label>
-      <input
-        id="o-start"
-        class="input"
-        type="date"
-        [ngModel]="startDate()"
-        [attr.min]="datasetMinDate() || null"
-        [attr.max]="datasetMaxDate() || null"
-        (ngModelChange)="startDate.set($event); dateRangeAutoFilled.set(false)"
-      />
-    </div>
-
-    <div class="field">
-      <label class="label" for="o-end">End date</label>
-      <input
-        id="o-end"
-        class="input"
-        type="date"
-        [ngModel]="endDate()"
-        [attr.min]="datasetMinDate() || null"
-        [attr.max]="datasetMaxDate() || null"
-        (ngModelChange)="endDate.set($event); dateRangeAutoFilled.set(false)"
-      />
-    </div>
-    @if (datasetMinDate() && datasetMaxDate()) {
-      <p class="muted field-hint">
-        Your uploaded file only has data between {{ datasetMinDateLabel() }} and {{ datasetMaxDateLabel() }} - dates outside that range are disabled.
-      </p>
-    }
-
-    @if (rangeInvalid()) {
-      <p class="drop-error">Start date must be before end date.</p>
-    }
-
     @if (hasMediaChannels()) {
-      <div class="example-section">
+      <div class="example-section example-section-first">
         <button type="button" class="param-switch-row" (click)="toggleCustomTimeframe()" [attr.aria-pressed]="customTimeframeOpen()">
           <span class="switch" [class.on]="customTimeframeOpen()">
             <span class="switch-thumb"></span>
@@ -160,6 +115,53 @@
         }
         }
       </div>
+    }
+
+    @if (dateRangeAutoFilled()) {
+      <p class="muted field-hint auto-filled-note">
+        Filled in from the earliest and latest dates in your uploaded file — change either field if you want a narrower range.
+      </p>
+    }
+
+    @if (dateRangeError(); as err) {
+      <p class="drop-error">{{ err }}</p>
+    }
+
+    <div class="date-range-row">
+      <div class="field">
+        <label class="label" for="o-start">Start date</label>
+        <input
+          id="o-start"
+          class="input"
+          type="date"
+          [ngModel]="startDate()"
+          [attr.min]="datasetMinDate() || null"
+          [attr.max]="datasetMaxDate() || null"
+          (ngModelChange)="startDate.set($event); dateRangeAutoFilled.set(false)"
+        />
+      </div>
+
+      <div class="field">
+        <label class="label" for="o-end">End date</label>
+        <input
+          id="o-end"
+          class="input"
+          type="date"
+          [ngModel]="endDate()"
+          [attr.min]="datasetMinDate() || null"
+          [attr.max]="datasetMaxDate() || null"
+          (ngModelChange)="endDate.set($event); dateRangeAutoFilled.set(false)"
+        />
+      </div>
+    </div>
+    @if (datasetMinDate() && datasetMaxDate()) {
+      <p class="muted field-hint">
+        Your uploaded file only has data between {{ datasetMinDateLabel() }} and {{ datasetMaxDateLabel() }} - dates outside that range are disabled.
+      </p>
+    }
+
+    @if (rangeInvalid()) {
+      <p class="drop-error">Start date must be before end date.</p>
     }
   </section>
 
