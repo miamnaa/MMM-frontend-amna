@@ -545,6 +545,20 @@
   background: var(--brand-500);
 }
 
+.review-derivation {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  background: var(--gray-50);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+.history-confidence {
+  margin: 4px 0 0;
+  font-size: 11px;
+}
+
 .review-actions {
   display: flex;
   align-items: center;

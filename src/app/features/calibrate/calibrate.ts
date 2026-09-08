@@ -35,6 +35,8 @@ interface CalibrationHistoryEntry {
   channel: string;
   before: number;
   after: number;
+  confidenceBefore: number;
+  confidenceAfter: number;
 }
 
 /**
@@ -164,6 +166,27 @@ export class Calibrate implements OnInit {
     return this.calculatedPct(name) !== null;
   }
 
+  /**
+   * The real overall belief this channel's evidence would produce if
+   * saved right now - the exact same blend formula saveChannelCalibration()
+   * actually applies, computed here so the Review card can show the real
+   * result instead of this channel's own raw evidence % (which is not the
+   * same number - evidence only ever moves belief halfway toward it, never
+   * replaces it outright). Shown so the number on screen matches the
+   * number that actually gets saved.
+   */
+  previewBeliefAfter(name: string): number | null {
+    const pct = this.calculatedPct(name);
+    if (pct === null) return null;
+    const before = this.currentBelief();
+    return Math.round(before + (pct - before) * BELIEF_BLEND);
+  }
+
+  /** Same real rule saveChannelCalibration() applies: confidence steps up by a flat amount, capped - shown here so the Review card previews the real result. */
+  previewConfidenceAfter(): number {
+    return Math.min(CONFIDENCE_CAP, this.currentConfidence() + CONFIDENCE_STEP);
+  }
+
   /** Once both evidence fields are filled in, the workflow card collapses them into a summary and shows the calculated result - this set tracks which channels have been explicitly reopened for editing via "Edit evidence", overriding that collapse. */
   private readonly reopenedForEditing = signal<Set<string>>(new Set());
 
@@ -175,17 +198,21 @@ export class Calibrate implements OnInit {
     this.reopenedForEditing.update((set) => new Set(set).add(name));
   }
 
-  /** Applies this channel's evidence: blends it into the one real overall belief, nudges confidence up, and records the before/after for the right-hand summary. */
+  /** Applies this channel's evidence: blends it into the one real overall belief, nudges confidence up, and records the real before/after of both for the right-hand summary - using the same preview methods the Review card already showed, so what gets saved is never a surprise. */
   saveChannelCalibration(name: string): void {
-    const pct = this.calculatedPct(name);
-    if (pct === null) return;
+    const after = this.previewBeliefAfter(name);
+    if (after === null) return;
 
     const before = this.currentBelief();
-    const after = Math.round(before + (pct - before) * BELIEF_BLEND);
+    const confidenceBefore = this.currentConfidence();
+    const confidenceAfter = this.previewConfidenceAfter();
 
     this.contributionBeliefPercent.set(after);
-    this.confidencePercent.set(Math.min(CONFIDENCE_CAP, this.currentConfidence() + CONFIDENCE_STEP));
-    this.calibrationHistory.update((history) => [...history, { channel: name, before, after }]);
+    this.confidencePercent.set(confidenceAfter);
+    this.calibrationHistory.update((history) => [
+      ...history,
+      { channel: name, before, after, confidenceBefore, confidenceAfter },
+    ]);
     this.calibratedChannels.update((set) => new Set(set).add(name));
     this.explicitExpandedChannel.set(null);
   }

@@ -148,16 +148,24 @@
                       <p class="review-card-title">Review before saving</p>
                       <div class="review-row">
                         <span class="flag-name">{{ ch.name }}</span>
-                        <span class="review-pct">{{ currentBelief() }}% → {{ calculatedPct(ch.name) }}%</span>
+                        <span class="review-pct">{{ currentBelief() }}% → {{ previewBeliefAfter(ch.name) }}%</span>
                       </div>
                       <div class="review-bar-track">
                         <div class="review-bar-before" [style.width.%]="currentBelief()"></div>
-                        <div class="review-bar-after" [style.width.%]="calculatedPct(ch.name)"></div>
+                        <div class="review-bar-after" [style.width.%]="previewBeliefAfter(ch.name)"></div>
                       </div>
                       <div class="review-legend">
                         <span><span class="review-legend-dot review-legend-before"></span>Model's current estimate</span>
-                        <span><span class="review-legend-dot review-legend-after"></span>With this evidence</span>
+                        <span><span class="review-legend-dot review-legend-after"></span>With this evidence applied</span>
                       </div>
+                      <p class="muted review-derivation">
+                        This channel's own evidence works out to <strong>{{ calculatedPct(ch.name) }}%</strong> - since
+                        the model only ever saves one belief number for every channel combined, that evidence moves
+                        it <strong>halfway</strong> from the current <strong>{{ currentBelief() }}%</strong> toward it,
+                        landing at <strong>{{ previewBeliefAfter(ch.name) }}%</strong>. Confidence rises from
+                        <strong>{{ currentConfidence() }}%</strong> to <strong>{{ previewConfidenceAfter() }}%</strong>
+                        (capped at 95%).
+                      </p>
 
                       <div class="review-actions">
                         <button type="button" class="link-btn-inline" (click)="editEvidence(ch.name)">← Edit evidence</button>
@@ -201,12 +209,13 @@
               <div class="history-row">
                 <div class="history-row-head">
                   <span class="flag-name">{{ h.channel }}</span>
-                  <span class="review-pct">{{ h.before }}% → {{ h.after }}%</span>
+                  <span class="review-pct">Belief {{ h.before }}% → {{ h.after }}%</span>
                 </div>
                 <div class="review-bar-track">
                   <div class="review-bar-before" [style.width.%]="h.before"></div>
                   <div class="review-bar-after" [style.width.%]="h.after"></div>
                 </div>
+                <p class="muted history-confidence">Confidence {{ h.confidenceBefore }}% → {{ h.confidenceAfter }}%</p>
               </div>
             }
             <div class="review-legend">
