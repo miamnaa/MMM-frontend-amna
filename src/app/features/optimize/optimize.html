@@ -40,6 +40,15 @@
   <section class="card">
     <h2 class="section-title">Training date range</h2>
 
+    @if (hasMediaChannels()) {
+      <button type="button" class="param-switch-row" (click)="toggleCustomTimeframe()" [attr.aria-pressed]="customTimeframeOpen()">
+        <span class="switch" [class.on]="customTimeframeOpen()">
+          <span class="switch-thumb"></span>
+        </span>
+        <h3 class="example-title">Custom Timeframe</h3>
+      </button>
+    }
+
     @if (dateRangeAutoFilled()) {
       <p class="muted field-hint auto-filled-note">
         Filled in from the earliest and latest dates in your uploaded file — change either field if you want a narrower range.
@@ -87,15 +96,8 @@
       <p class="drop-error">Start date must be before end date.</p>
     }
 
-    @if (hasMediaChannels()) {
+    @if (hasMediaChannels() && customTimeframeOpen()) {
       <div class="example-section">
-        <button type="button" class="param-switch-row" (click)="toggleCustomTimeframe()" [attr.aria-pressed]="customTimeframeOpen()">
-          <span class="switch" [class.on]="customTimeframeOpen()">
-            <span class="switch-thumb"></span>
-          </span>
-          <h3 class="example-title">Custom Timeframe</h3>
-        </button>
-        @if (customTimeframeOpen()) {
         <p class="muted field-hint">
           Why adjust the timeframe? Choose the range that best reflects your current strategy — an
           early ramp-up phase or a stretch with missing/unreliable data can drag your model's
@@ -159,7 +161,6 @@
               </span>
             }
           </div>
-        }
         }
       </div>
     }
