@@ -187,15 +187,71 @@ export class Calibrate implements OnInit {
     return Math.min(CONFIDENCE_CAP, this.currentConfidence() + CONFIDENCE_STEP);
   }
 
-  /** Once both evidence fields are filled in, the workflow card collapses them into a summary and shows the calculated result - this set tracks which channels have been explicitly reopened for editing via "Edit evidence", overriding that collapse. */
-  private readonly reopenedForEditing = signal<Set<string>>(new Set());
+  /**
+   * Real bug, fixed 2026-09-08: this used to collapse the evidence inputs
+   * into the read-only Calculated/Review summary automatically the moment
+   * `hasEvidence()` went true - which happens the instant Total $ gets ANY
+   * non-zero value, including after just the first keystroke. That
+   * destroyed the input fields mid-typing, so only the first digit (e.g.
+   * "1" of "102000") ever actually landed, and the summary was stuck
+   * showing that stale, incomplete math forever after - it was never a
+   * caching bug, the fields the user was typing into were just gone.
+   * Now a channel only leaves the editing view on an explicit
+   * confirmEvidence() click, never from typing alone.
+   */
+  private readonly confirmedEvidence = signal<Set<string>>(new Set());
 
   isEditingEvidence(name: string): boolean {
-    return !this.hasEvidence(name) || this.reopenedForEditing().has(name);
+    return !this.confirmedEvidence().has(name);
+  }
+
+  /** Explicit "done typing, show me the math" action - only enabled once both fields are real and usable (hasEvidence). */
+  confirmEvidence(name: string): void {
+    if (!this.hasEvidence(name)) return;
+    this.confirmedEvidence.update((set) => new Set(set).add(name));
   }
 
   editEvidence(name: string): void {
-    this.reopenedForEditing.update((set) => new Set(set).add(name));
+    this.confirmedEvidence.update((set) => {
+      const next = new Set(set);
+      next.delete(name);
+      return next;
+    });
+  }
+
+  /**
+   * Real bug, fixed 2026-09-08: once a channel was saved via
+   * saveChannelCalibration(), it became a static "✓ Calibrated" row with
+   * no way back - if the evidence that produced it was wrong (e.g. Bug 1
+   * above), there was no path to correct it; the real saved
+   * calibration was permanently stuck on the bad numbers. Only the most
+   * recently calibrated channel can be undone - correctly reverses just
+   * that channel's blend by restoring the exact before/before-confidence
+   * this history entry recorded (rather than re-blending on top of an
+   * already-nudged value, which would double-count it), then reopens its
+   * evidence fields with whatever was typed still intact so only the
+   * wrong field needs fixing.
+   */
+  canEditCalibratedChannel(name: string): boolean {
+    const history = this.calibrationHistory();
+    return history.length > 0 && history[history.length - 1].channel === name;
+  }
+
+  undoChannelCalibration(name: string): void {
+    const history = this.calibrationHistory();
+    const last = history[history.length - 1];
+    if (!last || last.channel !== name) return;
+
+    this.contributionBeliefPercent.set(last.before);
+    this.confidencePercent.set(last.confidenceBefore);
+    this.calibrationHistory.set(history.slice(0, -1));
+    this.calibratedChannels.update((set) => {
+      const next = new Set(set);
+      next.delete(name);
+      return next;
+    });
+    this.editEvidence(name);
+    this.explicitExpandedChannel.set(name);
   }
 
   /** Applies this channel's evidence: blends it into the one real overall belief, nudges confidence up, and records the real before/after of both for the right-hand summary - using the same preview methods the Review card already showed, so what gets saved is never a surprise. */

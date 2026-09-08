@@ -62,7 +62,19 @@
                     <span class="flag-name">{{ ch.name }}</span>
                     <span class="muted flag-reason">Calibrated from a lift test</span>
                   </div>
-                  <span class="flag-badge">✓ Calibrated · {{ calculatedPct(ch.name) }}%</span>
+                  <span class="flag-done-actions">
+                    <span class="flag-badge">✓ Calibrated · {{ calculatedPct(ch.name) }}%</span>
+                    @if (canEditCalibratedChannel(ch.name)) {
+                      <button
+                        type="button"
+                        class="link-btn-inline"
+                        [disabled]="isReadOnly()"
+                        (click)="undoChannelCalibration(ch.name)"
+                      >
+                        Edit
+                      </button>
+                    }
+                  </span>
                 </div>
               } @else if (ch.name === expandedChannel()) {
                 <div class="flag-row">
@@ -77,15 +89,15 @@
                     <span class="stepper-step done">
                       <span class="stepper-circle">✓</span>Identified
                     </span>
-                    <span class="stepper-line" [class.done]="hasEvidence(ch.name)"></span>
-                    <span class="stepper-step" [class.done]="hasEvidence(ch.name)">
-                      <span class="stepper-circle">{{ hasEvidence(ch.name) ? '✓' : '2' }}</span>Evidence
+                    <span class="stepper-line" [class.done]="!isEditingEvidence(ch.name)"></span>
+                    <span class="stepper-step" [class.done]="!isEditingEvidence(ch.name)">
+                      <span class="stepper-circle">{{ isEditingEvidence(ch.name) ? '2' : '✓' }}</span>Evidence
                     </span>
-                    <span class="stepper-line" [class.done]="hasEvidence(ch.name)"></span>
-                    <span class="stepper-step" [class.done]="hasEvidence(ch.name)">
-                      <span class="stepper-circle">{{ hasEvidence(ch.name) ? '✓' : '3' }}</span>Calculated
+                    <span class="stepper-line" [class.done]="!isEditingEvidence(ch.name)"></span>
+                    <span class="stepper-step" [class.done]="!isEditingEvidence(ch.name)">
+                      <span class="stepper-circle">{{ isEditingEvidence(ch.name) ? '3' : '✓' }}</span>Calculated
                     </span>
-                    <span class="stepper-line" [class.done]="hasEvidence(ch.name)"></span>
+                    <span class="stepper-line" [class.done]="!isEditingEvidence(ch.name)"></span>
                     <span class="stepper-step stepper-active">
                       <span class="stepper-circle">4</span>Review
                     </span>
@@ -129,6 +141,16 @@
                           />
                         </span>
                       </span>
+                    </div>
+                    <div class="workflow-actions">
+                      <button
+                        class="btn btn-primary btn-sm"
+                        type="button"
+                        [disabled]="!hasEvidence(ch.name) || isReadOnly()"
+                        (click)="confirmEvidence(ch.name)"
+                      >
+                        Continue
+                      </button>
                     </div>
                   } @else {
                     <div class="workflow-detail-row">

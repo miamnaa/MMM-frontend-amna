@@ -340,7 +340,18 @@
   color: var(--brand-700);
 }
 
+.flag-done-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 /* ---- Per-channel evidence workflow ---- */
+
+.workflow-actions {
+  margin-top: 12px;
+}
 
 .workflow-card {
   padding: 16px;
