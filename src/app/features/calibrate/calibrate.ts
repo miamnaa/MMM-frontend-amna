@@ -225,12 +225,21 @@ export class Calibrate implements OnInit {
     });
   }
 
+  /**
+   * Real contract confirmed 2026-09-08 (Hammad, via Anas): both fields are
+   * optional, but only together - send both, or send `{}`. An empty body
+   * is a real, valid "no belief input," not an error state, so the
+   * disabled-toggle case must send `{}` for real instead of a fabricated
+   * 50/50 placeholder that would assert a belief the user never actually
+   * gave.
+   */
   save(): void {
     if (this.saving()) return;
 
-    const body = this.calibrationEnabled()
-      ? { contributionBeliefPercent: this.currentBelief(), confidencePercent: this.currentConfidence() }
-      : { contributionBeliefPercent: DEFAULT_BELIEF, confidencePercent: DEFAULT_CONFIDENCE };
+    const enabled = this.calibrationEnabled();
+    const belief = this.currentBelief();
+    const confidence = this.currentConfidence();
+    const body = enabled ? { contributionBeliefPercent: belief, confidencePercent: confidence } : {};
 
     this.saving.set(true);
     this.saveError.set(null);
@@ -238,8 +247,12 @@ export class Calibrate implements OnInit {
     this.datasetService.saveCalibration(this.datasetId(), body).subscribe({
       next: () => {
         this.saving.set(false);
-        this.hasSavedCalibration.set(true);
-        this.tunnelService.setCalibration(body);
+        this.hasSavedCalibration.set(enabled);
+        if (enabled) {
+          this.tunnelService.setCalibration({ contributionBeliefPercent: belief, confidencePercent: confidence });
+        } else {
+          this.tunnelService.clearCalibration();
+        }
         this.router.navigate(['/hyperparameters', this.projectId(), this.datasetId()]);
       },
       error: (err: unknown) => {

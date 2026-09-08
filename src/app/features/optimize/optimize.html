@@ -509,23 +509,19 @@
           without touching either one. It's your call whether to fine-tune them first.
         </p>
 
-        @if (finishError(); as err) {
-          <p class="drop-error">{{ err }}</p>
-        }
-
         <div class="fork-options">
-          <button type="button" class="fork-option" [disabled]="finishing()" (click)="customizeModel()">
+          <button type="button" class="fork-option" (click)="customizeModel()">
             <span class="fork-option-icon" aria-hidden="true">⚙</span>
             <span class="fork-option-title">Set them myself</span>
             <span class="fork-option-desc">Walk through Calibration and Hyperparameters and choose every value by hand.</span>
             <span class="fork-option-cta">Customize model →</span>
           </button>
 
-          <button type="button" class="fork-option" [disabled]="finishing()" (click)="finishSetup()">
+          <button type="button" class="fork-option" (click)="finishSetup()">
             <span class="fork-option-icon" aria-hidden="true">⚡</span>
-            <span class="fork-option-title">Use neutral defaults</span>
-            <span class="fork-option-desc">Skip ahead with balanced starting values, saved for real — you can always fine-tune them later.</span>
-            <span class="fork-option-cta">{{ finishing() ? 'Finishing…' : 'Finish setup →' }}</span>
+            <span class="fork-option-title">Skip for now</span>
+            <span class="fork-option-desc">Leave both unset — the real modeling engine applies its own defaults. You can always come back and fine-tune them later.</span>
+            <span class="fork-option-cta">Finish setup →</span>
           </button>
         </div>
       </div>

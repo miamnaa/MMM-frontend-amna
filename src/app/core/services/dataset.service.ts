@@ -21,11 +21,18 @@ interface ApiDatasetCreateResponse {
   uploadedAt?: string;
 }
 
-/** Mirrors the real PATCH /datasets/:id/hyperparameters body exactly. */
+/**
+ * Mirrors the real PATCH /datasets/:id/hyperparameterize body - confirmed
+ * against Hammad's real contract 2026-09-08. A channel entry can have
+ * `carryover` only, `saturation` only, or both - never neither (a channel
+ * with nothing set is rejected, so leave it out of the array instead).
+ * `saturation`, when present, must be strictly greater than 0 (was >= 0
+ * before).
+ */
 export interface HyperparameterChannel {
   channel: string;
-  carryover: number;
-  saturation: number;
+  carryover?: number;
+  saturation?: number;
 }
 
 /**
@@ -568,18 +575,32 @@ export class DatasetService {
     return this.http.patch(`${environment.apiBaseUrl}/datasets/${datasetId}/optimize`, body);
   }
 
-  saveCalibration(datasetId: string, body: SavedCalibration): Observable<unknown> {
-    return this.http.patch(`${environment.apiBaseUrl}/datasets/${datasetId}/calibration`, body);
+  /**
+   * Real endpoint: PATCH /datasets/:id/calibrate, confirmed against
+   * Hammad's real contract 2026-09-08 - both fields are optional, but only
+   * together. Sending just one now real-400s ("Provide both
+   * contributionBeliefPercent and confidencePercent together, or leave
+   * both out - not just one"). An empty body is a real, valid, supported
+   * "no belief input" - not an error state - so callers must send `{}`,
+   * never a placeholder 50/50 default, when there's genuinely no belief
+   * to record.
+   */
+  saveCalibration(datasetId: string, body: Partial<SavedCalibration>): Observable<unknown> {
+    return this.http.patch(`${environment.apiBaseUrl}/datasets/${datasetId}/calibrate`, body);
   }
 
   /**
-   * Requires Configuration to already be saved - the backend checks that
-   * `channels` contains exactly the same channel names as Configure's
-   * mediaColumns, no more/fewer, any order. hyperparametersContextGuard is
-   * what guarantees that's true before this screen is even reachable.
+   * Real endpoint: PATCH /datasets/:id/hyperparameterize, confirmed against
+   * Hammad's real contract 2026-09-08. Requires Configuration to already
+   * be saved - a channel name that isn't one of this dataset's real media
+   * columns is rejected, same as before. Unlike before, `channels` no
+   * longer has to cover every real media column (`[]` is valid) - each
+   * entry can have carryover only, saturation only, or both, but never
+   * neither. Callers must leave an untouched channel out of the array
+   * entirely rather than sending it with no fields set.
    */
   saveHyperparameters(datasetId: string, channels: HyperparameterChannel[]): Observable<unknown> {
-    return this.http.patch(`${environment.apiBaseUrl}/datasets/${datasetId}/hyperparameters`, { channels });
+    return this.http.patch(`${environment.apiBaseUrl}/datasets/${datasetId}/hyperparameterize`, { channels });
   }
 
   /** Real endpoint - soft delete, backend keeps the row for audit and excludes it from listForProject() after. */

@@ -45,22 +45,34 @@ interface ChannelRow {
   carryoverEstimated: boolean;
   /** Same as carryoverEstimated, for Gamma. */
   saturationEstimated: boolean;
+  /**
+   * True once the user has actually applied a real carryover value for
+   * this channel (via Apply or Automatic Optimization) or it arrived
+   * already saved from the backend - false just means the field still
+   * shows its starting preview default, never touched for real. Per
+   * Hammad's real contract (confirmed 2026-09-08), PATCH
+   * /datasets/:id/hyperparameterize no longer requires every channel, and
+   * an untouched channel must be left out of the saved array entirely
+   * rather than sent with a placeholder value.
+   */
+  carryoverTouched: boolean;
+  /** Same as carryoverTouched, for saturation (Gamma). */
+  saturationTouched: boolean;
 }
 
-function validRow(row: ChannelRow): boolean {
-  return (
-    row.carryover !== null &&
-    row.carryover >= 0 &&
-    row.carryover <= 1 &&
-    row.saturation !== null &&
-    row.saturation >= 0
-  );
+/** A channel only needs to be valid for whichever field(s) the user actually touched - an untouched field isn't sent, so it can't be invalid. */
+function touchedFieldsValid(row: ChannelRow): boolean {
+  if (row.carryoverTouched && (row.carryover === null || row.carryover < 0 || row.carryover > 1)) return false;
+  if (row.saturationTouched && (row.saturation === null || row.saturation <= 0)) return false;
+  return true;
 }
 
 const DEFAULT_CARRYOVER = 0.4;
 const DEFAULT_SATURATION = 1;
 const DEFAULT_ALPHA = 0.5;
 const DEFAULT_VARIANCE = 20;
+/** Saturation (Gamma) must be strictly > 0 per the real backend contract - the slider's floor sits just above zero instead of allowing exactly 0. */
+const MIN_SATURATION = 0.05;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -181,7 +193,8 @@ export class Hyperparameters implements OnInit {
     this.expandedIndex.update((current) => (current === index ? null : index));
   }
 
-  readonly canSave = computed(() => this.rows().length > 0 && this.rows().every(validRow));
+  /** Real contract: `channels: []` is valid (nothing touched yet is fine) - this only guards against a touched field somehow ending up out of its valid range. */
+  readonly canSave = computed(() => this.rows().every(touchedFieldsValid));
 
   ngOnInit(): void {
     this.projectId.set(this.route.snapshot.paramMap.get('projectId') ?? '');
@@ -192,6 +205,9 @@ export class Hyperparameters implements OnInit {
     // (not fabricated data) so every slider/chart below has something
     // meaningful to show before the user touches anything - getDataset()
     // below overrides these with the real saved numbers if there are any.
+    // Neither field starts "touched" - previewing a default isn't the same
+    // as choosing one, so an untouched channel is correctly left out of
+    // what Save actually sends.
     const mediaColumns = this.tunnelService.configuration()?.mediaColumns ?? [];
     this.rows.set(
       mediaColumns.map((channel) => ({
@@ -207,6 +223,8 @@ export class Hyperparameters implements OnInit {
         alpha: DEFAULT_ALPHA,
         carryoverEstimated: false,
         saturationEstimated: false,
+        carryoverTouched: false,
+        saturationTouched: false,
       })),
     );
     if (mediaColumns.length > 0) this.expandedIndex.set(0);
@@ -214,7 +232,10 @@ export class Hyperparameters implements OnInit {
     // Real endpoint (GET /datasets/:id, confirmed working 2026-08-13) - the
     // channel names above were already correct, but carryover/saturation
     // used to always start blank even when already saved. Best-effort: a
-    // failure here just leaves them at the defaults set above.
+    // failure here just leaves them at the defaults set above. A saved
+    // entry can now real-legitimately have just one of the two fields
+    // (per the 2026-09-08 contract), so each is applied independently and
+    // only marks that one field touched.
     this.datasetService.getDataset(this.datasetId()).subscribe({
       next: (detail) => {
         const saved = detail.channelHyperparameters;
@@ -222,17 +243,20 @@ export class Hyperparameters implements OnInit {
         this.rows.update((rows) =>
           rows.map((row) => {
             const match = saved.find((s) => s.channel === row.channel);
-            return match
-              ? {
-                  ...row,
-                  carryover: match.carryover,
-                  saturation: match.saturation,
-                  carryoverDraft: match.carryover,
-                  saturationDraft: match.saturation,
-                  carryoverEstimated: false,
-                  saturationEstimated: false,
-                }
-              : row;
+            if (!match) return row;
+            const hasCarryover = match.carryover !== undefined && match.carryover !== null;
+            const hasSaturation = match.saturation !== undefined && match.saturation !== null;
+            return {
+              ...row,
+              carryover: hasCarryover ? match.carryover! : row.carryover,
+              saturation: hasSaturation ? match.saturation! : row.saturation,
+              carryoverDraft: hasCarryover ? match.carryover! : row.carryoverDraft,
+              saturationDraft: hasSaturation ? match.saturation! : row.saturationDraft,
+              carryoverEstimated: false,
+              saturationEstimated: false,
+              carryoverTouched: hasCarryover || row.carryoverTouched,
+              saturationTouched: hasSaturation || row.saturationTouched,
+            };
           }),
         );
       },
@@ -272,13 +296,17 @@ export class Hyperparameters implements OnInit {
     this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, saturationVariance: value } : r)));
   }
 
-  /** Commits the current slider position as the real value that gets saved. */
+  /** Commits the current slider position as the real value that gets saved - and marks the field touched, since this is the real "I chose this" moment, not just a preview. */
   applyCarryover(index: number): void {
-    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, carryover: r.carryoverDraft } : r)));
+    this.rows.update((rows) =>
+      rows.map((r, i) => (i === index ? { ...r, carryover: r.carryoverDraft, carryoverTouched: true } : r)),
+    );
   }
 
   applySaturation(index: number): void {
-    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, saturation: r.saturationDraft } : r)));
+    this.rows.update((rows) =>
+      rows.map((r, i) => (i === index ? { ...r, saturation: r.saturationDraft, saturationTouched: true } : r)),
+    );
   }
 
   /**
@@ -286,6 +314,8 @@ export class Hyperparameters implements OnInit {
    * committed value, applied immediately - not a call to a backend
    * optimizer (none exists), just an honest in-browser random draw the user
    * can see reflected on the chart and in the number field right away.
+   * Also marks the field touched, same as Apply - this commits a real
+   * value, it doesn't just preview one.
    */
   randomizeCarryover(index: number): void {
     const row = this.rows()[index];
@@ -294,7 +324,9 @@ export class Hyperparameters implements OnInit {
     const delta = (row.adstockVariance / 100) * base;
     const next = round2(clamp(base + (Math.random() * 2 - 1) * delta, 0, 1));
     this.rows.update((rows) =>
-      rows.map((r, i) => (i === index ? { ...r, carryover: next, carryoverDraft: next, carryoverEstimated: true } : r)),
+      rows.map((r, i) =>
+        i === index ? { ...r, carryover: next, carryoverDraft: next, carryoverEstimated: true, carryoverTouched: true } : r,
+      ),
     );
   }
 
@@ -302,7 +334,8 @@ export class Hyperparameters implements OnInit {
    * Same real local randomized search as AdStock's Automatic Optimization,
    * applied to Gamma instead of Theta - a random draw within +/-variance%
    * of the current committed saturation value, clamped to Gamma's real
-   * 0-3 range, applied immediately. Still just an honest in-browser random
+   * range (strictly > 0, per the backend contract, up to 3 in this
+   * preview), applied immediately. Still just an honest in-browser random
    * draw - there's no backend auto-tuner to call for this either.
    */
   randomizeSaturation(index: number): void {
@@ -310,9 +343,11 @@ export class Hyperparameters implements OnInit {
     if (!row) return;
     const base = row.saturation ?? DEFAULT_SATURATION;
     const delta = (row.saturationVariance / 100) * base;
-    const next = round2(clamp(base + (Math.random() * 2 - 1) * delta, 0, 3));
+    const next = round2(clamp(base + (Math.random() * 2 - 1) * delta, MIN_SATURATION, 3));
     this.rows.update((rows) =>
-      rows.map((r, i) => (i === index ? { ...r, saturation: next, saturationDraft: next, saturationEstimated: true } : r)),
+      rows.map((r, i) =>
+        i === index ? { ...r, saturation: next, saturationDraft: next, saturationEstimated: true, saturationTouched: true } : r,
+      ),
     );
   }
 
@@ -391,24 +426,34 @@ export class Hyperparameters implements OnInit {
     return { x: plotX(fraction), label: Math.round(fraction * SATURATION_MAX_SPEND).toLocaleString() };
   });
 
+  /**
+   * Real contract confirmed 2026-09-08 (Hammad, via Anas): `channels` no
+   * longer has to cover every real media column, and a channel entry can
+   * have carryover only, saturation only, or both - never neither. Only
+   * a channel with at least one touched field is included; an untouched
+   * channel is left out of the array entirely rather than sent with a
+   * placeholder value just to "fill" it.
+   */
   save(): void {
     if (!this.canSave() || this.saving()) return;
 
-    const channels: HyperparameterChannel[] = this.rows().map((r) => ({
-      channel: r.channel,
-      carryover: r.carryover!,
-      saturation: r.saturation!,
-    }));
+    const channels: HyperparameterChannel[] = this.rows()
+      .filter((r) => r.carryoverTouched || r.saturationTouched)
+      .map((r) => {
+        const entry: HyperparameterChannel = { channel: r.channel };
+        if (r.carryoverTouched) entry.carryover = r.carryover!;
+        if (r.saturationTouched) entry.saturation = r.saturation!;
+        return entry;
+      });
 
     this.saving.set(true);
     this.saveError.set(null);
     this.saved.set(false);
 
-    // No "start training" step exists on the backend yet, so there's
-    // nowhere further to go in the tunnel itself - success moves back to
-    // the Models list, which already shows this model as Ready 100% with
-    // the same "Train Model - Coming soon" state. Brief delay so the
-    // "Hyperparameters saved" confirmation is actually visible first.
+    // No "start training" step exists in this tunnel - success moves back
+    // to the Models list, where a real "Train Model" button already lives.
+    // Brief delay so the "Hyperparameters saved" confirmation is actually
+    // visible first.
     this.datasetService.saveHyperparameters(this.datasetId(), channels).subscribe({
       next: () => {
         this.saving.set(false);

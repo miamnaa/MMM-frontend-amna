@@ -41,18 +41,24 @@
           starts saturating, how abrupt is the flattening? A low gamma flattens quickly and sharply
           right after the half-saturation point; a high gamma bends more gradually, so the channel keeps
           giving a little more for a while longer before it truly flattens. This is the real "saturation"
-          value that gets saved. The slider here goes from 0 to 3 (a practical range for realistic
-          curves) — the model itself has no hard upper limit, so a value above 3 is technically valid,
-          it's just not reachable from this slider.
+          value that gets saved. Gamma must be <strong>greater than 0</strong> (never exactly 0) - the
+          slider here goes from just above 0 to 3 (a practical range for realistic curves), though the
+          model itself has no hard upper limit, so a value above 3 is technically valid, it's just not
+          reachable from this slider.
         </li>
         <li>
           <strong>Automatic Optimization:</strong> Draws a random value within your chosen % variance
           range around the current number, right in your browser, so you can quickly see a few nearby
-          options on the chart. It is <em>not</em> a real trained/optimized value from the model — that
-          would require an actual training run, which isn't wired up yet. Values it sets are marked
-          "Estimated" for that reason.
+          options on the chart. It is <em>not</em> a real trained/optimized value from the actual
+          model - it's just a quick in-browser guess to explore nearby options. Values it sets are
+          marked "Estimated" for that reason.
         </li>
-        <li>Channels are taken from what you saved in Configure. Valid ranges: Theta (carryover) 0–1, Gamma (saturation) 0 and above.</li>
+        <li>
+          Channels are taken from what you saved in Configure. Valid ranges: Theta (carryover) 0–1,
+          Gamma (saturation) greater than 0. You don't have to set both values for every channel, or
+          touch every channel at all - only what you actually apply here gets saved; anything left
+          untouched uses the modeling engine's own real defaults.
+        </li>
       </ul>
     </div>
   }
@@ -225,7 +231,7 @@
                       id="cal-gamma-{{ i }}"
                       class="range"
                       type="range"
-                      min="0"
+                      min="0.05"
                       max="3"
                       step="0.05"
                       [ngModel]="row.saturationDraft"

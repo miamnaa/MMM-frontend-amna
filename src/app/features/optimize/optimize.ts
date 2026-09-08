@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 
-import { AutoCombinedGroup, ChannelHealthApiRow, DatasetService, ExposureDirection, ExposureMetricRow, HyperparameterChannel, SavedColumnMapping } from '../../core/services/dataset.service';
+import { AutoCombinedGroup, ChannelHealthApiRow, DatasetService, ExposureDirection, ExposureMetricRow, SavedColumnMapping } from '../../core/services/dataset.service';
 import { SessionService } from '../../core/services/notification.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
@@ -909,8 +909,6 @@ export class Optimize implements OnInit {
   // ---- "Almost done!" fork after Optimize is saved ----
 
   readonly showFinishModal = signal(false);
-  readonly finishing = signal(false);
-  readonly finishError = signal<string | null>(null);
 
   customizeModel(): void {
     this.showFinishModal.set(false);
@@ -918,43 +916,17 @@ export class Optimize implements OnInit {
   }
 
   /**
-   * Skips Calibrate + Hyperparameterization by saving both for real with
-   * neutral defaults (50/50 calibration, mid-range carryover/saturation per
-   * channel) rather than bypassing their guards - the model ends up in the
-   * exact same "Ready" state either way, just without manual input.
+   * Real behavior change confirmed 2026-09-08 (Hammad's contract): Assemble/
+   * Train no longer requires either Calibrate or Hyperparameterization -
+   * the real modeling engine applies its own real defaults when a dataset
+   * has never had either saved. This used to fake "skip" by actually
+   * PATCHing 50/50 calibration and a fabricated 0.5/1-per-channel
+   * hyperparameter set just to satisfy a requirement that no longer
+   * exists. Now it genuinely skips both - no fabricated numbers sent to
+   * the backend - same as what the real engine already does on its own.
    */
   finishSetup(): void {
-    if (this.finishing()) return;
-    this.finishing.set(true);
-    this.finishError.set(null);
-
-    const calibrationBody = { contributionBeliefPercent: 50, confidencePercent: 50 };
-    this.datasetService.saveCalibration(this.datasetId(), calibrationBody).subscribe({
-      next: () => {
-        this.tunnelService.setCalibration(calibrationBody);
-
-        const channels: HyperparameterChannel[] = this.mediaChannels().map((channel) => ({
-          channel,
-          carryover: 0.5,
-          saturation: 1,
-        }));
-
-        this.datasetService.saveHyperparameters(this.datasetId(), channels).subscribe({
-          next: () => {
-            this.finishing.set(false);
-            this.showFinishModal.set(false);
-            this.router.navigate(['/models', this.projectId()]);
-          },
-          error: (err: unknown) => {
-            this.finishing.set(false);
-            this.finishError.set(backendErrorMessage(err, "Couldn't finish setup automatically. Try again, or customize the model instead."));
-          },
-        });
-      },
-      error: (err: unknown) => {
-        this.finishing.set(false);
-        this.finishError.set(backendErrorMessage(err, "Couldn't finish setup automatically. Try again, or customize the model instead."));
-      },
-    });
+    this.showFinishModal.set(false);
+    this.router.navigate(['/models', this.projectId()]);
   }
 }
