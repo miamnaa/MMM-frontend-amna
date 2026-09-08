@@ -47,11 +47,12 @@
           reachable from this slider.
         </li>
         <li>
-          <strong>Automatic Optimization:</strong> Draws a random value within your chosen % variance
-          range around the current number, right in your browser, so you can quickly see a few nearby
-          options on the chart. It is <em>not</em> a real trained/optimized value from the actual
-          model - it's just a quick in-browser guess to explore nearby options. Values it sets are
-          marked "Estimated" for that reason.
+          <strong>Automatic Optimization:</strong> Applies a real suggested value computed from this
+          channel's actual spend history, your saved training date range, and any real channel
+          combinations - the same real weeks and channels that will actually train, not a guess. It's
+          disabled for a channel that doesn't have at least 4 real weeks of spend to compute a
+          suggestion from. It is still <em>not</em> Meridian's own trained answer - that only comes
+          from a real training run - so values it sets are still marked "Estimated."
         </li>
         <li>
           Channels are taken from what you saved in Configure. Valid ranges: Theta (carryover) 0–1,
@@ -61,6 +62,10 @@
         </li>
       </ul>
     </div>
+  }
+
+  @if (suggestionsError(); as err) {
+    <p class="drop-error">{{ err }} Automatic Optimization is unavailable for this session — Apply and manual sliders still work.</p>
   }
 
   <div class="channel-accordion">
@@ -134,27 +139,24 @@
                       (ngModelChange)="setCarryoverDraft(i, $event)"
                     />
 
-                    <div class="variance-row">
-                      <div>
-                        <label class="label" for="cal-theta-variance-{{ i }}">% variance (+/-)</label>
-                        <input
-                          id="cal-theta-variance-{{ i }}"
-                          class="input param-number"
-                          type="number"
-                          min="0"
-                          max="100"
-                          [ngModel]="row.adstockVariance"
-                          (ngModelChange)="setAdstockVariance(i, $event)"
-                        />
-                      </div>
-                    </div>
-
                     @if (row.carryover !== row.carryoverDraft) {
                       <p class="unsaved-note">Not applied yet — saved value is {{ row.carryover }}.</p>
                     }
 
                     <button class="btn btn-primary param-action" type="button" (click)="applyCarryover(i)">Apply</button>
-                    <button class="btn btn-secondary param-action" type="button" (click)="randomizeCarryover(i)" title="Draws a random value within your % variance range, in-browser — there's no backend auto-tuner to call yet">
+                    <button
+                      class="btn btn-secondary param-action"
+                      type="button"
+                      [disabled]="!suggestionsLoaded() || suggestedCarryover(row.channel) === null"
+                      (click)="applySuggestedCarryover(i)"
+                      [title]="
+                        !suggestionsLoaded()
+                          ? 'Loading a real suggested value for this channel…'
+                          : suggestedCarryover(row.channel) === null
+                          ? 'Not enough real spend history to estimate this channel (needs at least 4 real weeks) — no suggestion available.'
+                          : 'Applies a real value computed from real spend history, date range, and combinations for this channel'
+                      "
+                    >
                       Automatic Optimization
                     </button>
                   </div>
@@ -238,27 +240,24 @@
                       (ngModelChange)="setSaturationDraft(i, $event)"
                     />
 
-                    <div class="variance-row">
-                      <div>
-                        <label class="label" for="cal-gamma-variance-{{ i }}">% variance (+/-)</label>
-                        <input
-                          id="cal-gamma-variance-{{ i }}"
-                          class="input param-number"
-                          type="number"
-                          min="0"
-                          max="100"
-                          [ngModel]="row.saturationVariance"
-                          (ngModelChange)="setSaturationVariance(i, $event)"
-                        />
-                      </div>
-                    </div>
-
                     @if (row.saturation !== row.saturationDraft) {
                       <p class="unsaved-note">Gamma not applied yet — saved value is {{ row.saturation }}.</p>
                     }
 
                     <button class="btn btn-primary param-action" type="button" (click)="applySaturation(i)">Apply</button>
-                    <button class="btn btn-secondary param-action" type="button" (click)="randomizeSaturation(i)" title="Draws a random value within your % variance range, in-browser — there's no backend auto-tuner to call yet">
+                    <button
+                      class="btn btn-secondary param-action"
+                      type="button"
+                      [disabled]="!suggestionsLoaded() || suggestedSaturation(row.channel) === null"
+                      (click)="applySuggestedSaturation(i)"
+                      [title]="
+                        !suggestionsLoaded()
+                          ? 'Loading a real suggested value for this channel…'
+                          : suggestedSaturation(row.channel) === null
+                          ? 'Not enough real spend history to estimate this channel (needs at least 4 real weeks) — no suggestion available.'
+                          : 'Applies a real value computed from real spend history, date range, and combinations for this channel'
+                      "
+                    >
                       Automatic Optimization
                     </button>
                   </div>

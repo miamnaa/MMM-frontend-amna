@@ -288,17 +288,6 @@
   accent-color: var(--brand-500);
 }
 
-.param-number {
-  width: 100%;
-}
-
-.variance-row {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-  margin-top: 4px;
-}
-
 .unsaved-note {
   margin: 6px 0 0;
   font-size: 11.5px;

@@ -43,6 +43,29 @@ export interface HyperparameterChannel {
 }
 
 /**
+ * Real endpoint: GET /datasets/:id/suggested-hyperparameters, added
+ * 2026-09-08 - replaces Automatic Optimization's old pure client-side
+ * random draw (which never looked at the dataset at all) with a real
+ * value computed server-side from this dataset's actual spend history,
+ * Optimize's real saved date range (when set), and real channel
+ * combinations (when set) - the same real weeks/channels that will
+ * actually train, not the raw uploaded file. Requires Configure saved
+ * first (400s otherwise). One entry per real media column.
+ * `carryover`/`saturation` come back real `null` when that channel has
+ * fewer than 4 real weeks of spend to compute a signal from - treat that
+ * as "no suggestion available," never fall back to a random guess.
+ */
+export interface SuggestedHyperparameterRow {
+  channel: string;
+  carryover: number | null;
+  saturation: number | null;
+}
+
+export interface SuggestedHyperparametersResponse {
+  suggestions: SuggestedHyperparameterRow[];
+}
+
+/**
  * Deliberately conservative name-pattern matching on the backend, not ML -
  * dateColumn/targetColumn come back null rather than guessing wrong, so
  * every field here has to be treated as optional.
@@ -612,6 +635,13 @@ export class DatasetService {
    */
   saveHyperparameters(datasetId: string, channels: HyperparameterChannel[]): Observable<unknown> {
     return this.http.patch(`${environment.apiBaseUrl}/datasets/${datasetId}/hyperparameters`, { channels });
+  }
+
+  /** Real endpoint, added 2026-09-08 - requires Configuration to already be saved (400s otherwise). See SuggestedHyperparametersResponse for the real per-field null rule. */
+  getSuggestedHyperparameters(datasetId: string): Observable<SuggestedHyperparametersResponse> {
+    return this.http.get<SuggestedHyperparametersResponse>(
+      `${environment.apiBaseUrl}/datasets/${datasetId}/suggested-hyperparameters`,
+    );
   }
 
   /** Real endpoint - soft delete, backend keeps the row for audit and excludes it from listForProject() after. */

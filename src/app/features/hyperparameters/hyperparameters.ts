@@ -2,7 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { DatasetService, HyperparameterChannel } from '../../core/services/dataset.service';
+import { DatasetService, HyperparameterChannel, SuggestedHyperparameterRow } from '../../core/services/dataset.service';
 import { SessionService } from '../../core/services/notification.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
@@ -23,10 +23,6 @@ interface ChannelRow {
   saturationDraft: number;
   adstockOpen: boolean;
   saturationOpen: boolean;
-  /** Automatic Optimization's search range - AdStock. */
-  adstockVariance: number;
-  /** Automatic Optimization's search range - Diminishing Returns (Gamma). */
-  saturationVariance: number;
   /**
    * Alpha - the illustrative curve's half-saturation spend point (as a
    * fraction of the illustrative max spend axis). There's no second
@@ -70,7 +66,6 @@ function touchedFieldsValid(row: ChannelRow): boolean {
 const DEFAULT_CARRYOVER = 0.4;
 const DEFAULT_SATURATION = 1;
 const DEFAULT_ALPHA = 0.5;
-const DEFAULT_VARIANCE = 20;
 /** Saturation (Gamma) must be strictly > 0 per the real backend contract - the slider's floor sits just above zero instead of allowing exactly 0. */
 const MIN_SATURATION = 0.05;
 
@@ -196,6 +191,43 @@ export class Hyperparameters implements OnInit {
   /** Real contract: `channels: []` is valid (nothing touched yet is fine) - this only guards against a touched field somehow ending up out of its valid range. */
   readonly canSave = computed(() => this.rows().every(touchedFieldsValid));
 
+  /**
+   * Real per-channel suggestions from GET /datasets/:id/suggested-hyperparameters
+   * (added 2026-09-08) - fetched once on load and cached here, keyed by
+   * channel name. Automatic Optimization just applies whatever's already
+   * in this map instead of re-fetching on every click. Replaces the old
+   * pure client-side random draw, which never looked at the dataset at
+   * all - Anas flagged that as no longer acceptable now that real
+   * training is connected.
+   */
+  readonly suggestedHyperparameters = signal<Record<string, SuggestedHyperparameterRow>>({});
+  readonly suggestionsLoaded = signal(false);
+  readonly suggestionsError = signal<string | null>(null);
+
+  /** Real null when this channel has fewer than 4 real weeks of spend - never falls back to a random guess for it. Returns null (not just "unavailable yet") until suggestionsLoaded() is true too - callers should check that first. */
+  suggestedCarryover(channel: string): number | null {
+    return this.suggestedHyperparameters()[channel]?.carryover ?? null;
+  }
+
+  suggestedSaturation(channel: string): number | null {
+    return this.suggestedHyperparameters()[channel]?.saturation ?? null;
+  }
+
+  private loadSuggestedHyperparameters(): void {
+    this.datasetService.getSuggestedHyperparameters(this.datasetId()).subscribe({
+      next: ({ suggestions }) => {
+        this.suggestionsLoaded.set(true);
+        this.suggestedHyperparameters.set(
+          Object.fromEntries(suggestions.map((s) => [s.channel, s])),
+        );
+      },
+      error: (err: unknown) => {
+        this.suggestionsLoaded.set(true);
+        this.suggestionsError.set(backendErrorMessage(err, "Couldn't load real suggested values for these channels."));
+      },
+    });
+  }
+
   ngOnInit(): void {
     this.projectId.set(this.route.snapshot.paramMap.get('projectId') ?? '');
     this.datasetId.set(this.route.snapshot.paramMap.get('datasetId') ?? '');
@@ -218,8 +250,6 @@ export class Hyperparameters implements OnInit {
         saturationDraft: DEFAULT_SATURATION,
         adstockOpen: true,
         saturationOpen: true,
-        adstockVariance: DEFAULT_VARIANCE,
-        saturationVariance: DEFAULT_VARIANCE,
         alpha: DEFAULT_ALPHA,
         carryoverEstimated: false,
         saturationEstimated: false,
@@ -264,6 +294,8 @@ export class Hyperparameters implements OnInit {
       },
       error: () => {},
     });
+
+    this.loadSuggestedHyperparameters();
   }
 
   toggleAdstockOpen(index: number): void {
@@ -290,14 +322,6 @@ export class Hyperparameters implements OnInit {
     this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, alpha: value } : r)));
   }
 
-  setAdstockVariance(index: number, value: number): void {
-    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, adstockVariance: value } : r)));
-  }
-
-  setSaturationVariance(index: number, value: number): void {
-    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, saturationVariance: value } : r)));
-  }
-
   /** Commits the current slider position as the real value that gets saved - and marks the field touched, since this is the real "I chose this" moment, not just a preview. */
   applyCarryover(index: number): void {
     this.rows.update((rows) =>
@@ -312,19 +336,22 @@ export class Hyperparameters implements OnInit {
   }
 
   /**
-   * A real local randomized search within +/-variance% of the current
-   * committed value, applied immediately - not a call to a backend
-   * optimizer (none exists), just an honest in-browser random draw the user
-   * can see reflected on the chart and in the number field right away.
-   * Also marks the field touched, same as Apply - this commits a real
-   * value, it doesn't just preview one.
+   * Real, added 2026-09-08 - replaces the old pure client-side random draw
+   * (current +/- variance%, which never looked at the dataset at all) with
+   * the real value from GET /datasets/:id/suggested-hyperparameters,
+   * already fetched and cached in suggestedHyperparameters. Disabled in
+   * the template whenever that channel's real suggestion is null (fewer
+   * than 4 real weeks of spend) - never falls back to a random guess for
+   * it. Still marks the field "Estimated," same honesty rule as before:
+   * this is a real heuristic suggestion, not Meridian's own trained
+   * answer.
    */
-  randomizeCarryover(index: number): void {
+  applySuggestedCarryover(index: number): void {
     const row = this.rows()[index];
     if (!row) return;
-    const base = row.carryover ?? DEFAULT_CARRYOVER;
-    const delta = (row.adstockVariance / 100) * base;
-    const next = round2(clamp(base + (Math.random() * 2 - 1) * delta, 0, 1));
+    const suggestion = this.suggestedCarryover(row.channel);
+    if (suggestion === null) return;
+    const next = round2(clamp(suggestion, 0, 1));
     this.rows.update((rows) =>
       rows.map((r, i) =>
         i === index ? { ...r, carryover: next, carryoverDraft: next, carryoverEstimated: true, carryoverTouched: true } : r,
@@ -332,20 +359,13 @@ export class Hyperparameters implements OnInit {
     );
   }
 
-  /**
-   * Same real local randomized search as AdStock's Automatic Optimization,
-   * applied to Gamma instead of Theta - a random draw within +/-variance%
-   * of the current committed saturation value, clamped to Gamma's real
-   * range (strictly > 0, per the backend contract, up to 3 in this
-   * preview), applied immediately. Still just an honest in-browser random
-   * draw - there's no backend auto-tuner to call for this either.
-   */
-  randomizeSaturation(index: number): void {
+  /** Same as applySuggestedCarryover, for Gamma (saturation). */
+  applySuggestedSaturation(index: number): void {
     const row = this.rows()[index];
     if (!row) return;
-    const base = row.saturation ?? DEFAULT_SATURATION;
-    const delta = (row.saturationVariance / 100) * base;
-    const next = round2(clamp(base + (Math.random() * 2 - 1) * delta, MIN_SATURATION, 3));
+    const suggestion = this.suggestedSaturation(row.channel);
+    if (suggestion === null) return;
+    const next = round2(clamp(suggestion, MIN_SATURATION, 3));
     this.rows.update((rows) =>
       rows.map((r, i) =>
         i === index ? { ...r, saturation: next, saturationDraft: next, saturationEstimated: true, saturationTouched: true } : r,
