@@ -6,22 +6,28 @@ import { DatasetService } from '../services/dataset.service';
 import { ModelStatus, computeModelStatus, loadDatasetIntoTunnel } from '../services/model-status';
 import { TunnelService } from '../services/tunnel.service';
 
-/** What must already be true, in TunnelService's own terms, to reach each tunnel screen. */
-type RequiredStage = 'dataset' | 'configuration' | 'optimize' | 'calibration';
+/**
+ * What must already be true, in TunnelService's own terms, to reach each
+ * tunnel screen. No 'calibration' stage on purpose - Calibrate is real but
+ * genuinely optional (Hammad's contract, confirmed 2026-09-08), and a real
+ * deliberate "skip" there saves `calibration: null`, indistinguishable
+ * from "never visited." Requiring it to reach Hyperparameters caused a
+ * real bug: skipping Calibrate on purpose looped straight back into it
+ * every time. Hyperparameters only actually needs Optimize done (which is
+ * what guarantees Configure's saved mediaColumns exist to pre-fill from).
+ */
+type RequiredStage = 'dataset' | 'configuration' | 'optimize';
 
 const STATUS_RANK: Record<ModelStatus, number> = {
   uploaded: 0,
   configured: 1,
-  optimized: 2,
-  calibrated: 3,
-  ready: 4,
+  ready: 2,
 };
 
 const MIN_RANK: Record<RequiredStage, number> = {
   dataset: 0,
   configuration: 1,
   optimize: 2,
-  calibration: 3,
 };
 
 /**
@@ -48,8 +54,7 @@ export function createStageGuard(requiredStage: RequiredStage): CanActivateFn {
     const stageMet = (): boolean => {
       if (requiredStage === 'dataset') return true;
       if (requiredStage === 'configuration') return tunnelService.configuration() !== null;
-      if (requiredStage === 'optimize') return tunnelService.optimize() !== null;
-      return tunnelService.calibration() !== null;
+      return tunnelService.optimize() !== null; // 'optimize'
     };
 
     const sameDataset = tunnelService.projectId() === projectId && tunnelService.dataset()?.id === datasetId;

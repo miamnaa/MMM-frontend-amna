@@ -1,22 +1,33 @@
 import { ApiProjectDataset } from './dataset.service';
 import { TunnelService } from './tunnel.service';
 
-export type ModelStatus = 'uploaded' | 'configured' | 'optimized' | 'calibrated' | 'ready';
+export type ModelStatus = 'uploaded' | 'configured' | 'ready';
 
 export const MODEL_STATUS_META: Record<ModelStatus, { label: string; percent: number }> = {
-  uploaded: { label: 'Uploaded', percent: 20 },
-  configured: { label: 'Configured', percent: 40 },
-  optimized: { label: 'Optimized', percent: 60 },
-  calibrated: { label: 'Calibrated', percent: 80 },
+  uploaded: { label: 'Uploaded', percent: 33 },
+  configured: { label: 'Configured', percent: 66 },
   ready: { label: 'Ready', percent: 100 },
 };
 
-/** Status is computed purely from presence (null vs. not) - see ApiProjectDataset for what's assumed about the shape. */
+/**
+ * Status is computed purely from presence (null vs. not) - see
+ * ApiProjectDataset for what's assumed about the shape. Only tracks
+ * `columnMapping` and `dateRange`, not `calibration`/
+ * `channelHyperparameters` - real bug, fixed 2026-09-08: Calibrate and
+ * Hyperparameterization are both genuinely optional per Hammad's real
+ * contract, and Assemble/Train only requires Configure + Optimize. A real
+ * deliberate "skip" on either optional step saves that field as `null`,
+ * which is indistinguishable from "the user never visited this screen at
+ * all" - the backend has no way to tell them apart. Treating null as "not
+ * done" (the previous behavior) meant a real, on-purpose skip of
+ * Calibrate looped the user straight back into it every time they
+ * reopened the model, forever stuck below 100%. Since neither field can
+ * be trusted to mean "incomplete," status only tracks the two steps that
+ * are actually required and actually provable from the data.
+ */
 export function computeModelStatus(d: ApiProjectDataset): ModelStatus {
   if (d.columnMapping === null) return 'uploaded';
   if (d.dateRange === null) return 'configured';
-  if (d.calibration === null) return 'optimized';
-  if (d.channelHyperparameters === null) return 'calibrated';
   return 'ready';
 }
 
@@ -45,10 +56,15 @@ export function loadDatasetIntoTunnel(
 
 /**
  * Returns the router.navigate() commands for wherever `dataset` should open -
- * the next incomplete step, or Configure (fully editable from there, since
- * every stage is now loaded) if it's already Ready. Shared by the Projects
- * page's eye icon and the Models list's Continue Setup/Edit buttons - same
- * "jump back into this model's build screens" behavior either way.
+ * the next incomplete required step, or Configure (fully editable from
+ * there, since every real saved stage is now loaded) once Configure +
+ * Optimize are both done. Calibrate and Hyperparameterization stay
+ * reachable from there via each screen's own real Save/Continue - this
+ * never forces either one, since neither is required and neither can be
+ * reliably proven "already done" vs. "on-purpose skipped." Shared by the
+ * Projects page's eye icon and the Models list's Continue Setup/Edit
+ * buttons - same "jump back into this model's build screens" behavior
+ * either way.
  */
 export function resumeDatasetRoute(
   tunnelService: TunnelService,
@@ -60,9 +76,8 @@ export function resumeDatasetRoute(
 
   if (status === 'uploaded') return ['/configure', projectId, dataset.id];
   if (status === 'configured') return ['/optimize', projectId, dataset.id];
-  if (status === 'optimized') return ['/calibrate', projectId, dataset.id];
-  if (status === 'calibrated') return ['/hyperparameters', projectId, dataset.id];
 
-  // 'ready' - stays fully editable; start at Configure now that every stage is loaded.
+  // 'ready' - Configure + Optimize are both real and saved, which is all
+  // Assemble/Train actually requires now.
   return ['/configure', projectId, dataset.id];
 }
