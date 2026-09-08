@@ -269,20 +269,6 @@
     <p class="drop-error">{{ err }}</p>
   }
 
-  @if (saved()) {
-    <section class="card complete-panel">
-      <h2 class="section-title">Setup complete</h2>
-      <p class="muted field-hint">
-        Everything's configured. Training isn't wired up yet — that's a real, live question to the
-        modeling team, not something skipped by accident — so there's nowhere to send a training
-        run just yet. Once that's answered, this becomes a real button.
-      </p>
-      <button class="btn btn-primary btn-lg" type="button" disabled title="Coming soon">
-        Train Model <span class="coming-soon">Coming soon</span>
-      </button>
-    </section>
-  }
-
   <div class="tunnel-actions">
     @if (saved()) {
       <span class="saved-note">Hyperparameters saved.</span>
