@@ -77,7 +77,7 @@ export class TunnelService {
     this.calibration.set(calibration);
   }
 
-  /** Real "no belief input" state (Save with the toggle off, per the real PATCH /datasets/:id/calibrate contract) - distinct from setCalibration(), which asserts an actual saved belief/confidence pair. */
+  /** Real "no belief input" state (Save with the toggle off, per the real PATCH /datasets/:id/calibration contract) - distinct from setCalibration(), which asserts an actual saved belief/confidence pair. */
   clearCalibration(): void {
     this.calibration.set(null);
   }

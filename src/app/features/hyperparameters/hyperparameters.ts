@@ -51,7 +51,7 @@ interface ChannelRow {
    * already saved from the backend - false just means the field still
    * shows its starting preview default, never touched for real. Per
    * Hammad's real contract (confirmed 2026-09-08), PATCH
-   * /datasets/:id/hyperparameterize no longer requires every channel, and
+   * /datasets/:id/hyperparameters no longer requires every channel, and
    * an untouched channel must be left out of the saved array entirely
    * rather than sent with a placeholder value.
    */
