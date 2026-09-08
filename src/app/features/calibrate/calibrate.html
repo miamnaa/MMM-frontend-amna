@@ -245,7 +245,7 @@
 
   <div class="tunnel-actions">
     @if (calibrationEnabled() && flaggedChannels().length > 0) {
-      <span class="progress-note">🔒 {{ calibratedChannels().size }} of {{ flaggedChannels().length }} flagged channels calibrated so far.</span>
+      <span class="progress-note">ⓘ {{ calibratedChannels().size }} of {{ flaggedChannels().length }} flagged channels calibrated so far — not required to continue.</span>
     }
     @if (isReadOnly()) {
       <p class="muted read-only-hint">Your role only allows viewing. Ask a Master for Read/Write access to save changes.</p>
