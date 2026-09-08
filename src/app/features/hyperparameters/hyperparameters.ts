@@ -252,8 +252,10 @@ export class Hyperparameters implements OnInit {
               saturation: hasSaturation ? match.saturation! : row.saturation,
               carryoverDraft: hasCarryover ? match.carryover! : row.carryoverDraft,
               saturationDraft: hasSaturation ? match.saturation! : row.saturationDraft,
-              carryoverEstimated: false,
-              saturationEstimated: false,
+              // Real, durable now (added 2026-09-08) - read back exactly
+              // as saved instead of always resetting to false on load.
+              carryoverEstimated: match.carryoverEstimated ?? false,
+              saturationEstimated: match.saturationEstimated ?? false,
               carryoverTouched: hasCarryover || row.carryoverTouched,
               saturationTouched: hasSaturation || row.saturationTouched,
             };
@@ -432,7 +434,12 @@ export class Hyperparameters implements OnInit {
    * have carryover only, saturation only, or both - never neither. Only
    * a channel with at least one touched field is included; an untouched
    * channel is left out of the array entirely rather than sent with a
-   * placeholder value just to "fill" it.
+   * placeholder value just to "fill" it. `carryoverEstimated`/
+   * `saturationEstimated` (also real, added 2026-09-08) ride along with
+   * their matching field so the "Estimated" badge is a durable saved fact,
+   * not something that resets to false on the next reload - explicitly
+   * `false` the moment a value was manually chosen (Apply on a
+   * hand-dragged slider), never left `true` just because it used to be.
    */
   save(): void {
     if (!this.canSave() || this.saving()) return;
@@ -441,8 +448,14 @@ export class Hyperparameters implements OnInit {
       .filter((r) => r.carryoverTouched || r.saturationTouched)
       .map((r) => {
         const entry: HyperparameterChannel = { channel: r.channel };
-        if (r.carryoverTouched) entry.carryover = r.carryover!;
-        if (r.saturationTouched) entry.saturation = r.saturation!;
+        if (r.carryoverTouched) {
+          entry.carryover = r.carryover!;
+          entry.carryoverEstimated = r.carryoverEstimated;
+        }
+        if (r.saturationTouched) {
+          entry.saturation = r.saturation!;
+          entry.saturationEstimated = r.saturationEstimated;
+        }
         return entry;
       });
 

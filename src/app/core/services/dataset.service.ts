@@ -27,12 +27,19 @@ interface ApiDatasetCreateResponse {
  * `carryover` only, `saturation` only, or both - never neither (a channel
  * with nothing set is rejected, so leave it out of the array instead).
  * `saturation`, when present, must be strictly greater than 0 (was >= 0
- * before).
+ * before). `carryoverEstimated`/`saturationEstimated` (real, added
+ * 2026-09-08) are stored as-is and echoed back on every read, but never
+ * reach Hammad's real engine - `model_configuration.channels` only ever
+ * gets the real `carryover`/`saturation` numbers, confirmed by Anas. Purely
+ * a durable "was this value a random Automatic Optimization draw, or a
+ * real deliberate choice" fact for the UI.
  */
 export interface HyperparameterChannel {
   channel: string;
   carryover?: number;
   saturation?: number;
+  carryoverEstimated?: boolean;
+  saturationEstimated?: boolean;
 }
 
 /**
