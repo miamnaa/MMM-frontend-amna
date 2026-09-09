@@ -247,55 +247,70 @@
               <span><span class="health-legend-dot health-legend-dot-approx"></span>Approximate VIF</span>
             </div>
 
-            <div class="toggle-inline">
-              <button type="button" class="param-switch-row" (click)="spendCutoffEnabled.set(!spendCutoffEnabled())" [attr.aria-pressed]="spendCutoffEnabled()">
-                <span class="switch" [class.on]="spendCutoffEnabled()"><span class="switch-thumb"></span></span>
-                <strong>Flag by spend cutoff</strong>
-              </button>
-              <span class="muted">(Optional)</span>
-            </div>
-            @if (spendCutoffEnabled()) {
-              <div class="health-slider-row">
-                <label class="health-slider-label" for="o-spend-cutoff">Flag channels below</label>
-                <input id="o-spend-cutoff" type="range" min="0" [attr.max]="maxSpendPct()" step="0.5" [ngModel]="spendCutoffPct()" (ngModelChange)="setSpendCutoffPct($event)" />
-                <span class="health-slider-value">{{ spendCutoffPct() | number: '1.1-1' }}%</span>
-              </div>
-              <p class="muted health-slider-hint">
-                Default is half of an equal spend split across your channels - there's no statistical
-                convention for this one, so adjust it to whatever "too small to trust" means for you.
-                Shaded zone on the chart = below this line.
-                @if (spendFlaggedChannels().length > 0) {
-                  {{ spendFlaggedChannels().length }} channel{{ spendFlaggedChannels().length === 1 ? '' : 's' }} fall{{ spendFlaggedChannels().length === 1 ? 's' : '' }} in it:
-                  {{ displayChannelList(spendFlaggedChannels()) }} — click one to act on it.
-                } @else {
-                  Nothing falls below it right now.
-                }
-              </p>
+            <button
+              type="button"
+              class="link-btn-inline health-advanced-toggle"
+              (click)="toggleAdvancedFilters()"
+              [attr.aria-expanded]="advancedFiltersOpen()"
+            >
+              {{ advancedFiltersOpen() ? 'Hide' : 'Adjust' }} flag thresholds
+              <span class="chevron" [class.open]="advancedFiltersOpen()" aria-hidden="true">⌄</span>
+            </button>
+            @if (!advancedFiltersOpen()) {
+              <p class="muted health-slider-hint">{{ healthFlagSummary() }}</p>
             }
 
-            <div class="toggle-inline">
-              <button type="button" class="param-switch-row" (click)="vifCutoffEnabled.set(!vifCutoffEnabled())" [attr.aria-pressed]="vifCutoffEnabled()">
-                <span class="switch" [class.on]="vifCutoffEnabled()"><span class="switch-thumb"></span></span>
-                <strong>Flag by VIF cutoff</strong>
-              </button>
-              <span class="muted">(Optional)</span>
-            </div>
-            @if (vifCutoffEnabled()) {
-              <div class="health-slider-row">
-                <label class="health-slider-label" for="o-vif-cutoff">Flag channels above</label>
-                <input id="o-vif-cutoff" type="range" min="1" [attr.max]="maxVif()" step="0.5" [ngModel]="vifCutoffValue()" (ngModelChange)="vifCutoffValue.set($event)" />
-                <span class="health-slider-value">{{ vifCutoffValue() | number: '1.1-1' }}</span>
+            @if (advancedFiltersOpen()) {
+              <div class="toggle-inline">
+                <button type="button" class="param-switch-row" (click)="spendCutoffEnabled.set(!spendCutoffEnabled())" [attr.aria-pressed]="spendCutoffEnabled()">
+                  <span class="switch" [class.on]="spendCutoffEnabled()"><span class="switch-thumb"></span></span>
+                  <strong>Flag by spend cutoff</strong>
+                </button>
+                <span class="muted">(Optional)</span>
               </div>
-              <p class="muted health-slider-hint">
-                Default is 5 - the standard statistical threshold for moderate multicollinearity concern
-                (10 is usually where it's called severe). Shaded zone on the chart = above this line.
-                @if (vifFlaggedChannels().length > 0) {
-                  {{ vifFlaggedChannels().length }} channel{{ vifFlaggedChannels().length === 1 ? '' : 's' }} fall{{ vifFlaggedChannels().length === 1 ? 's' : '' }} in it:
-                  {{ displayChannelList(vifFlaggedChannels()) }} — click one to act on it.
-                } @else {
-                  Nothing falls above it right now.
-                }
-              </p>
+              @if (spendCutoffEnabled()) {
+                <div class="health-slider-row">
+                  <label class="health-slider-label" for="o-spend-cutoff">Flag channels below</label>
+                  <input id="o-spend-cutoff" type="range" min="0" [attr.max]="maxSpendPct()" step="0.5" [ngModel]="spendCutoffPct()" (ngModelChange)="setSpendCutoffPct($event)" />
+                  <span class="health-slider-value">{{ spendCutoffPct() | number: '1.1-1' }}%</span>
+                </div>
+                <p class="muted health-slider-hint">
+                  Default is half of an equal spend split across your channels - there's no statistical
+                  convention for this one, so adjust it to whatever "too small to trust" means for you.
+                  Shaded zone on the chart = below this line.
+                  @if (spendFlaggedChannels().length > 0) {
+                    {{ spendFlaggedChannels().length }} channel{{ spendFlaggedChannels().length === 1 ? '' : 's' }} fall{{ spendFlaggedChannels().length === 1 ? 's' : '' }} in it:
+                    {{ displayChannelList(spendFlaggedChannels()) }} — click one to act on it.
+                  } @else {
+                    Nothing falls below it right now.
+                  }
+                </p>
+              }
+
+              <div class="toggle-inline">
+                <button type="button" class="param-switch-row" (click)="vifCutoffEnabled.set(!vifCutoffEnabled())" [attr.aria-pressed]="vifCutoffEnabled()">
+                  <span class="switch" [class.on]="vifCutoffEnabled()"><span class="switch-thumb"></span></span>
+                  <strong>Flag by VIF cutoff</strong>
+                </button>
+                <span class="muted">(Optional)</span>
+              </div>
+              @if (vifCutoffEnabled()) {
+                <div class="health-slider-row">
+                  <label class="health-slider-label" for="o-vif-cutoff">Flag channels above</label>
+                  <input id="o-vif-cutoff" type="range" min="1" [attr.max]="maxVif()" step="0.5" [ngModel]="vifCutoffValue()" (ngModelChange)="vifCutoffValue.set($event)" />
+                  <span class="health-slider-value">{{ vifCutoffValue() | number: '1.1-1' }}</span>
+                </div>
+                <p class="muted health-slider-hint">
+                  Default is 5 - the standard statistical threshold for moderate multicollinearity concern
+                  (10 is usually where it's called severe). Shaded zone on the chart = above this line.
+                  @if (vifFlaggedChannels().length > 0) {
+                    {{ vifFlaggedChannels().length }} channel{{ vifFlaggedChannels().length === 1 ? '' : 's' }} fall{{ vifFlaggedChannels().length === 1 ? 's' : '' }} in it:
+                    {{ displayChannelList(vifFlaggedChannels()) }} — click one to act on it.
+                  } @else {
+                    Nothing falls above it right now.
+                  }
+                </p>
+              }
             }
           </div>
 
@@ -338,98 +353,110 @@
                 </button>
               }
 
-              <p class="muted correlation-note">
-                Or pick channels yourself —
-                <button type="button" class="link-btn-inline" (click)="toggleCombineForm()">open the combine form</button>.
-              </p>
+              <button
+                type="button"
+                class="link-btn-inline health-more-toggle"
+                (click)="toggleHealthMoreOptions()"
+                [attr.aria-expanded]="healthMoreOptionsOpen()"
+              >
+                {{ healthMoreOptionsOpen() ? 'Hide' : 'More' }} options
+                <span class="chevron" [class.open]="healthMoreOptionsOpen()" aria-hidden="true">⌄</span>
+              </button>
 
-              <p class="muted correlation-note">Select a different channel:</p>
-              <div class="health-dot-list">
-                @for (p of channelHealthPoints(); track p.name) {
-                  <button type="button" class="health-dot-chip" [class.selected]="p.name === selected.name" (click)="selectHealthChannel(p.name)">
-                    <span class="health-legend-dot" [class]="'health-point-' + p.status"></span>{{ displayChannelName(p.name) }}
-                  </button>
-                }
-              </div>
+              @if (healthMoreOptionsOpen()) {
+                <p class="muted correlation-note">
+                  Or pick channels yourself —
+                  <button type="button" class="link-btn-inline" (click)="toggleCombineForm()">open the combine form</button>.
+                </p>
 
-              <div class="health-footer-links">
-                <button type="button" class="link-btn-inline" [disabled]="isReadOnly()" (click)="combineEverythingFlagged()">Combine everything flagged</button>
-                <button type="button" class="link-btn-inline" [disabled]="isReadOnly()" (click)="removeEverythingFlagged()">Remove everything flagged</button>
-                <button type="button" class="link-btn-inline" [disabled]="autoCombining() || isReadOnly()" (click)="autoCombineChannels()">
-                  {{ autoCombining() ? 'Checking…' : 'Also check server-side for 90%+ correlated pairs' }}
-                </button>
-              </div>
-              @if (autoCombineError(); as err) {
-                <p class="drop-error">{{ err }}</p>
-              }
-              @if (autoCombineGroups(); as groups) {
-                @if (groups.length === 0) {
-                  <p class="muted auto-combine-note">Nothing's correlated enough to need combining.</p>
-                } @else {
-                  <div class="auto-combine-note auto-combine-note-success">
-                    <strong>Combined:</strong>
-                    @for (group of groups; track group.newColumnName) {
-                      <div>{{ group.sourceColumns.join(' + ') }} → {{ group.newColumnName }}</div>
-                    }
-                  </div>
-                }
-              }
-
-              @if (combineFormOpen()) {
-                <div class="field">
-                  <label class="label" for="o-column-type">Column type</label>
-                  <select id="o-column-type" class="select" disabled>
-                    <option>Media channel</option>
-                  </select>
-                </div>
-
-                <div class="field">
-                  <label class="label" for="o-combine-trigger">Select variables <span class="required">*</span></label>
-                  <div class="dropdown-select">
-                    <button
-                      id="o-combine-trigger"
-                      type="button"
-                      class="dropdown-trigger"
-                      (click)="toggleCombineDropdown()"
-                      [attr.aria-expanded]="combineDropdownOpen()"
-                    >
-                      <span class="dropdown-trigger-text" [class.placeholder]="selectedCombineChannels().length === 0">
-                        {{ combineDropdownLabel() }}
-                      </span>
-                      <span class="dropdown-chevron" [class.open]="combineDropdownOpen()" aria-hidden="true">⌄</span>
+                <p class="muted correlation-note">Select a different channel:</p>
+                <div class="health-dot-list">
+                  @for (p of channelHealthPoints(); track p.name) {
+                    <button type="button" class="health-dot-chip" [class.selected]="p.name === selected.name" (click)="selectHealthChannel(p.name)">
+                      <span class="health-legend-dot" [class]="'health-point-' + p.status"></span>{{ displayChannelName(p.name) }}
                     </button>
-
-                    @if (combineDropdownOpen()) {
-                      <div class="dropdown-panel">
-                        @for (ch of effectiveChannels(); track ch) {
-                          <label class="dropdown-option">
-                            <input type="checkbox" [checked]="selectedCombineChannels().includes(ch)" (change)="toggleCombineChannel(ch)" />
-                            {{ ch }}
-                          </label>
-                        }
-                      </div>
-                    }
-                  </div>
+                  }
                 </div>
 
-                <div class="field">
-                  <label class="label" for="o-new-field">New field name</label>
-                  <input
-                    id="o-new-field"
-                    class="input"
-                    [ngModel]="newFieldName()"
-                    (ngModelChange)="newFieldName.set($event)"
-                    placeholder="e.g. tv_combined_spend"
-                  />
+                <div class="health-footer-links">
+                  <button type="button" class="link-btn-inline" [disabled]="isReadOnly()" (click)="combineEverythingFlagged()">Combine everything flagged</button>
+                  <button type="button" class="link-btn-inline" [disabled]="isReadOnly()" (click)="removeEverythingFlagged()">Remove everything flagged</button>
+                  <button type="button" class="link-btn-inline" [disabled]="autoCombining() || isReadOnly()" (click)="autoCombineChannels()">
+                    {{ autoCombining() ? 'Checking…' : 'Also check server-side for 90%+ correlated pairs' }}
+                  </button>
                 </div>
-
-                @if (aggregateError(); as err) {
+                @if (autoCombineError(); as err) {
                   <p class="drop-error">{{ err }}</p>
                 }
+                @if (autoCombineGroups(); as groups) {
+                  @if (groups.length === 0) {
+                    <p class="muted auto-combine-note">Nothing's correlated enough to need combining.</p>
+                  } @else {
+                    <div class="auto-combine-note auto-combine-note-success">
+                      <strong>Combined:</strong>
+                      @for (group of groups; track group.newColumnName) {
+                        <div>{{ group.sourceColumns.join(' + ') }} → {{ group.newColumnName }}</div>
+                      }
+                    </div>
+                  }
+                }
 
-                <button class="btn btn-primary btn-sm side-panel-action" type="button" [disabled]="!canAggregate() || isReadOnly()" (click)="aggregateChannels()">
-                  {{ aggregating() ? 'Combining…' : 'Aggregate' }}
-                </button>
+                @if (combineFormOpen()) {
+                  <div class="field">
+                    <label class="label" for="o-column-type">Column type</label>
+                    <select id="o-column-type" class="select" disabled>
+                      <option>Media channel</option>
+                    </select>
+                  </div>
+
+                  <div class="field">
+                    <label class="label" for="o-combine-trigger">Select variables <span class="required">*</span></label>
+                    <div class="dropdown-select">
+                      <button
+                        id="o-combine-trigger"
+                        type="button"
+                        class="dropdown-trigger"
+                        (click)="toggleCombineDropdown()"
+                        [attr.aria-expanded]="combineDropdownOpen()"
+                      >
+                        <span class="dropdown-trigger-text" [class.placeholder]="selectedCombineChannels().length === 0">
+                          {{ combineDropdownLabel() }}
+                        </span>
+                        <span class="dropdown-chevron" [class.open]="combineDropdownOpen()" aria-hidden="true">⌄</span>
+                      </button>
+
+                      @if (combineDropdownOpen()) {
+                        <div class="dropdown-panel">
+                          @for (ch of effectiveChannels(); track ch) {
+                            <label class="dropdown-option">
+                              <input type="checkbox" [checked]="selectedCombineChannels().includes(ch)" (change)="toggleCombineChannel(ch)" />
+                              {{ ch }}
+                            </label>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="field">
+                    <label class="label" for="o-new-field">New field name</label>
+                    <input
+                      id="o-new-field"
+                      class="input"
+                      [ngModel]="newFieldName()"
+                      (ngModelChange)="newFieldName.set($event)"
+                      placeholder="e.g. tv_combined_spend"
+                    />
+                  </div>
+
+                  @if (aggregateError(); as err) {
+                    <p class="drop-error">{{ err }}</p>
+                  }
+
+                  <button class="btn btn-primary btn-sm side-panel-action" type="button" [disabled]="!canAggregate() || isReadOnly()" (click)="aggregateChannels()">
+                    {{ aggregating() ? 'Combining…' : 'Aggregate' }}
+                  </button>
+                }
               }
             </aside>
           }

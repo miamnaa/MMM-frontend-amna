@@ -675,6 +675,19 @@
   color: var(--brand-500);
 }
 
+.health-advanced-toggle,
+.health-more-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+.health-advanced-toggle .chevron,
+.health-more-toggle .chevron {
+  font-size: 11px;
+}
+
 /* Toast */
 
 .toast {
