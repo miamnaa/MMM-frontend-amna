@@ -361,43 +361,12 @@
 
 /* Channel Health - VIF x spend-share scatter with two optional cutoff sliders */
 
-.correlation-note {
-  margin: 14px 0 0;
-  font-size: 12px;
-  line-height: 1.55;
-}
-
-.health-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 20px;
-  align-items: start;
-  margin-top: 10px;
-}
-
-@media (max-width: 900px) {
-  .health-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.health-main-col,
-.health-side-col {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 0;
-}
-
-.health-subcard {
-  margin-bottom: 0;
-}
-
 .health-subcard-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  margin-top: 10px;
   margin-bottom: 4px;
 }
 
@@ -412,21 +381,6 @@
 .health-visibility-select .dropdown-trigger {
   width: auto;
   white-space: nowrap;
-}
-
-.health-count-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  margin-left: 6px;
-  border-radius: var(--r-full);
-  background: var(--brand-500);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
 }
 
 .health-chart-wrap {
@@ -488,6 +442,12 @@
   stroke-dasharray: 2 2;
 }
 
+/* Selected for combining - same real selection a table row checkbox toggles, so a click here and a checkbox there always agree. */
+.health-point-selected {
+  stroke: var(--brand-700);
+  stroke-width: 2.5;
+}
+
 .health-legend-dot-approx {
   border-radius: 50%;
   border: 1.5px dashed var(--text-muted);
@@ -500,12 +460,6 @@
   font-size: 10.5px;
   color: var(--text-muted);
   font-weight: 400;
-}
-
-.health-approx-hint {
-  margin: 8px 0 0;
-  font-size: 12px;
-  line-height: 1.5;
 }
 
 .health-legend {
@@ -575,37 +529,20 @@
   line-height: 1.5;
 }
 
-.health-diagnosis-box {
+/* Real channels currently flagged by either cutoff - the amber banner is the primary "do something about this" prompt, with Combine flagged channels right alongside it. */
+.health-flag-banner {
   display: flex;
-  gap: 10px;
-  padding: 12px 14px;
-  margin-bottom: 14px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 10px 14px;
+  margin-top: 14px;
   border: 1px solid color-mix(in srgb, #f5b942 45%, transparent);
   border-radius: var(--r-md);
   background: color-mix(in srgb, #f5b942 12%, var(--surface));
-}
-
-.health-diagnosis-icon {
-  flex: none;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.health-diagnosis {
-  margin: 0;
   font-size: 12.5px;
-  line-height: 1.55;
-  color: var(--text);
-}
-
-.health-footer-links {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
+  color: #6b4a09;
 }
 
 /* Channel Health - toggles shared between the chart card and elsewhere */
@@ -622,6 +559,10 @@
 }
 
 /* Channel Health - Channels table */
+
+.health-table-title {
+  margin-top: 18px;
+}
 
 .health-table-wrap {
   overflow-x: auto;
@@ -654,7 +595,15 @@
   border-bottom: none;
 }
 
-.health-table td:first-child {
+.health-table tr.health-row-selected {
+  background: var(--brand-50);
+}
+
+.health-table-check-col {
+  width: 20px;
+}
+
+.health-table td:nth-child(2) {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -690,21 +639,6 @@
   color: var(--text-muted);
 }
 
-.health-row-menu-trigger {
-  padding: 2px 6px;
-  border: none;
-  border-radius: var(--r-md);
-  background: none;
-  color: var(--text-muted);
-  font-size: 15px;
-  line-height: 1;
-}
-
-.health-row-menu-trigger:hover {
-  background: var(--gray-50);
-  color: var(--text);
-}
-
 .health-table-menu-col .health-row-menu {
   position: absolute;
   top: calc(100% + 2px);
@@ -736,93 +670,20 @@
   cursor: not-allowed;
 }
 
-.health-details-row td {
-  padding: 12px 10px 16px;
-  white-space: normal;
-  background: var(--gray-50);
+.health-row-menu-item-danger {
+  color: var(--red-600, #c0362c);
 }
 
-/* Channel Health - right column (Removed channels / Channel actions / Reset) */
-
-.health-removed-row {
+/* Real hidden channels + manual entry points - one compact row under the table instead of a separate side panel. */
+.health-table-footer {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding: 10px 0;
+  gap: 6px 16px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid var(--border);
-}
-
-.health-removed-row:first-of-type {
-  border-top: none;
-}
-
-.health-removed-name {
-  flex: 1;
-  min-width: 0;
   font-size: 12.5px;
-  font-weight: 600;
-}
-
-.health-action-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  background: var(--surface);
-  text-align: left;
-  transition: border-color 0.15s, background 0.15s;
-}
-
-.health-action-row:last-of-type {
-  margin-bottom: 12px;
-}
-
-.health-action-row:hover {
-  border-color: var(--border-strong);
-  background: var(--gray-50);
-}
-
-.health-action-row strong {
-  display: block;
-  font-size: 13px;
-}
-
-.health-action-desc {
-  display: block;
-  margin-top: 2px;
-  font-size: 12px;
-}
-
-.health-action-icon {
-  flex: none;
-  font-size: 15px;
-  line-height: 1.4;
-}
-
-.health-action-callout {
-  display: flex;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: var(--r-md);
-  background: var(--brand-50);
-}
-
-.health-action-callout-icon {
-  flex: none;
-  color: var(--brand-700);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.health-action-callout-body {
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.55;
-  color: var(--brand-700);
 }
 
 /* Exposure metrics */

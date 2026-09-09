@@ -574,14 +574,6 @@ export class Optimize implements OnInit {
     this.openHealthRowMenu.set(null);
   }
 
-  /** Expanding a row's "View details" shows the same real diagnosis + Remove/Combine actions the old side panel had, inline under that row instead of in a separate panel. */
-  readonly expandedHealthRow = signal<string | null>(null);
-  toggleHealthRowDetails(name: string): void {
-    this.expandedHealthRow.update((current) => (current === name ? null : name));
-    this.selectHealthChannel(name);
-    this.closeHealthRowMenu();
-  }
-
   /** Cutoff sliders stay real and adjustable, just tucked out of the primary view - collapsed by default. */
   readonly healthThresholdsOpen = signal(false);
   toggleHealthThresholds(): void {
@@ -730,38 +722,39 @@ export class Optimize implements OnInit {
   readonly vifFlaggedChannels = computed(() =>
     this.channelHealthPoints().filter((p) => p.vif !== null && p.vif > this.vifCutoffValue()).map((p) => p.name),
   );
+  /** Union of both real cutoffs, deduplicated - shared by the flagged-channels banner and both bulk actions below, so they can never disagree on what's actually flagged. */
+  readonly flaggedChannelNames = computed(() =>
+    Array.from(new Set([...this.spendFlaggedChannels(), ...this.vifFlaggedChannels()])),
+  );
 
-  readonly selectedHealthChannelName = signal<string | null>(null);
-
-  /** Falls back to the worst-flagged real channel (both issues, then one issue, then just the first) so the action panel isn't empty before anyone's clicked a point. */
-  readonly effectiveSelectedHealthChannel = computed(() => {
-    const points = this.channelHealthPoints();
-    if (points.length === 0) return null;
-    const explicit = points.find((p) => p.name === this.selectedHealthChannelName());
-    if (explicit) return explicit;
-    return points.find((p) => p.status === 'both') ?? points.find((p) => p.status === 'one') ?? points[0];
-  });
-
-  selectHealthChannel(name: string): void {
-    this.selectedHealthChannelName.set(name);
+  /**
+   * Selection now lives entirely in selectedCombineChannels (used for the
+   * real combine form below) - a chart-point click and a table checkbox
+   * both toggle membership in the exact same set, so there's one real
+   * selection mechanism instead of two that could disagree.
+   */
+  isChannelSelected(name: string): boolean {
+    return this.selectedCombineChannels().includes(name);
   }
 
-  /** Real most-correlated other channel - read directly off the selected channel's own real channel-health row (mostCorrelatedWith), already computed server-side from the actual uploaded data. No separate calculation needed here. */
-  readonly healthChannelSuggestedPartner = computed<string | null>(() => this.effectiveSelectedHealthChannel()?.mostCorrelatedWith ?? null);
+  /** Real most-correlated other channel for this specific row - read directly off its own channel-health data (mostCorrelatedWith), already computed server-side. No "currently selected channel" concept needed - every row can look up its own suggestion independently. */
+  suggestedPartnerFor(name: string): string | null {
+    return this.channelHealthPoints().find((p) => p.name === name)?.mostCorrelatedWith ?? null;
+  }
 
   /** Pre-fills the existing real combine form (same combineColumns/combineChannels calls below) rather than combining immediately - Aggregate still needs an explicit click, same as picking channels manually always has. */
-  combineSelectedWithSuggested(): void {
-    const selected = this.effectiveSelectedHealthChannel();
-    const partner = this.healthChannelSuggestedPartner();
-    if (!selected || !partner) return;
-    this.selectedCombineChannels.set([selected.name, partner]);
-    this.newFieldName.set(`${selected.name}_${partner}_combined`.toLowerCase().replace(/[^a-z0-9]+/g, '_'));
+  combineChannelWithSuggested(name: string): void {
+    const partner = this.suggestedPartnerFor(name);
+    if (!partner) return;
+    this.selectedCombineChannels.set([name, partner]);
+    this.newFieldName.set(`${name}_${partner}_combined`.toLowerCase().replace(/[^a-z0-9]+/g, '_'));
     this.combineFormOpen.set(true);
     this.combineDropdownOpen.set(false);
+    this.closeHealthRowMenu();
   }
 
   combineEverythingFlagged(): void {
-    const flagged = Array.from(new Set([...this.spendFlaggedChannels(), ...this.vifFlaggedChannels()]));
+    const flagged = this.flaggedChannelNames();
     if (flagged.length < 2) return;
     this.selectedCombineChannels.set(flagged);
     this.newFieldName.set('combined_flagged_channels');
@@ -770,9 +763,7 @@ export class Optimize implements OnInit {
   }
 
   removeEverythingFlagged(): void {
-    const flagged = new Set([...this.spendFlaggedChannels(), ...this.vifFlaggedChannels()]);
-    flagged.forEach((name) => this.removeVariable(name));
-    this.selectedHealthChannelName.set(null);
+    this.flaggedChannelNames().forEach((name) => this.removeVariable(name));
   }
 
   /** "Or pick channels yourself" - the existing real combine form (Column type/Select variables/New field name/Aggregate), tucked behind a toggle instead of always visible. */
