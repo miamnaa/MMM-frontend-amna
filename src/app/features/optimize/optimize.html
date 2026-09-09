@@ -196,7 +196,9 @@
           <div class="dropdown-select health-visibility-select">
             <button type="button" class="dropdown-trigger" (click)="toggleShowHideDropdown()" [attr.aria-expanded]="showHideDropdownOpen()">
               <span class="dropdown-trigger-text">Show / Hide channels</span>
-              <span class="dropdown-chevron" [class.open]="showHideDropdownOpen()" aria-hidden="true">⌄</span>
+              <svg class="dropdown-chevron" [class.open]="showHideDropdownOpen()" aria-hidden="true" viewBox="0 0 12 12" width="12" height="12">
+                <path d="M2.5 4.5L6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
             </button>
             @if (showHideDropdownOpen()) {
               <div class="dropdown-panel">
@@ -480,7 +482,9 @@
                 <span class="dropdown-trigger-text" [class.placeholder]="selectedCombineChannels().length === 0">
                   {{ combineDropdownLabel() }}
                 </span>
-                <span class="dropdown-chevron" [class.open]="combineDropdownOpen()" aria-hidden="true">⌄</span>
+                <svg class="dropdown-chevron" [class.open]="combineDropdownOpen()" aria-hidden="true" viewBox="0 0 12 12" width="12" height="12">
+                  <path d="M2.5 4.5L6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
               </button>
 
               @if (combineDropdownOpen()) {

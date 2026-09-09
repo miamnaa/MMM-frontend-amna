@@ -880,6 +880,7 @@
 
 .dropdown-chevron {
   flex: none;
+  display: block;
   color: var(--text-muted);
   transition: transform 0.15s;
 }
