@@ -49,25 +49,6 @@
     </div>
   }
 
-  @if (warningFlags().length > 0) {
-    <div class="quality-card quality-card-warning">
-      <h2 class="quality-title">Worth a look</h2>
-      <p class="muted field-hint">These aren't blocking — you can proceed with them left as-is.</p>
-      @for (flag of warningFlags(); track flag.message) {
-        <div class="quality-row">
-          <span class="quality-icon" aria-hidden="true">⚠</span>
-          <div>
-            <p class="quality-message">{{ flag.message }}</p>
-            @if (flag.columnsInvolved.length > 0) {
-              <p class="quality-columns">{{ flag.columnsInvolved.join(', ') }}</p>
-            }
-          </div>
-          <button class="btn btn-ghost btn-sm icon-btn" type="button" (click)="dismissWarning(flag.message)" aria-label="Dismiss">✕</button>
-        </div>
-      }
-    </div>
-  }
-
   @if (dataset(); as ds) {
     @if (columnsUnavailable() && columnsNotice()) {
       <div class="notice">{{ columnsNotice() }}</div>

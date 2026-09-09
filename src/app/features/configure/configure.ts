@@ -77,20 +77,19 @@ export class Configure implements OnInit {
    */
   readonly dataQualityFlags = signal<DataQualityFlag[]>([]);
   readonly dataQualityLoading = signal(false);
-  private readonly dismissedWarnings = signal<Set<string>>(new Set());
 
-  readonly errorFlags = computed(() => this.dataQualityFlags().filter((f) => f.severity === 'error'));
-  readonly warningFlags = computed(() =>
-    this.dataQualityFlags()
-      .filter((f) => f.severity === 'warning')
-      .filter((f) => !this.dismissedWarnings().has(f.message)),
-  );
-  /** A real blocker - nothing past Configure should be reachable while a real data error still exists. */
+  /**
+   * Every real data-quality flag is treated as a blocker, regardless of
+   * the backend's own severity field - explicit product decision: a
+   * dismissible "warning" invited leaving a real problem in the uploaded
+   * file (a repeated date, etc.) unfixed, when every one of these is a
+   * real issue that will surface again at Train either way. No more
+   * dismiss, no separate "worth a look" tier - every flag blocks Save
+   * until the source file is actually fixed and re-uploaded.
+   */
+  readonly errorFlags = computed(() => this.dataQualityFlags());
+  /** A real blocker - nothing past Configure should be reachable while a real data flag still exists. */
   readonly hasBlockingErrors = computed(() => this.errorFlags().length > 0);
-
-  dismissWarning(message: string): void {
-    this.dismissedWarnings.update((set) => new Set(set).add(message));
-  }
 
   private loadDataQuality(): void {
     this.dataQualityLoading.set(true);
