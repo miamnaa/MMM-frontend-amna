@@ -251,9 +251,9 @@
           @if (hoveredHealthPoint(); as t) {
             <div class="chart-tooltip" [style.left.%]="t.xPct" [style.top.%]="t.yPct">
               <strong>{{ t.name }}</strong>
-              <div>Spend share: <strong>{{ t.spendPct }}%</strong></div>
+              <div>Spend share: <strong>{{ t.spendPct | number: '1.2-2' }}%</strong></div>
               <div>
-                VIF: <strong>{{ t.vif === null ? 'not enough data to tell' : t.vif }}</strong>
+                VIF: <strong>{{ t.vif === null ? 'not enough data to tell' : (t.vif | number: '1.2-2') }}</strong>
                 @if (t.vifIsApproximate) {
                   <span class="health-approx-note">(approximate — estimated from a regularized fit, two other channels are exactly collinear)</span>
                 }
