@@ -23,7 +23,6 @@ export class Sidebar {
   readonly primary: NavItem[] = [
     { label: 'Models', path: '/models', icon: '▤' },
     { label: 'Experiments', path: '/experiments', icon: '▷' },
-    { label: 'Model Studio', path: '/model-studio', icon: '⚙' },
   ];
 
   readonly analysis: NavItem[] = [
