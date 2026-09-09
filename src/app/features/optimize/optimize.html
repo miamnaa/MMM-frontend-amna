@@ -391,8 +391,8 @@
                     <span class="health-legend-dot" [class]="'health-point-' + p.status"></span>
                     {{ displayChannelName(p.name) }}
                   </td>
-                  <td>{{ p.spendPct }}%</td>
-                  <td>{{ p.vif === null ? '—' : p.vif }}{{ p.vif !== null && p.vifIsApproximate ? ' ~' : '' }}</td>
+                  <td>{{ p.spendPct | number: '1.2-2' }}%</td>
+                  <td>{{ p.vif === null ? '—' : (p.vif | number: '1.2-2') }}{{ p.vif !== null && p.vifIsApproximate ? ' ~' : '' }}</td>
                   <td><span class="health-status-badge" [class]="'health-status-' + p.status">{{ statusLabel(p) }}</span></td>
                   <td class="health-table-menu-col">
                     <button type="button" class="link-btn-inline" (click)="toggleHealthRowMenu(p.name)" [attr.aria-expanded]="openHealthRowMenu() === p.name">Edit</button>
