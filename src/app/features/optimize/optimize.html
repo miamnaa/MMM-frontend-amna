@@ -504,23 +504,38 @@
     <div class="modal-backdrop">
       <div class="fork-card" role="dialog" aria-modal="true" aria-labelledby="finish-modal-title">
         <h2 class="fork-title" id="finish-modal-title">Your training range is saved. What's next?</h2>
-        <p class="fork-subtitle">
-          Calibration and Hyperparameters are both optional — this model can go straight to Ready
-          without touching either one. It's your call whether to fine-tune them first.
-        </p>
+        @if (modelType() === 'pymc') {
+          <p class="fork-subtitle">
+            Hyperparameters are optional — this model can go straight to Ready without touching it.
+            It's your call whether to fine-tune it first.
+          </p>
+        } @else {
+          <p class="fork-subtitle">
+            Calibration and Hyperparameters are both optional — this model can go straight to Ready
+            without touching either one. It's your call whether to fine-tune them first.
+          </p>
+        }
 
         <div class="fork-options">
           <button type="button" class="fork-option" (click)="customizeModel()">
             <span class="fork-option-icon" aria-hidden="true">⚙</span>
             <span class="fork-option-title">Set them myself</span>
-            <span class="fork-option-desc">Walk through Calibration and Hyperparameters and choose every value by hand.</span>
+            @if (modelType() === 'pymc') {
+              <span class="fork-option-desc">Walk through Hyperparameters and choose every value by hand.</span>
+            } @else {
+              <span class="fork-option-desc">Walk through Calibration and Hyperparameters and choose every value by hand.</span>
+            }
             <span class="fork-option-cta">Customize model →</span>
           </button>
 
           <button type="button" class="fork-option" (click)="finishSetup()">
             <span class="fork-option-icon" aria-hidden="true">⚡</span>
             <span class="fork-option-title">Skip for now</span>
-            <span class="fork-option-desc">Leave both unset — the real modeling engine applies its own defaults. You can always come back and fine-tune them later.</span>
+            @if (modelType() === 'pymc') {
+              <span class="fork-option-desc">Leave it unset — the real modeling engine applies its own defaults. You can always come back and fine-tune it later.</span>
+            } @else {
+              <span class="fork-option-desc">Leave both unset — the real modeling engine applies its own defaults. You can always come back and fine-tune them later.</span>
+            }
             <span class="fork-option-cta">Finish setup →</span>
           </button>
         </div>
