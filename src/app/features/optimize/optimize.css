@@ -394,13 +394,16 @@
 .health-svg {
   display: block;
   width: 100%;
-  /* Matches the 560x300 viewBox exactly so the rendered chart always fills
+  /* Matches the 900x300 viewBox exactly so the rendered chart always fills
      its box edge-to-edge with no preserveAspectRatio letterboxing - the
      tooltip's xPct/yPct (plain fractions of the viewBox) would otherwise
-     drift away from the real point once the container gets wider than a
-     560:300 ratio, since "meet" then scales+centers the content into a
-     smaller area than the full box the percentages assume. */
-  aspect-ratio: 560 / 300;
+     drift away from the real point once the container's own ratio differs,
+     since "meet" then scales+centers the content into a smaller area than
+     the full box the percentages assume. 900:300 was picked (over the
+     y-axis's actual 560:300) to keep the rendered height close to the
+     original fixed 300px at this page's real content width, instead of
+     ballooning past 700px tall the way a 560:300 lock would. */
+  aspect-ratio: 900 / 300;
 }
 
 .health-zone {

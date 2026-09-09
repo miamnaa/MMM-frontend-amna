@@ -24,7 +24,7 @@ const CHART_X_TICKS = 8;
 const SERIES_COLORS = ['#e0554f', '#1baf7a', '#3b82f6', '#f59e0b', '#8b5cf6', '#0891b2'];
 
 // ---- Channel Health scatter geometry ----
-const HEALTH_W = 560;
+const HEALTH_W = 900;
 const HEALTH_H = 300;
 const HEALTH_PAD = { top: 20, right: 30, bottom: 46, left: 50 };
 
