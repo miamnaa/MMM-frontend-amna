@@ -581,11 +581,27 @@ export class Optimize implements OnInit {
   readonly removingChannels = signal(false);
   readonly removeChannelError = signal<string | null>(null);
 
-  private saveRealMediaColumns(updatedMediaColumns: string[], onDone: () => void): void {
+  /**
+   * The one real removal that can still be undone with a single click -
+   * cleared as soon as a different remove/undo is made or a fresh removal
+   * replaces it. Undo is real (another saveConfiguration PATCH putting the
+   * channel back into mediaColumns), not a client-side-only toggle - so it
+   * still can't rewrite a training run that already happened between the
+   * remove and the undo.
+   */
+  readonly lastRemoval = signal<{ previousMediaColumns: string[]; removedNames: string[] } | null>(null);
+  readonly undoingRemoval = signal(false);
+
+  private saveRealMediaColumns(
+    updatedMediaColumns: string[],
+    onDone: () => void,
+    opts?: { removalSnapshot?: { previousMediaColumns: string[]; removedNames: string[] }; onError?: () => void },
+  ): void {
     const currentConfig = this.tunnelService.configuration();
     if (!currentConfig) return;
     if (updatedMediaColumns.length === 0) {
       this.removeChannelError.set('Cannot remove the last real media channel - at least one is required.');
+      opts?.onError?.();
       return;
     }
 
@@ -603,6 +619,7 @@ export class Optimize implements OnInit {
         if (!detail.kpiType) {
           this.removingChannels.set(false);
           this.removeChannelError.set('Could not remove this channel - this dataset has no KPI type set yet. Revisit Configure first.');
+          opts?.onError?.();
           return;
         }
 
@@ -620,31 +637,49 @@ export class Optimize implements OnInit {
             // re-fetch both, same as after a real combine.
             this.loadChannelHealth();
             this.loadExposureMetrics();
+            this.lastRemoval.set(opts?.removalSnapshot ?? null);
             onDone();
           },
           error: (err: unknown) => {
             this.removingChannels.set(false);
             this.removeChannelError.set(backendErrorMessage(err, 'Could not remove this channel. Try again.'));
+            opts?.onError?.();
           },
         });
       },
       error: (err: unknown) => {
         this.removingChannels.set(false);
         this.removeChannelError.set(backendErrorMessage(err, 'Could not remove this channel. Try again.'));
+        opts?.onError?.();
       },
     });
   }
 
   removeChannelForReal(name: string): void {
-    const updated = this.mediaChannels().filter((c) => c !== name);
-    this.saveRealMediaColumns(updated, () => this.closeHealthRowMenu());
+    const previousMediaColumns = this.mediaChannels();
+    const updated = previousMediaColumns.filter((c) => c !== name);
+    this.saveRealMediaColumns(updated, () => this.closeHealthRowMenu(), {
+      removalSnapshot: { previousMediaColumns, removedNames: [name] },
+    });
   }
 
   removeFlaggedChannelsForReal(): void {
     const flagged = new Set(this.flaggedChannelNames());
     if (flagged.size === 0) return;
-    const updated = this.mediaChannels().filter((c) => !flagged.has(c));
-    this.saveRealMediaColumns(updated, () => {});
+    const previousMediaColumns = this.mediaChannels();
+    const updated = previousMediaColumns.filter((c) => !flagged.has(c));
+    this.saveRealMediaColumns(updated, () => {}, {
+      removalSnapshot: { previousMediaColumns, removedNames: previousMediaColumns.filter((c) => flagged.has(c)) },
+    });
+  }
+
+  undoLastRemoval(): void {
+    const snapshot = this.lastRemoval();
+    if (!snapshot || this.removingChannels()) return;
+    this.undoingRemoval.set(true);
+    this.saveRealMediaColumns(snapshot.previousMediaColumns, () => this.undoingRemoval.set(false), {
+      onError: () => this.undoingRemoval.set(false),
+    });
   }
 
   readonly showHideDropdownOpen = signal(false);

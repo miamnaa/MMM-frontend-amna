@@ -353,6 +353,17 @@
         @if (removeChannelError(); as err) {
           <p class="drop-error">{{ err }}</p>
         }
+        @if (lastRemoval(); as removal) {
+          <div class="health-undo-banner">
+            <span>
+              {{ removal.removedNames.length }} channel{{ removal.removedNames.length === 1 ? '' : 's' }} removed:
+              {{ displayChannelList(removal.removedNames) }}
+            </span>
+            <button type="button" class="link-btn-inline" [disabled]="isReadOnly() || removingChannels()" (click)="undoLastRemoval()">
+              {{ undoingRemoval() ? 'Undoing…' : 'Undo' }}
+            </button>
+          </div>
+        }
 
         <h3 class="side-panel-title health-table-title">Channels</h3>
         @if (!hasChannelHealthData()) {
