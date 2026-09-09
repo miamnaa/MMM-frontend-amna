@@ -166,6 +166,40 @@ export class ModelPerformanceLab {
     return this.results()?.saturation_curves ?? [];
   }
 
+  /**
+   * Real bug, fixed: `adstock_decay_curves` and `saturation_curves` are two
+   * separate real arrays from the backend, with no guarantee they list
+   * channels in the same order as each other - assigning color by each
+   * array's own index (seriesColor(i)) meant the same channel could get a
+   * different color in each chart, and the two legends could disagree
+   * with each other too. One real, stable channel->color map instead,
+   * built from the canonical real media column order
+   * (data_used.media_columns) - colour follows the entity, never its rank
+   * in whichever array happened to list it, matching the palette's own
+   * documented rule. Both charts, and both legends, read color from this
+   * same map.
+   */
+  private readonly channelColorMap = computed(() => {
+    const canonical = this.hasRealChartData()
+      ? this.results()?.data_used?.media_columns ?? []
+      : FALLBACK_CHANNELS.map((c) => c.name);
+    const map = new Map<string, string>();
+    canonical.forEach((name, i) => map.set(name, seriesColor(i)));
+    return map;
+  });
+
+  private colorForChannel(name: string): string {
+    return this.channelColorMap().get(name) ?? seriesColor(0);
+  }
+
+  /** One shared legend (same channels, same order, same color) for both the decay and saturation charts - reading straight off the same canonical color map instead of each chart's own series list, so the two legends can never disagree with each other. */
+  readonly sharedChannelLegend = computed(() => {
+    const canonical = this.hasRealChartData()
+      ? this.results()?.data_used?.media_columns ?? []
+      : FALLBACK_CHANNELS.map((c) => c.name);
+    return canonical.map((name) => ({ name, color: this.colorForChannel(name) }));
+  });
+
   // ---- Decay chart ("How long effects last") ----
   protected readonly decayViewBox = `0 0 ${DECAY_W} ${DECAY_H}`;
   protected readonly decayPad = DECAY_PAD;
@@ -196,7 +230,7 @@ export class ModelPerformanceLab {
           y: this.decayY(p.effect_remaining_percent),
           title: `${ch.channel}: week ${p.weeks_since_spend}, ${Math.round(p.effect_remaining_percent)}% effect remaining`,
         }));
-        return { name: ch.channel, color: seriesColor(i), points: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '), pts };
+        return { name: ch.channel, color: this.colorForChannel(ch.channel), points: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '), pts };
       });
     }
     return FALLBACK_CHANNELS.map((ch, i) => {
@@ -204,7 +238,7 @@ export class ModelPerformanceLab {
         const percent = 100 * Math.pow(ch.theta, week);
         return { x: this.decayX(week), y: this.decayY(percent), title: `${ch.name}: week ${week}, ${Math.round(percent)}% effect remaining` };
       });
-      return { name: ch.name, color: seriesColor(i), points: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '), pts };
+      return { name: ch.name, color: this.colorForChannel(ch.name), points: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '), pts };
     });
   });
 
@@ -258,7 +292,7 @@ export class ModelPerformanceLab {
           y: this.satY(p.effect, maxEffect),
           title: `${ch.channel}: $${Math.round(p.spend_level).toLocaleString()} weekly spend, ${p.effect.toFixed(2)} modeled effect`,
         }));
-        return { name: ch.channel, color: seriesColor(i), points: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '), pts };
+        return { name: ch.channel, color: this.colorForChannel(ch.channel), points: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '), pts };
       });
     }
 
@@ -268,7 +302,7 @@ export class ModelPerformanceLab {
         const effect = fallbackSaturationEffect(spend, ch.gamma);
         return { x: this.satX(spend, maxSpend), y: this.satY(effect, maxEffect), title: `${ch.name}: modeled effect ${effect.toFixed(1)}` };
       });
-      return { name: ch.name, color: seriesColor(i), points: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '), pts };
+      return { name: ch.name, color: this.colorForChannel(ch.name), points: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '), pts };
     });
   });
 

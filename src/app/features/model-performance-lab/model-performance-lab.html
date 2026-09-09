@@ -59,13 +59,14 @@
       <p class="chart-subtitle">A sale today from a TV ad two weeks ago still counts. This shows how fast that fades.</p>
 
       <div class="legend">
-        @for (s of decaySeries(); track s.name) {
+        @for (s of sharedChannelLegend(); track s.name) {
           <span class="legend-item"><span class="legend-dash" [style.background]="s.color"></span>{{ s.name }}</span>
         }
       </div>
 
       <svg [attr.viewBox]="decayViewBox" class="chart-svg" role="img" aria-label="How each channel's effect fades over time">
         @for (t of decayYTicks; track t.value) {
+          <line [attr.x1]="decayPad.left" [attr.x2]="480 - decayPad.right" [attr.y1]="t.y" [attr.y2]="t.y" class="chart-gridline" />
           <text [attr.x]="decayPad.left - 8" [attr.y]="t.y + 3" text-anchor="end" class="tick">{{ t.value }}%</text>
         }
         <text [attr.x]="12" [attr.y]="(decayPlotBottom + decayPad.top) / 2" text-anchor="middle" class="axis-caption" [attr.transform]="'rotate(-90 12 ' + (decayPlotBottom + decayPad.top) / 2 + ')'">Effect remaining (%)</text>
@@ -91,7 +92,7 @@
       <p class="chart-subtitle">As spend rises, the extra return eventually flattens out — this shows roughly where.</p>
 
       <div class="legend">
-        @for (s of saturationSeries(); track s.name) {
+        @for (s of sharedChannelLegend(); track s.name) {
           <span class="legend-item"><span class="legend-dash" [style.background]="s.color"></span>{{ s.name }}</span>
         }
       </div>

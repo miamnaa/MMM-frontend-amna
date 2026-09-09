@@ -128,6 +128,11 @@
   stroke-width: 1;
 }
 
+.chart-gridline {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
 .tick {
   fill: var(--text-muted);
   font-size: 10.5px;
