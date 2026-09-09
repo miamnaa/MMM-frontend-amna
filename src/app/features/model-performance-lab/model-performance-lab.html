@@ -53,13 +53,14 @@
     </p>
   }
 
-  <div class="legend chart-shared-legend">
-    @for (s of sharedChannelLegend(); track s.name) {
-      <span class="legend-item"><span class="legend-dash" [style.background]="s.color"></span>{{ s.name }}</span>
-    }
-  </div>
+  <div class="chart-group">
+    <div class="legend chart-shared-legend">
+      @for (s of sharedChannelLegend(); track s.name) {
+        <span class="legend-item"><span class="legend-dash" [style.background]="s.color"></span>{{ s.name }}</span>
+      }
+    </div>
 
-  <div class="chart-row">
+    <div class="chart-row">
     <section class="chart-card">
       <h2 class="chart-title">How long effects last</h2>
       <p class="chart-subtitle">A sale today from a TV ad two weeks ago still counts. This shows how fast that fades.</p>
@@ -109,6 +110,7 @@
         }
       </svg>
     </section>
+    </div>
   </div>
 
   <section class="chart-card scatter-card">

@@ -85,12 +85,30 @@
 /* ---------- Charts ---------- */
 
 /* One shared legend covering both charts below it - not a separate legend per chart, since it's the same channels/colors either way. */
+/* One outer box holding the shared legend and both charts together, instead of three separate bordered boxes. */
+.chart-group {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
 .chart-shared-legend {
   justify-content: center;
   padding: 14px 18px;
-  margin-bottom: 16px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.chart-group .chart-card {
+  border: none;
+  border-radius: 0;
+}
+
+.chart-group .chart-card:first-child {
+  border-right: 1px solid var(--border);
+}
+
+.chart-group .chart-row {
+  gap: 0;
 }
 
 .chart-row {
@@ -225,5 +243,9 @@
   }
   .chart-row {
     grid-template-columns: 1fr;
+  }
+  .chart-group .chart-card:first-child {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
   }
 }
