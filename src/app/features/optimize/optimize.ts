@@ -592,16 +592,41 @@ export class Optimize implements OnInit {
     this.removingChannels.set(true);
     this.removeChannelError.set(null);
 
-    const body: SavedConfiguration = { ...currentConfig, mediaColumns: updatedMediaColumns };
-    this.datasetService.saveConfiguration(this.datasetId(), body).subscribe({
-      next: () => {
-        this.removingChannels.set(false);
-        this.tunnelService.setConfiguration(body);
-        // Real spend-share/VIF numbers shift once a channel is really gone -
-        // re-fetch both, same as after a real combine.
-        this.loadChannelHealth();
-        this.loadExposureMetrics();
-        onDone();
+    // tunnelService.configuration().kpiType can be stale or never-real when
+    // this session was resumed from the Models list rather than freshly
+    // saved through Configure (see ApiProjectDataset.columnMapping's own
+    // doc comment). GET /datasets/:id is the one place kpiType is a
+    // verified, reliable sibling field, so fetch it fresh right before
+    // building the PATCH body instead of trusting what's already in memory.
+    this.datasetService.getDataset(this.datasetId()).subscribe({
+      next: (detail) => {
+        if (!detail.kpiType) {
+          this.removingChannels.set(false);
+          this.removeChannelError.set('Could not remove this channel - this dataset has no KPI type set yet. Revisit Configure first.');
+          return;
+        }
+
+        const body: SavedConfiguration = {
+          ...currentConfig,
+          kpiType: detail.kpiType,
+          revenuePerKpiValue: detail.revenuePerKpiValue,
+          mediaColumns: updatedMediaColumns,
+        };
+        this.datasetService.saveConfiguration(this.datasetId(), body).subscribe({
+          next: () => {
+            this.removingChannels.set(false);
+            this.tunnelService.setConfiguration(body);
+            // Real spend-share/VIF numbers shift once a channel is really gone -
+            // re-fetch both, same as after a real combine.
+            this.loadChannelHealth();
+            this.loadExposureMetrics();
+            onDone();
+          },
+          error: (err: unknown) => {
+            this.removingChannels.set(false);
+            this.removeChannelError.set(backendErrorMessage(err, 'Could not remove this channel. Try again.'));
+          },
+        });
       },
       error: (err: unknown) => {
         this.removingChannels.set(false);
