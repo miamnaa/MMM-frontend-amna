@@ -625,12 +625,6 @@ export class Optimize implements OnInit {
     this.healthPanelClosed.set(true);
   }
 
-  /** Collapsed by default - the manual channel picker and the two bulk "everything flagged" actions are real, but stacking them under the two primary actions (Remove/Combine) made the panel read as far more complex than "here's the one suggested fix" it's meant to be. Resets whenever a different channel is selected, so it doesn't stay open showing stale channel-picker context. */
-  readonly healthMoreOptionsOpen = signal(false);
-  toggleHealthMoreOptions(): void {
-    this.healthMoreOptionsOpen.update((open) => !open);
-  }
-
   /** Points are also labeled on hover with exact figures - the always-on labels above give the name and rough position, the tooltip gives the real spend %/VIF numbers behind it. */
   readonly hoveredHealthPoint = signal<{ xPct: number; yPct: number; name: string; spendPct: number; vif: number | null; vifIsApproximate: boolean } | null>(null);
 
@@ -648,23 +642,6 @@ export class Optimize implements OnInit {
   hideHealthTooltip(): void {
     this.hoveredHealthPoint.set(null);
   }
-
-  /** Collapsed by default - the two cutoff sliders and their explanations are real controls, but showing them open by default made this section read as far more complex than the chart + legend it's actually built around. */
-  readonly advancedFiltersOpen = signal(false);
-  toggleAdvancedFilters(): void {
-    this.advancedFiltersOpen.update((open) => !open);
-  }
-
-  /** One-line summary shown in place of the sliders while they're collapsed, so the current real thresholds stay visible even when not being adjusted. */
-  readonly healthFlagSummary = computed(() => {
-    const spendOn = this.spendCutoffEnabled();
-    const vifOn = this.vifCutoffEnabled();
-    if (!spendOn && !vifOn) return 'Not flagging by spend or redundancy right now - both cutoffs are off.';
-    const parts: string[] = [];
-    if (spendOn) parts.push(`under ${this.spendCutoffPct().toFixed(1)}% spend`);
-    if (vifOn) parts.push(`above ${this.vifCutoffValue().toFixed(1)} VIF`);
-    return `Flagging channels ${parts.join(' or ')}.`;
-  });
 
   readonly spendCutoffEnabled = signal(true);
   /** Real default, not a guess - see defaultSpendCutoffPct(). Overwritten once real channel data loads, unless the user has already touched the slider. */
@@ -699,7 +676,6 @@ export class Optimize implements OnInit {
   selectHealthChannel(name: string): void {
     this.selectedHealthChannelName.set(name);
     this.healthPanelClosed.set(false);
-    this.healthMoreOptionsOpen.set(false);
   }
 
   /** Real most-correlated other channel - read directly off the selected channel's own real channel-health row (mostCorrelatedWith), already computed server-side from the actual uploaded data. No separate calculation needed here. */
