@@ -137,7 +137,7 @@
 .axis-caption {
   fill: var(--text-muted);
   font-size: 11px;
-  font-weight: 400;
+  font-weight: 700;
 }
 
 .legend {
@@ -196,7 +196,7 @@
   align-items: center;
   gap: 7px;
   font-size: 13px;
-  font-weight: 400;
+  font-weight: 700;
   color: var(--text-muted);
 }
 
