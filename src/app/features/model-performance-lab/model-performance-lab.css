@@ -84,6 +84,14 @@
 
 /* ---------- Charts ---------- */
 
+/* One shared legend covering both charts below it - not a separate legend per chart, since it's the same channels/colors either way. */
+.chart-shared-legend {
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
 .chart-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

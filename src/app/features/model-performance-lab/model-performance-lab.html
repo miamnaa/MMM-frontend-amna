@@ -53,16 +53,16 @@
     </p>
   }
 
+  <div class="legend chart-shared-legend">
+    @for (s of sharedChannelLegend(); track s.name) {
+      <span class="legend-item"><span class="legend-dash" [style.background]="s.color"></span>{{ s.name }}</span>
+    }
+  </div>
+
   <div class="chart-row">
     <section class="chart-card">
       <h2 class="chart-title">How long effects last</h2>
       <p class="chart-subtitle">A sale today from a TV ad two weeks ago still counts. This shows how fast that fades.</p>
-
-      <div class="legend">
-        @for (s of sharedChannelLegend(); track s.name) {
-          <span class="legend-item"><span class="legend-dash" [style.background]="s.color"></span>{{ s.name }}</span>
-        }
-      </div>
 
       <svg [attr.viewBox]="decayViewBox" class="chart-svg" role="img" aria-label="How each channel's effect fades over time">
         @for (t of decayYTicks; track t.value) {
@@ -90,12 +90,6 @@
     <section class="chart-card">
       <h2 class="chart-title">Room left to grow</h2>
       <p class="chart-subtitle">As spend rises, the extra return eventually flattens out — this shows roughly where.</p>
-
-      <div class="legend">
-        @for (s of sharedChannelLegend(); track s.name) {
-          <span class="legend-item"><span class="legend-dash" [style.background]="s.color"></span>{{ s.name }}</span>
-        }
-      </div>
 
       <svg [attr.viewBox]="satViewBox" class="chart-svg" role="img" aria-label="Saturation curve per channel">
         <line [attr.x1]="satPad.left" [attr.x2]="satPad.left" [attr.y1]="satPad.top" [attr.y2]="satPlotBottom" class="axis-line" />
