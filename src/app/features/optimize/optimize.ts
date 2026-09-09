@@ -490,7 +490,7 @@ export class Optimize implements OnInit {
    * below) - re-flagging on a slider drag re-classifies these same real
    * numbers instantly, without a network round-trip.
    */
-  private readonly removedVariables = signal<Set<string>>(new Set());
+  readonly removedVariables = signal<Set<string>>(new Set());
   readonly channelHealthData = signal<ChannelHealthApiRow[]>([]);
   readonly channelHealthLoading = signal(false);
   readonly channelHealthError = signal<string | null>(null);
@@ -534,6 +534,80 @@ export class Optimize implements OnInit {
 
   removeVariable(name: string): void {
     this.removedVariables.update((set) => new Set(set).add(name));
+  }
+
+  /** Purely a display filter, same as removeVariable() - real membership in mediaColumns/training is untouched either way. */
+  restoreVariable(name: string): void {
+    this.removedVariables.update((set) => {
+      const next = new Set(set);
+      next.delete(name);
+      return next;
+    });
+  }
+
+  restoreAllVariables(): void {
+    this.removedVariables.set(new Set());
+  }
+
+  toggleChannelVisible(name: string): void {
+    if (this.removedVariables().has(name)) this.restoreVariable(name);
+    else this.removeVariable(name);
+  }
+
+  /** Real channel names currently hidden from the chart/table, with the real display name attached for the "Removed channels" panel. */
+  readonly removedChannelRows = computed(() =>
+    Array.from(this.removedVariables())
+      .map((name) => ({ name, display: displayName(name) }))
+      .sort((a, b) => a.display.localeCompare(b.display)),
+  );
+
+  readonly showHideDropdownOpen = signal(false);
+  toggleShowHideDropdown(): void {
+    this.showHideDropdownOpen.update((open) => !open);
+  }
+
+  readonly openHealthRowMenu = signal<string | null>(null);
+  toggleHealthRowMenu(name: string): void {
+    this.openHealthRowMenu.update((current) => (current === name ? null : name));
+  }
+  closeHealthRowMenu(): void {
+    this.openHealthRowMenu.set(null);
+  }
+
+  /** Expanding a row's "View details" shows the same real diagnosis + Remove/Combine actions the old side panel had, inline under that row instead of in a separate panel. */
+  readonly expandedHealthRow = signal<string | null>(null);
+  toggleHealthRowDetails(name: string): void {
+    this.expandedHealthRow.update((current) => (current === name ? null : name));
+    this.selectHealthChannel(name);
+    this.closeHealthRowMenu();
+  }
+
+  /** Cutoff sliders stay real and adjustable, just tucked out of the primary view - collapsed by default. */
+  readonly healthThresholdsOpen = signal(false);
+  toggleHealthThresholds(): void {
+    this.healthThresholdsOpen.update((open) => !open);
+  }
+
+  /** Specific real reason, not just the coarse both/one/healthy/unknown status - so "one issue" reads as "Low spend" or "Redundant," whichever it actually is. */
+  /** One-line summary shown in place of the sliders while they're collapsed, so the current real thresholds stay visible even when not being adjusted. */
+  readonly healthFlagSummary = computed(() => {
+    const spendOn = this.spendCutoffEnabled();
+    const vifOn = this.vifCutoffEnabled();
+    if (!spendOn && !vifOn) return 'Not flagging by spend or redundancy right now - both cutoffs are off.';
+    const parts: string[] = [];
+    if (spendOn) parts.push(`under ${this.spendCutoffPct().toFixed(1)}% spend`);
+    if (vifOn) parts.push(`above ${this.vifCutoffValue().toFixed(1)} VIF`);
+    return `Flagging channels ${parts.join(' or ')}.`;
+  });
+
+  statusLabel(row: ChannelHealthPoint): string {
+    if (row.status === 'unknown') return 'Not enough data';
+    const lowSpend = this.spendCutoffEnabled() && row.spendPct < this.spendCutoffPct();
+    const highVif = this.vifCutoffEnabled() && row.vif !== null && row.vif > this.vifCutoffValue();
+    if (lowSpend && highVif) return 'Low spend + redundant';
+    if (lowSpend) return 'Low spend';
+    if (highVif) return 'Redundant';
+    return 'Healthy';
   }
 
   protected readonly maxVif = computed(() => {
@@ -609,6 +683,8 @@ export class Optimize implements OnInit {
   });
 
   readonly hasChannelHealthData = computed(() => this.channelHealthPoints().length > 0);
+  /** Whether any real Channel Health data exists at all, ignoring hidden channels - drives the outer section gate, so hiding every channel via Show/Hide never makes the whole card (including "Removed channels" and Restore) disappear. */
+  readonly hasAnyChannelHealthData = computed(() => this.channelHealthData().length > 0);
 
   protected displayChannelName(name: string): string {
     return displayName(name);
@@ -616,13 +692,6 @@ export class Optimize implements OnInit {
 
   protected displayChannelList(names: string[]): string {
     return names.map((n) => displayName(n)).join(', ');
-  }
-
-  /** Explicitly dismissed via the panel's ✕ - cleared again the next time a channel is picked, so the panel doesn't just reappear on its own after being closed but still opens right back up on the next real click. */
-  readonly healthPanelClosed = signal(false);
-
-  closeHealthPanel(): void {
-    this.healthPanelClosed.set(true);
   }
 
   /** Points are also labeled on hover with exact figures - the always-on labels above give the name and rough position, the tooltip gives the real spend %/VIF numbers behind it. */
@@ -675,18 +744,10 @@ export class Optimize implements OnInit {
 
   selectHealthChannel(name: string): void {
     this.selectedHealthChannelName.set(name);
-    this.healthPanelClosed.set(false);
   }
 
   /** Real most-correlated other channel - read directly off the selected channel's own real channel-health row (mostCorrelatedWith), already computed server-side from the actual uploaded data. No separate calculation needed here. */
   readonly healthChannelSuggestedPartner = computed<string | null>(() => this.effectiveSelectedHealthChannel()?.mostCorrelatedWith ?? null);
-
-  removeSelectedHealthChannel(): void {
-    const selected = this.effectiveSelectedHealthChannel();
-    if (!selected) return;
-    this.removeVariable(selected.name);
-    this.selectedHealthChannelName.set(null);
-  }
 
   /** Pre-fills the existing real combine form (same combineColumns/combineChannels calls below) rather than combining immediately - Aggregate still needs an explicit click, same as picking channels manually always has. */
   combineSelectedWithSuggested(): void {
