@@ -127,7 +127,7 @@
         <text [attr.x]="t.x" [attr.y]="scatterPlotBottom + 16" text-anchor="middle" class="tick">{{ t.value }}</text>
       }
       <text [attr.x]="(560 - scatterPad.left - scatterPad.right) / 2 + scatterPad.left" [attr.y]="scatterPlotBottom + 34" text-anchor="middle" class="axis-caption">Weeks until effect fades to half</text>
-      <text [attr.x]="16" [attr.y]="(scatterPlotBottom + scatterPad.top) / 2" text-anchor="middle" class="axis-caption" [attr.transform]="'rotate(-90 16 ' + (scatterPlotBottom + scatterPad.top) / 2 + ')'">How close to maxed out (%)</text>
+      <text [attr.x]="12" [attr.y]="(scatterPlotBottom + scatterPad.top) / 2" text-anchor="middle" class="axis-caption" [attr.transform]="'rotate(-90 12 ' + (scatterPlotBottom + scatterPad.top) / 2 + ')'">How close to maxed out (%)</text>
 
       @for (p of scatterPoints(); track p.name) {
         <circle [attr.cx]="p.x" [attr.cy]="p.y" r="5.5" [attr.fill]="p.lowData ? 'var(--amber-500)' : 'var(--blue-500)'" class="chart-point">

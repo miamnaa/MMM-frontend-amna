@@ -72,7 +72,7 @@ const SAT_PAD = { top: 12, right: 14, bottom: 34, left: 30 };
 // ---- Scatter chart geometry ----
 const SCATTER_W = 560;
 const SCATTER_H = 340;
-const SCATTER_PAD = { top: 20, right: 30, bottom: 46, left: 46 };
+const SCATTER_PAD = { top: 20, right: 30, bottom: 46, left: 54 };
 
 function fallbackSaturationEffect(spend: number, gamma: number): number {
   return (100 * spend * spend) / (spend * spend + gamma * gamma);
