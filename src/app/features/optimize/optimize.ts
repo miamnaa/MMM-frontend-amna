@@ -155,6 +155,8 @@ export class Optimize implements OnInit {
 
   private readonly config = computed(() => this.tunnelService.configuration());
   private readonly mediaChannels = computed(() => this.config()?.mediaColumns ?? []);
+  /** Drives WizardTopbar's real PyMC step-hiding (Calibrate isn't usable for that engine, confirmed 2026-09-09). */
+  readonly modelType = computed(() => this.tunnelService.dataset()?.modelType ?? '');
   readonly controlColumnsList = computed(() => this.config()?.controlColumns ?? []);
   private readonly organicColumnsList = computed(() => this.config()?.organicColumns ?? []);
   /** Real GET /datasets/:id/exposure-metrics covers both groups in one call - Exposure Metrics shows them together as a single list. */
@@ -910,9 +912,11 @@ export class Optimize implements OnInit {
 
   readonly showFinishModal = signal(false);
 
+  /** Real, confirmed 2026-09-09: Calibrate's fields are never read anywhere in PyMC's real pipeline - only Meridian uses them. A PyMC dataset skips straight to Hyperparameterization, the same real step it would land on next anyway. */
   customizeModel(): void {
     this.showFinishModal.set(false);
-    this.router.navigate(['/calibrate', this.projectId(), this.datasetId()]);
+    const next = this.modelType() === 'pymc' ? '/hyperparameters' : '/calibrate';
+    this.router.navigate([next, this.projectId(), this.datasetId()]);
   }
 
   /**

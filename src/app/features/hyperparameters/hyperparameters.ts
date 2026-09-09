@@ -177,6 +177,9 @@ export class Hyperparameters implements OnInit {
   readonly saveError = signal<string | null>(null);
   readonly saved = signal(false);
 
+  /** Drives WizardTopbar's real PyMC step-hiding (Calibrate isn't usable for that engine, confirmed 2026-09-09). */
+  readonly modelType = computed(() => this.tunnelService.dataset()?.modelType ?? '');
+
   readonly infoOpen = signal(false);
   toggleInfo(): void {
     this.infoOpen.update((open) => !open);

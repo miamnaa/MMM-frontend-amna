@@ -8,7 +8,7 @@
   </button>
 
   <span class="wizard-crumb">
-    <strong>Step {{ stepNumber() }} of {{ totalSteps }}</strong><span class="wizard-crumb-rule"></span>{{ stepLabel() }}
+    <strong>Step {{ stepNumber() }} of {{ totalSteps() }}</strong><span class="wizard-crumb-rule"></span>{{ stepLabel() }}
   </span>
 
   @if (isOptional()) {
