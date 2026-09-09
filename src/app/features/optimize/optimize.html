@@ -575,8 +575,8 @@
   }
 
   @if (showFinishModal()) {
-    <div class="modal-backdrop">
-      <div class="fork-card" role="dialog" aria-modal="true" aria-labelledby="finish-modal-title">
+    <div class="modal-backdrop" (click)="closeFinishModal()">
+      <div class="fork-card" role="dialog" aria-modal="true" aria-labelledby="finish-modal-title" (click)="$event.stopPropagation()">
         <h2 class="fork-title" id="finish-modal-title">Your training range is saved. What's next?</h2>
         @if (modelType() === 'pymc') {
           <p class="fork-subtitle">

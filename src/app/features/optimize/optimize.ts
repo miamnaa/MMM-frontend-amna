@@ -1081,6 +1081,10 @@ export class Optimize implements OnInit {
 
   readonly showFinishModal = signal(false);
 
+  closeFinishModal(): void {
+    this.showFinishModal.set(false);
+  }
+
   /** Real, confirmed 2026-09-09: Calibrate's fields are never read anywhere in PyMC's real pipeline - only Meridian uses them. A PyMC dataset skips straight to Hyperparameterization, the same real step it would land on next anyway. */
   customizeModel(): void {
     this.showFinishModal.set(false);
