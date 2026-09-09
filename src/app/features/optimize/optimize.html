@@ -340,7 +340,18 @@
               {{ displayChannelList(flaggedChannelNames()) }}
             </span>
             <button type="button" class="btn btn-secondary btn-sm" [disabled]="isReadOnly()" (click)="combineEverythingFlagged()">Combine flagged channels</button>
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              [disabled]="isReadOnly() || removingChannels() || mediaChannels().length <= flaggedChannelNames().length"
+              (click)="removeFlaggedChannelsForReal()"
+            >
+              {{ removingChannels() ? 'Removing…' : 'Remove flagged channels' }}
+            </button>
           </div>
+        }
+        @if (removeChannelError(); as err) {
+          <p class="drop-error">{{ err }}</p>
         }
 
         <h3 class="side-panel-title health-table-title">Channels</h3>
@@ -381,8 +392,14 @@
                             Combine with {{ displayChannelName(partner) }}
                           </button>
                         }
-                        <button type="button" class="health-row-menu-item health-row-menu-item-danger" [disabled]="isReadOnly()" (click)="removeVariable(p.name); closeHealthRowMenu()">
-                          Remove channel
+                        <button
+                          type="button"
+                          class="health-row-menu-item health-row-menu-item-danger"
+                          [disabled]="isReadOnly() || removingChannels() || mediaChannels().length <= 1"
+                          [attr.title]="mediaChannels().length <= 1 ? 'Cannot remove the last real media channel' : 'Real removal - drops this channel from Configure for good, same as editing it there'"
+                          (click)="removeChannelForReal(p.name)"
+                        >
+                          {{ removingChannels() ? 'Removing…' : 'Remove channel' }}
                         </button>
                       </div>
                     }

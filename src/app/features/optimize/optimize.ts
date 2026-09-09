@@ -6,7 +6,7 @@ import { forkJoin, of } from 'rxjs';
 
 import { AutoCombinedGroup, ChannelHealthApiRow, DatasetService, ExposureDirection, ExposureMetricRow, SavedColumnMapping } from '../../core/services/dataset.service';
 import { SessionService } from '../../core/services/notification.service';
-import { TunnelService } from '../../core/services/tunnel.service';
+import { SavedConfiguration, TunnelService } from '../../core/services/tunnel.service';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
 import { WizardTopbar } from '../../shared/ui/wizard-topbar/wizard-topbar';
@@ -154,7 +154,7 @@ export class Optimize implements OnInit {
   // Channel/target/control NAMES still come from Configure's saved mapping.
 
   private readonly config = computed(() => this.tunnelService.configuration());
-  private readonly mediaChannels = computed(() => this.config()?.mediaColumns ?? []);
+  protected readonly mediaChannels = computed(() => this.config()?.mediaColumns ?? []);
   /** Drives WizardTopbar's real PyMC step-hiding (Calibrate isn't usable for that engine, confirmed 2026-09-09). */
   readonly modelType = computed(() => this.tunnelService.dataset()?.modelType ?? '');
   readonly controlColumnsList = computed(() => this.config()?.controlColumns ?? []);
@@ -561,6 +561,67 @@ export class Optimize implements OnInit {
       .sort((a, b) => a.display.localeCompare(b.display)),
   );
 
+  /**
+   * Real channel removal - distinct from removeVariable() above, which
+   * only ever hides a channel from this chart/table (never touched what
+   * trains). This actually re-saves the dataset's real Configuration
+   * (same PATCH /datasets/:id/configuration Configure's own Save uses)
+   * with that channel dropped from mediaColumns for real - so it stops
+   * appearing in Hyperparameterization (which reads mediaColumns fresh
+   * from TunnelService), and any model trained after this point genuinely
+   * won't include it.
+   *
+   * What this can't and doesn't do: rewrite an ALREADY-completed real
+   * training run. Results & Insights for a model trained before this
+   * removal keeps showing that run's real historical inputs, including
+   * the removed channel - that's honest (it's what actually trained),
+   * not a bug. Only a model trained after this change excludes it for
+   * real.
+   */
+  readonly removingChannels = signal(false);
+  readonly removeChannelError = signal<string | null>(null);
+
+  private saveRealMediaColumns(updatedMediaColumns: string[], onDone: () => void): void {
+    const currentConfig = this.tunnelService.configuration();
+    if (!currentConfig) return;
+    if (updatedMediaColumns.length === 0) {
+      this.removeChannelError.set('Cannot remove the last real media channel - at least one is required.');
+      return;
+    }
+
+    this.removingChannels.set(true);
+    this.removeChannelError.set(null);
+
+    const body: SavedConfiguration = { ...currentConfig, mediaColumns: updatedMediaColumns };
+    this.datasetService.saveConfiguration(this.datasetId(), body).subscribe({
+      next: () => {
+        this.removingChannels.set(false);
+        this.tunnelService.setConfiguration(body);
+        // Real spend-share/VIF numbers shift once a channel is really gone -
+        // re-fetch both, same as after a real combine.
+        this.loadChannelHealth();
+        this.loadExposureMetrics();
+        onDone();
+      },
+      error: (err: unknown) => {
+        this.removingChannels.set(false);
+        this.removeChannelError.set(backendErrorMessage(err, 'Could not remove this channel. Try again.'));
+      },
+    });
+  }
+
+  removeChannelForReal(name: string): void {
+    const updated = this.mediaChannels().filter((c) => c !== name);
+    this.saveRealMediaColumns(updated, () => this.closeHealthRowMenu());
+  }
+
+  removeFlaggedChannelsForReal(): void {
+    const flagged = new Set(this.flaggedChannelNames());
+    if (flagged.size === 0) return;
+    const updated = this.mediaChannels().filter((c) => !flagged.has(c));
+    this.saveRealMediaColumns(updated, () => {});
+  }
+
   readonly showHideDropdownOpen = signal(false);
   toggleShowHideDropdown(): void {
     this.showHideDropdownOpen.update((open) => !open);
@@ -760,10 +821,6 @@ export class Optimize implements OnInit {
     this.newFieldName.set('combined_flagged_channels');
     this.combineFormOpen.set(true);
     this.combineDropdownOpen.set(false);
-  }
-
-  removeEverythingFlagged(): void {
-    this.flaggedChannelNames().forEach((name) => this.removeVariable(name));
   }
 
   /** "Or pick channels yourself" - the existing real combine form (Column type/Select variables/New field name/Aggregate), tucked behind a toggle instead of always visible. */
