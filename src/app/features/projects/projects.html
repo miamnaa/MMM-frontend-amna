@@ -108,7 +108,14 @@
 } @else {
   <div class="project-grid">
     @for (p of filteredProjects(); track p.id) {
-      <article class="card project">
+      <article
+        class="card project project-clickable"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="'Open ' + p.name + ' models'"
+        (click)="openModel(p)"
+        (keydown.enter)="openModel(p)"
+      >
         <div class="project-top">
           <app-status-badge [status]="p.status" />
           <span class="muted updated">{{ relativeTime(p.updatedAt) }}</span>
@@ -122,7 +129,7 @@
         <div class="project-foot">
           <span class="muted owner">{{ p.ownerName }}</span>
           <div class="project-actions">
-            <button class="btn btn-ghost btn-sm icon-btn" type="button" (click)="openView(p)" aria-label="View project details" title="View details">
+            <button class="btn btn-ghost btn-sm icon-btn" type="button" (click)="openView(p); $event.stopPropagation()" aria-label="View project details" title="View details">
               <svg class="eye-icon" viewBox="0 0 24 16" fill="none" aria-hidden="true">
                 <path
                   d="M1 8C1 8 5 1 12 1C19 1 23 8 23 8C23 8 19 15 12 15C5 15 1 8 1 8Z"
@@ -134,8 +141,8 @@
               </svg>
             </button>
             @if (!isReadOnly()) {
-              <button class="btn btn-ghost btn-sm" type="button" (click)="openEdit(p)">Edit</button>
-              <button class="btn btn-ghost btn-sm" type="button" (click)="confirmDelete(p)">Delete</button>
+              <button class="btn btn-ghost btn-sm" type="button" (click)="openEdit(p); $event.stopPropagation()">Edit</button>
+              <button class="btn btn-ghost btn-sm" type="button" (click)="confirmDelete(p); $event.stopPropagation()">Delete</button>
             }
           </div>
         </div>

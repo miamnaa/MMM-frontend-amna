@@ -178,6 +178,15 @@
   border-color: var(--border-strong);
 }
 
+.project-clickable {
+  cursor: pointer;
+}
+
+.project-clickable:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
+
 .project-top {
   display: flex;
   align-items: center;
