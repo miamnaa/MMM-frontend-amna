@@ -546,18 +546,33 @@
 }
 
 .health-undo-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px 16px;
-  padding: 10px 14px;
   margin-top: 14px;
+  padding: 10px 14px;
   border: 1px solid var(--border);
   border-radius: var(--r-md);
   background: var(--brand-50);
   font-size: 12.5px;
   color: var(--text-muted);
+}
+
+.health-undo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.health-undo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+
+.health-undo-locked {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  opacity: 0.75;
 }
 
 /* Channel Health - toggles shared between the chart card and elsewhere */

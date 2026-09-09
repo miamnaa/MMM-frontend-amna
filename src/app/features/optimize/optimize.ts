@@ -276,6 +276,7 @@ export class Optimize implements OnInit {
     if (!this.canAggregate()) return;
     const members = this.selectedCombineChannels();
     const name = this.newFieldName().trim();
+    const previousMediaColumns = this.mediaChannels();
 
     this.aggregating.set(true);
     this.aggregateError.set(null);
@@ -294,6 +295,16 @@ export class Optimize implements OnInit {
         this.newFieldName.set('');
 
         this.applyRealColumnMapping(real.columnMapping);
+
+        // Undoing a combine just restores the old mediaColumns list via the
+        // same real saveConfiguration PATCH remove/undo already use - the
+        // individual channels' own real spend data was never deleted, only
+        // consolidated under the new combined name, so this is a real,
+        // honest revert too, not a fake one.
+        this.channelChangeHistory.update((h) => [
+          { id: crypto.randomUUID(), summary: `Combined ${this.displayChannelList(members)} into ${this.displayChannelName(name)}`, previousMediaColumns },
+          ...h,
+        ]);
 
         if (real.channelHyperparameters === null) {
           this.hyperparametersNeedRedo.set(true);
@@ -326,6 +337,8 @@ export class Optimize implements OnInit {
     this.autoCombineError.set(null);
     this.autoCombineGroups.set(null);
 
+    const previousMediaColumns = this.mediaChannels();
+
     this.datasetService.autoCombineChannels(this.datasetId()).subscribe({
       next: ({ dataset, combined }) => {
         this.autoCombineGroups.set(combined);
@@ -339,6 +352,15 @@ export class Optimize implements OnInit {
         if (dataset.channelHyperparameters === null) {
           this.hyperparametersNeedRedo.set(true);
         }
+
+        this.channelChangeHistory.update((h) => [
+          {
+            id: crypto.randomUUID(),
+            summary: `Combined ${combined.length} correlated pair${combined.length === 1 ? '' : 's'} server-side`,
+            previousMediaColumns,
+          },
+          ...h,
+        ]);
 
         forkJoin(
           combined.map((g) => this.datasetService.combineColumns(this.datasetId(), g.sourceColumns)),
@@ -582,20 +604,23 @@ export class Optimize implements OnInit {
   readonly removeChannelError = signal<string | null>(null);
 
   /**
-   * The one real removal that can still be undone with a single click -
-   * cleared as soon as a different remove/undo is made or a fresh removal
-   * replaces it. Undo is real (another saveConfiguration PATCH putting the
-   * channel back into mediaColumns), not a client-side-only toggle - so it
-   * still can't rewrite a training run that already happened between the
-   * remove and the undo.
+   * Every real remove/combine made this session, most recent first - only
+   * entry [0] can be undone (a plain undo stack), since undoing an older
+   * entry out of order would silently discard whatever changed after it.
+   * Undo is real (another saveConfiguration PATCH restoring that entry's
+   * previousMediaColumns), not a client-side-only toggle - so it still
+   * can't rewrite a training run that already happened in between. This
+   * only knows about changes made in this session/tab - a page refresh
+   * clears it, since there's no real "channel change history" endpoint to
+   * hydrate it from.
    */
-  readonly lastRemoval = signal<{ previousMediaColumns: string[]; removedNames: string[] } | null>(null);
-  readonly undoingRemoval = signal(false);
+  readonly channelChangeHistory = signal<{ id: string; summary: string; previousMediaColumns: string[] }[]>([]);
+  readonly undoingChannelChange = signal(false);
 
   private saveRealMediaColumns(
     updatedMediaColumns: string[],
     onDone: () => void,
-    opts?: { removalSnapshot?: { previousMediaColumns: string[]; removedNames: string[] }; onError?: () => void },
+    opts?: { historyEntry?: { summary: string; previousMediaColumns: string[] }; isUndo?: boolean; onError?: () => void },
   ): void {
     const currentConfig = this.tunnelService.configuration();
     if (!currentConfig) return;
@@ -637,7 +662,11 @@ export class Optimize implements OnInit {
             // re-fetch both, same as after a real combine.
             this.loadChannelHealth();
             this.loadExposureMetrics();
-            this.lastRemoval.set(opts?.removalSnapshot ?? null);
+            if (opts?.historyEntry) {
+              this.channelChangeHistory.update((h) => [{ id: crypto.randomUUID(), ...opts.historyEntry! }, ...h]);
+            } else if (opts?.isUndo) {
+              this.channelChangeHistory.update((h) => h.slice(1));
+            }
             onDone();
           },
           error: (err: unknown) => {
@@ -659,7 +688,7 @@ export class Optimize implements OnInit {
     const previousMediaColumns = this.mediaChannels();
     const updated = previousMediaColumns.filter((c) => c !== name);
     this.saveRealMediaColumns(updated, () => this.closeHealthRowMenu(), {
-      removalSnapshot: { previousMediaColumns, removedNames: [name] },
+      historyEntry: { summary: `Removed ${this.displayChannelName(name)}`, previousMediaColumns },
     });
   }
 
@@ -668,17 +697,20 @@ export class Optimize implements OnInit {
     if (flagged.size === 0) return;
     const previousMediaColumns = this.mediaChannels();
     const updated = previousMediaColumns.filter((c) => !flagged.has(c));
+    const removedNames = previousMediaColumns.filter((c) => flagged.has(c));
     this.saveRealMediaColumns(updated, () => {}, {
-      removalSnapshot: { previousMediaColumns, removedNames: previousMediaColumns.filter((c) => flagged.has(c)) },
+      historyEntry: { summary: `Removed ${this.displayChannelList(removedNames)}`, previousMediaColumns },
     });
   }
 
-  undoLastRemoval(): void {
-    const snapshot = this.lastRemoval();
-    if (!snapshot || this.removingChannels()) return;
-    this.undoingRemoval.set(true);
-    this.saveRealMediaColumns(snapshot.previousMediaColumns, () => this.undoingRemoval.set(false), {
-      onError: () => this.undoingRemoval.set(false),
+  /** Only the most recent entry (index 0) is ever undoable - see channelChangeHistory's doc comment. */
+  undoChannelChange(): void {
+    const entry = this.channelChangeHistory()[0];
+    if (!entry || this.removingChannels() || this.undoingChannelChange()) return;
+    this.undoingChannelChange.set(true);
+    this.saveRealMediaColumns(entry.previousMediaColumns, () => this.undoingChannelChange.set(false), {
+      isUndo: true,
+      onError: () => this.undoingChannelChange.set(false),
     });
   }
 

@@ -353,15 +353,22 @@
         @if (removeChannelError(); as err) {
           <p class="drop-error">{{ err }}</p>
         }
-        @if (lastRemoval(); as removal) {
+        @if (channelChangeHistory().length > 0) {
           <div class="health-undo-banner">
-            <span>
-              {{ removal.removedNames.length }} channel{{ removal.removedNames.length === 1 ? '' : 's' }} removed:
-              {{ displayChannelList(removal.removedNames) }}
-            </span>
-            <button type="button" class="link-btn-inline" [disabled]="isReadOnly() || removingChannels()" (click)="undoLastRemoval()">
-              {{ undoingRemoval() ? 'Undoing…' : 'Undo' }}
-            </button>
+            <div class="health-undo-list">
+              @for (entry of channelChangeHistory(); track entry.id; let first = $first) {
+                <div class="health-undo-row">
+                  <span>{{ entry.summary }}</span>
+                  @if (first) {
+                    <button type="button" class="link-btn-inline" [disabled]="isReadOnly() || removingChannels()" (click)="undoChannelChange()">
+                      {{ undoingChannelChange() ? 'Undoing…' : 'Undo' }}
+                    </button>
+                  } @else {
+                    <span class="health-undo-locked" title="Undo the most recent change first">Undo the latest change first</span>
+                  }
+                </div>
+              }
+            </div>
           </div>
         }
 
