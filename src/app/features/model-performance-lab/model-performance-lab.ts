@@ -167,24 +167,44 @@ export class ModelPerformanceLab {
   }
 
   /**
-   * Real bug, fixed: `adstock_decay_curves` and `saturation_curves` are two
-   * separate real arrays from the backend, with no guarantee they list
-   * channels in the same order as each other - assigning color by each
-   * array's own index (seriesColor(i)) meant the same channel could get a
-   * different color in each chart, and the two legends could disagree
-   * with each other too. One real, stable channel->color map instead,
-   * built from the canonical real media column order
-   * (data_used.media_columns) - colour follows the entity, never its rank
-   * in whichever array happened to list it, matching the palette's own
-   * documented rule. Both charts, and both legends, read color from this
-   * same map.
+   * Real bug, found and fixed twice now:
+   *
+   * 1. `adstock_decay_curves` and `saturation_curves` are two separate real
+   *    arrays from the backend, with no guarantee they list channels in the
+   *    same order as each other - assigning color by each array's own
+   *    index (seriesColor(i)) meant the same channel could get a different
+   *    color in each chart, and the two legends could disagree too.
+   *
+   * 2. The first fix built the canonical color order from
+   *    `data_used.media_columns`, on the assumption its channel-name
+   *    strings would exactly match `channel` in the curve arrays -
+   *    confirmed wrong live: every real curve's name missed that map
+   *    entirely and fell back to the same default color, so every line on
+   *    both charts rendered identically. The canonical order now comes
+   *    from the curve arrays' own real `channel` field instead - the same
+   *    field every lookup here actually uses - so a name can never fail to
+   *    match itself. Decay is checked first (real channels always have an
+   *    AdStock curve), any channel that only appears in saturation_curves
+   *    is appended after.
    */
+  private readonly canonicalChannelNames = computed(() => {
+    if (this.hasRealChartData()) {
+      const seen = new Set<string>();
+      const ordered: string[] = [];
+      for (const name of [...this.realDecayCurves().map((c) => c.channel), ...this.realSaturationCurves().map((c) => c.channel)]) {
+        if (!seen.has(name)) {
+          seen.add(name);
+          ordered.push(name);
+        }
+      }
+      return ordered;
+    }
+    return FALLBACK_CHANNELS.map((c) => c.name);
+  });
+
   private readonly channelColorMap = computed(() => {
-    const canonical = this.hasRealChartData()
-      ? this.results()?.data_used?.media_columns ?? []
-      : FALLBACK_CHANNELS.map((c) => c.name);
     const map = new Map<string, string>();
-    canonical.forEach((name, i) => map.set(name, seriesColor(i)));
+    this.canonicalChannelNames().forEach((name, i) => map.set(name, seriesColor(i)));
     return map;
   });
 
@@ -193,12 +213,9 @@ export class ModelPerformanceLab {
   }
 
   /** One shared legend (same channels, same order, same color) for both the decay and saturation charts - reading straight off the same canonical color map instead of each chart's own series list, so the two legends can never disagree with each other. */
-  readonly sharedChannelLegend = computed(() => {
-    const canonical = this.hasRealChartData()
-      ? this.results()?.data_used?.media_columns ?? []
-      : FALLBACK_CHANNELS.map((c) => c.name);
-    return canonical.map((name) => ({ name, color: this.colorForChannel(name) }));
-  });
+  readonly sharedChannelLegend = computed(() =>
+    this.canonicalChannelNames().map((name) => ({ name, color: this.colorForChannel(name) })),
+  );
 
   // ---- Decay chart ("How long effects last") ----
   protected readonly decayViewBox = `0 0 ${DECAY_W} ${DECAY_H}`;
