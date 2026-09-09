@@ -62,7 +62,7 @@ const SATURATION_STEPS = 20;
 // ---- Decay chart geometry ----
 const DECAY_W = 480;
 const DECAY_H = 240;
-const DECAY_PAD = { top: 12, right: 14, bottom: 34, left: 40 };
+const DECAY_PAD = { top: 12, right: 14, bottom: 34, left: 48 };
 
 // ---- Saturation chart geometry ----
 const SAT_W = 480;

@@ -70,7 +70,7 @@
           <line [attr.x1]="decayPad.left" [attr.x2]="480 - decayPad.right" [attr.y1]="t.y" [attr.y2]="t.y" class="chart-gridline" />
           <text [attr.x]="decayPad.left - 8" [attr.y]="t.y + 3" text-anchor="end" class="tick">{{ t.value }}%</text>
         }
-        <text [attr.x]="12" [attr.y]="(decayPlotBottom + decayPad.top) / 2" text-anchor="middle" class="axis-caption" [attr.transform]="'rotate(-90 12 ' + (decayPlotBottom + decayPad.top) / 2 + ')'">Effect remaining (%)</text>
+        <text [attr.x]="10" [attr.y]="(decayPlotBottom + decayPad.top) / 2" text-anchor="middle" class="axis-caption" [attr.transform]="'rotate(-90 10 ' + (decayPlotBottom + decayPad.top) / 2 + ')'">Effect remaining (%)</text>
         <line [attr.x1]="decayPad.left" [attr.x2]="decayPad.left" [attr.y1]="decayPad.top" [attr.y2]="decayPlotBottom" class="axis-line" />
         <line [attr.x1]="decayPad.left" [attr.x2]="480 - decayPad.right" [attr.y1]="decayPlotBottom" [attr.y2]="decayPlotBottom" class="axis-line" />
         @for (t of decayXTicks(); track t.value) {
