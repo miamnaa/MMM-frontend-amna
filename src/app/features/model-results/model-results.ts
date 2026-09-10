@@ -293,50 +293,6 @@ export class ModelResults implements OnInit {
     });
   }
 
-  /** Real, honest download - exactly what's already sitting in `dataset()`/`results()`, not a separate fetch, so what downloads can never drift from what's on screen. */
-  private downloadJson(filenameSuffix: string, data: unknown): void {
-    const name = (this.dataset()?.name ?? this.datasetId() ?? 'model').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${name}-${filenameSuffix}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  /**
-   * Everything real that actually went into this training run - the same
-   * fields Configure/Optimize/Calibrate/Hyperparameters each PATCH for
-   * real, read back off this dataset's own real GET /datasets/:id rather
-   * than reconstructed from whatever's in memory, so it reflects what was
-   * genuinely saved even if this page was opened fresh.
-   */
-  downloadInputJson(): void {
-    const d = this.dataset();
-    if (!d) return;
-    this.downloadJson('input', {
-      dateColumn: d.columnMapping?.dateColumn,
-      targetColumn: d.columnMapping?.targetColumn,
-      kpiType: d.kpiType,
-      revenuePerKpiValue: d.revenuePerKpiValue,
-      mediaColumns: d.columnMapping?.mediaColumns,
-      controlColumns: d.columnMapping?.controlColumns,
-      organicColumns: d.columnMapping?.organicColumns,
-      geoColumns: d.columnMapping?.geoColumns,
-      dateRange: d.dateRange,
-      calibration: d.calibration,
-      channelHyperparameters: d.channelHyperparameters,
-    });
-  }
-
-  /** The exact real training-results payload this whole page is built from - nothing recomputed or reshaped, so it matches every number shown above it. */
-  downloadOutputJson(): void {
-    const r = this.results();
-    if (!r) return;
-    this.downloadJson('results', r);
-  }
-
   /**
    * Real browser print-to-PDF, not a generated file - there's no PDF
    * rendering library or backend endpoint to build one from, so this opens
