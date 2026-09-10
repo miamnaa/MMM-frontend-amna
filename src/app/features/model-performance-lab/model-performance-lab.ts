@@ -217,6 +217,20 @@ export class ModelPerformanceLab {
     this.canonicalChannelNames().map((name) => ({ name, color: this.colorForChannel(name) })),
   );
 
+  /**
+   * Real gap, not a bug: the shared legend is the union of decay AND
+   * saturation channels (see canonicalChannelNames' doc comment), so a
+   * channel present only in saturation_curves shows a legend swatch with no
+   * line ever drawn for it on THIS chart - the backend genuinely didn't
+   * return AdStock decay data for it. Named here so the chart can say so
+   * instead of silently looking broken.
+   */
+  readonly channelsMissingDecayData = computed(() => {
+    if (!this.hasRealChartData()) return [];
+    const withDecay = new Set(this.realDecayCurves().map((c) => c.channel));
+    return this.canonicalChannelNames().filter((name) => !withDecay.has(name));
+  });
+
   // ---- Decay chart ("How long effects last") ----
   protected readonly decayViewBox = `0 0 ${DECAY_W} ${DECAY_H}`;
   protected readonly decayPad = DECAY_PAD;

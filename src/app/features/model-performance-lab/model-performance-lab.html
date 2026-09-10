@@ -64,6 +64,13 @@
     <section class="chart-card">
       <h2 class="chart-title">How long effects last</h2>
       <p class="chart-subtitle">A sale today from a TV ad two weeks ago still counts. This shows how fast that fades.</p>
+      @if (channelsMissingDecayData().length > 0) {
+        <p class="chart-subtitle chart-data-gap-note">
+          {{ channelsMissingDecayData().length }} channel{{ channelsMissingDecayData().length === 1 ? '' : 's' }} in the legend
+          {{ channelsMissingDecayData().length === 1 ? "doesn't" : "don't" }} have a line here - training didn't return decay data
+          for {{ channelsMissingDecayData().join(', ') }} yet, even though it's in the saturation chart.
+        </p>
+      }
 
       <svg [attr.viewBox]="decayViewBox" class="chart-svg" role="img" aria-label="How each channel's effect fades over time">
         @for (t of decayYTicks; track t.value) {

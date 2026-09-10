@@ -49,6 +49,12 @@
   color: var(--text);
 }
 
+.json-export-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
 .card {
   padding: 20px;
   background: var(--surface);

@@ -140,6 +140,12 @@
   max-width: 48ch;
 }
 
+.chart-data-gap-note {
+  margin-top: -10px;
+  font-size: 12px;
+  color: var(--amber-700, #b45309);
+}
+
 .chart-svg {
   width: 100%;
   height: auto;

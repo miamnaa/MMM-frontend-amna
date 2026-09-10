@@ -30,6 +30,11 @@
 } @else if (results(); as r) {
   <div class="results-banner results-banner-real">Real model results</div>
 
+  <div class="json-export-row">
+    <button type="button" class="btn btn-secondary btn-sm" (click)="downloadInputJson()">Download input (JSON)</button>
+    <button type="button" class="btn btn-secondary btn-sm" (click)="downloadOutputJson()">Download results (JSON)</button>
+  </div>
+
   <div class="tabs" role="tablist">
     <button
       type="button"
