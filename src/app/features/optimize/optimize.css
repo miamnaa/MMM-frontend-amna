@@ -755,6 +755,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  /* Grid items also default to justify-self: stretch, which - now that
+     .em-row is a grid instead of a flex row - was stretching the chip
+     into a full-width pill instead of hugging its own text like every
+     other chip in the app. */
+  justify-self: start;
 }
 
 .em-suggestion {
