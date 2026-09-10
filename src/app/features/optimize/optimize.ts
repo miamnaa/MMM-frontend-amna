@@ -609,12 +609,17 @@ export class Optimize implements OnInit {
    * entry out of order would silently discard whatever changed after it.
    * Undo is real (another saveConfiguration PATCH restoring that entry's
    * previousMediaColumns), not a client-side-only toggle - so it still
-   * can't rewrite a training run that already happened in between. This
-   * only knows about changes made in this session/tab - a page refresh
-   * clears it, since there's no real "channel change history" endpoint to
-   * hydrate it from.
+   * can't rewrite a training run that already happened in between.
+   *
+   * Lives on TunnelService, not as a local signal here, so it survives
+   * leaving and coming back to Optimize (e.g. to Calibrate and back) -
+   * that navigation destroys and recreates this component, which would
+   * otherwise silently lose the undo history even though the underlying
+   * change is still really saved. It's still session/tab-scoped only - a
+   * fresh tab clears it, since there's no real "channel change history"
+   * endpoint to hydrate it from.
    */
-  readonly channelChangeHistory = signal<{ id: string; summary: string; previousMediaColumns: string[] }[]>([]);
+  readonly channelChangeHistory = this.tunnelService.channelChangeHistory;
   readonly undoingChannelChange = signal(false);
 
   private saveRealMediaColumns(

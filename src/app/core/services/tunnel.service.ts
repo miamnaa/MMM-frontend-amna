@@ -48,6 +48,17 @@ export class TunnelService {
   readonly optimize = signal<SavedOptimize | null>(null);
   readonly calibration = signal<SavedCalibration | null>(null);
 
+  /**
+   * Optimize's real remove/combine undo history - lives here rather than on
+   * the Optimize component itself so it survives leaving and coming back
+   * (e.g. Optimize -> Calibrate -> back to Optimize), which would otherwise
+   * destroy and recreate the component and silently lose it. Still
+   * in-memory only, same as everything else here - no real "channel change
+   * history" endpoint exists to hydrate it from, so it's still gone on a
+   * fresh tab, just not on in-tunnel navigation.
+   */
+  readonly channelChangeHistory = signal<{ id: string; summary: string; previousMediaColumns: string[] }[]>([]);
+
   selectProject(id: string): void {
     // A dataset (and everything saved against it) picked for a different
     // project shouldn't silently carry over if someone backs out and picks
@@ -57,11 +68,19 @@ export class TunnelService {
       this.configuration.set(null);
       this.optimize.set(null);
       this.calibration.set(null);
+      this.channelChangeHistory.set([]);
     }
     this.projectId.set(id);
   }
 
   setDataset(dataset: TunnelDataset): void {
+    // A dataset switch within the same project (e.g. resuming a different
+    // model from the Models list) shouldn't carry the previous dataset's
+    // undo history along - it describes changes to a different set of
+    // mediaColumns entirely.
+    if (this.dataset()?.id !== dataset.id) {
+      this.channelChangeHistory.set([]);
+    }
     this.dataset.set(dataset);
   }
 
@@ -95,6 +114,7 @@ export class TunnelService {
     this.configuration.set(null);
     this.optimize.set(null);
     this.calibration.set(null);
+    this.channelChangeHistory.set([]);
   }
 
   reset(): void {
@@ -103,5 +123,6 @@ export class TunnelService {
     this.configuration.set(null);
     this.optimize.set(null);
     this.calibration.set(null);
+    this.channelChangeHistory.set([]);
   }
 }
