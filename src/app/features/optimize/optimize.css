@@ -744,6 +744,19 @@
   border-radius: var(--r-md);
 }
 
+.em-row > .column-chip {
+  /* Grid items default to min-width: auto, which lets a long chip's own
+     min-content size silently grow this column past its minmax(140px,
+     1fr) track size - that's what was pushing the "Suggested" column
+     further right on rows with a long channel name than on rows with a
+     short one. min-width: 0 lets the track size (and its own text
+     overflow below) actually govern the column's width instead. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .em-suggestion {
   font-size: 12px;
   color: var(--text-muted);
