@@ -52,6 +52,44 @@
             know which ones are weak, just answer where you have evidence.
           </p>
 
+          <div class="threshold-toggle-row">
+            <button
+              type="button"
+              class="switch-row"
+              (click)="spendFlagThresholdEnabled.set(!spendFlagThresholdEnabled())"
+              [attr.aria-pressed]="spendFlagThresholdEnabled()"
+            >
+              <span class="switch" [class.on]="spendFlagThresholdEnabled()"><span class="switch-thumb"></span></span>
+              <strong>Flag by spend cutoff</strong>
+            </button>
+            <span class="muted">(Optional)</span>
+          </div>
+          @if (spendFlagThresholdEnabled()) {
+            <div class="threshold-slider-row">
+              <label class="threshold-slider-label" for="cal-spend-cutoff">Flag channels below</label>
+              <input
+                id="cal-spend-cutoff"
+                type="range"
+                min="0"
+                [attr.max]="maxSpendPct()"
+                step="0.5"
+                [ngModel]="spendFlagThresholdPct()"
+                (ngModelChange)="setSpendFlagThresholdPct($event)"
+              />
+              <span class="threshold-slider-value">{{ spendFlagThresholdPct() | number: '1.1-1' }}%</span>
+            </div>
+            <p class="muted field-hint threshold-slider-hint">
+              Default is half of an equal spend split across your channels - there's no statistical
+              convention for this one, so adjust it to whatever "too small to trust" means for you.
+              @if (flaggedChannels().length > 0) {
+                {{ flaggedChannels().length }} channel{{ flaggedChannels().length === 1 ? '' : 's' }} fall{{ flaggedChannels().length === 1 ? 's' : '' }} in it:
+                {{ flaggedChannelNames() }}.
+              } @else {
+                Nothing falls below it right now.
+              }
+            </p>
+          }
+
           @if (flaggedChannels().length === 0) {
             <p class="muted">Every real channel already has enough spend history - nothing needs outside evidence right now.</p>
           } @else {

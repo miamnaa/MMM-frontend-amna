@@ -1,4 +1,4 @@
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -15,8 +15,14 @@ function toNumber(value: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-/** Below this real share of total real spend, a channel is flagged as thin on real data - the same "low real spend, low real confidence" idea Optimize's Channel Health uses, applied here to decide which channels calibration should prioritize. */
-const SPEND_FLAG_THRESHOLD_PCT = 5;
+/**
+ * Below this real share of total real spend, a channel is flagged as thin on
+ * real data - the same "low real spend, low real confidence" idea Optimize's
+ * Channel Health uses, applied here to decide which channels calibration
+ * should prioritize. Just the fallback before the real channel count is
+ * known - defaultSpendFlagThresholdPct() below is what actually sets it.
+ */
+const DEFAULT_SPEND_FLAG_THRESHOLD_PCT = 5;
 /** A channel's lift-test evidence nudges the one real overall belief halfway toward what that evidence suggests, rather than replacing it outright - one channel's evidence shouldn't single-handedly override what the rest of the model already reflects. */
 const BELIEF_BLEND = 0.5;
 const CONFIDENCE_STEP = 10;
@@ -51,7 +57,7 @@ interface CalibrationHistoryEntry {
  */
 @Component({
   selector: 'app-calibrate',
-  imports: [FormsModule, CurrencyPipe, PageHeader, WizardTopbar],
+  imports: [FormsModule, CurrencyPipe, DecimalPipe, PageHeader, WizardTopbar],
   templateUrl: './calibrate.html',
   styleUrl: './calibrate.css',
 })
@@ -111,7 +117,31 @@ export class Calibrate implements OnInit {
     return totals.map((t) => ({ name: t.name, pct: Math.round((t.raw / total) * 1000) / 10 }));
   });
 
-  readonly flaggedChannels = computed(() => this.channelSpendShare().filter((c) => c.pct < SPEND_FLAG_THRESHOLD_PCT));
+  /**
+   * Same real rule Optimize's Channel Health uses for its own spend cutoff:
+   * no statistical convention for "too small a channel to trust," so the
+   * default is grounded in this dataset's real channel count instead of a
+   * flat guess - half of what an equal split of spend across all real
+   * channels would give each one.
+   */
+  readonly maxSpendPct = computed(() => Math.max(5, ...this.channelSpendShare().map((c) => c.pct)));
+  private defaultSpendFlagThresholdPct(channelCount: number): number {
+    if (channelCount <= 0) return DEFAULT_SPEND_FLAG_THRESHOLD_PCT;
+    return Math.round((50 / channelCount) * 10) / 10;
+  }
+
+  readonly spendFlagThresholdEnabled = signal(true);
+  readonly spendFlagThresholdPct = signal(DEFAULT_SPEND_FLAG_THRESHOLD_PCT);
+  readonly spendFlagThresholdTouched = signal(false);
+  setSpendFlagThresholdPct(value: number): void {
+    this.spendFlagThresholdTouched.set(true);
+    this.spendFlagThresholdPct.set(value);
+  }
+
+  readonly flaggedChannels = computed(() =>
+    this.spendFlagThresholdEnabled() ? this.channelSpendShare().filter((c) => c.pct < this.spendFlagThresholdPct()) : [],
+  );
+  readonly flaggedChannelNames = computed(() => this.flaggedChannels().map((c) => c.name).join(', '));
 
   // ---- Per-channel evidence workflow ----
 
@@ -300,6 +330,9 @@ export class Calibrate implements OnInit {
       next: ({ rows }) => {
         this.rowsLoading.set(false);
         this.rows.set(rows);
+        if (!this.spendFlagThresholdTouched()) {
+          this.spendFlagThresholdPct.set(this.defaultSpendFlagThresholdPct(this.mediaChannels().length));
+        }
       },
       error: (err: unknown) => {
         this.rowsLoading.set(false);
