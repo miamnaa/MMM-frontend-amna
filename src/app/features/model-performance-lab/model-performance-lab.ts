@@ -218,17 +218,35 @@ export class ModelPerformanceLab {
   );
 
   /**
-   * Real gap, not a bug: the shared legend is the union of decay AND
-   * saturation channels (see canonicalChannelNames' doc comment), so a
-   * channel present only in saturation_curves shows a legend swatch with no
-   * line ever drawn for it on THIS chart - the backend genuinely didn't
-   * return AdStock decay data for it. Named here so the chart can say so
-   * instead of silently looking broken.
+   * Real behavior, not a bug - verified against a live response: every
+   * channel really does have a curve in adstock_decay_curves, but with only
+   * ~200 weeks of history the model can't always tell two channels' real
+   * carryover apart, so it converges several channels onto the exact same
+   * curve (confirmed byte-for-byte identical effect_remaining_percent
+   * values, and matching saturation_status.carryover_label groupings -
+   * e.g. every "short" channel gets the same curve). Those lines then
+   * render pixel-on-pixel and only the group's top line is ever visible,
+   * even though every channel really is being drawn. Grouped here so the
+   * chart can name exactly which channels are overlapping instead of
+   * silently looking like 4 lines went missing.
    */
-  readonly channelsMissingDecayData = computed(() => {
+  readonly decayCurveOverlapGroups = computed(() => {
     if (!this.hasRealChartData()) return [];
-    const withDecay = new Set(this.realDecayCurves().map((c) => c.channel));
-    return this.canonicalChannelNames().filter((name) => !withDecay.has(name));
+    const bySignature = new Map<string, string[]>();
+    for (const c of this.realDecayCurves()) {
+      const signature = c.curve.map((p) => `${p.weeks_since_spend}:${p.effect_remaining_percent}`).join('|');
+      const group = bySignature.get(signature) ?? [];
+      group.push(c.channel);
+      bySignature.set(signature, group);
+    }
+    return Array.from(bySignature.values()).filter((group) => group.length > 1);
+  });
+
+  readonly decayCurveOverlapNote = computed(() => {
+    const groups = this.decayCurveOverlapGroups();
+    if (groups.length === 0) return null;
+    const parts = groups.map((g) => g.join(', '));
+    return `Channels with an identical curve overlap into one visible line: ${parts.join('; and ')}.`;
   });
 
   // ---- Decay chart ("How long effects last") ----
