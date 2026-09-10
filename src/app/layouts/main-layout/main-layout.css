@@ -24,3 +24,28 @@
     padding: 18px 16px 36px;
   }
 }
+
+/* App chrome nobody wants in a print/Export PDF (see model-results.ts's
+   exportPdf()) - the sidebar and header are real components used across
+   every screen this layout wraps, not just Results, so hiding them here
+   covers Export PDF everywhere rather than one page re-declaring it. The
+   shell/content are height-constrained + scrollable for on-screen use,
+   which would otherwise clip a multi-page print to a single page. */
+@media print {
+  app-sidebar,
+  app-header {
+    display: none;
+  }
+
+  .shell,
+  .main,
+  .content {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+
+  .content {
+    padding: 0;
+  }
+}

@@ -337,6 +337,20 @@ export class ModelResults implements OnInit {
     this.downloadJson('results', r);
   }
 
+  /**
+   * Real browser print-to-PDF, not a generated file - there's no PDF
+   * rendering library or backend endpoint to build one from, so this opens
+   * the browser's own print dialog (every browser can "Save as PDF" from
+   * there) over this exact page, with the nav/tabs/export buttons hidden
+   * via @media print in this component's own CSS plus main-layout's.
+   * Whichever tab is open when this is clicked is the one that prints,
+   * same as what's genuinely on screen - the other tab's content isn't in
+   * the DOM to print alongside it.
+   */
+  exportPdf(): void {
+    window.print();
+  }
+
   private loadModel(): void {
     this.loading.set(true);
     this.notTrained.set(false);

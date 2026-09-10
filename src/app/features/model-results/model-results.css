@@ -220,3 +220,12 @@ h3.section-title:first-of-type {
 .planner-link:hover {
   color: var(--brand-500);
 }
+
+/* Export PDF is the browser's own print dialog (see exportPdf() in the
+   component) - this is what actually keeps a printed/saved-as-PDF copy of
+   this page down to the real content instead of the nav chrome around it. */
+@media print {
+  .print-hide {
+    display: none !important;
+  }
+}

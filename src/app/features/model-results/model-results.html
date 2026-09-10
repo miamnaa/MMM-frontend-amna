@@ -2,10 +2,10 @@
   [title]="dataset()?.name ?? 'Model results'"
   subtitle="Real results from this model's training run."
 >
-  <a class="btn btn-secondary btn-sm" [routerLink]="['/results', projectId()]">← Back to models</a>
+  <a class="btn btn-secondary btn-sm print-hide" [routerLink]="['/results', projectId()]">← Back to models</a>
 </app-page-header>
 
-<div class="model-select-row">
+<div class="model-select-row print-hide">
   <label class="model-select-label" for="model-select">Select Model</label>
   <select id="model-select" class="select" [ngModel]="datasetId()" (ngModelChange)="selectModel($event)">
     @for (m of modelOptions(); track m.id) {
@@ -30,12 +30,13 @@
 } @else if (results(); as r) {
   <div class="results-banner results-banner-real">Real model results</div>
 
-  <div class="json-export-row">
+  <div class="json-export-row print-hide">
     <button type="button" class="btn btn-secondary btn-sm" (click)="downloadInputJson()">Download input (JSON)</button>
     <button type="button" class="btn btn-secondary btn-sm" (click)="downloadOutputJson()">Download results (JSON)</button>
+    <button type="button" class="btn btn-secondary btn-sm" (click)="exportPdf()">Export PDF</button>
   </div>
 
-  <div class="tabs" role="tablist">
+  <div class="tabs print-hide" role="tablist">
     <button
       type="button"
       role="tab"
