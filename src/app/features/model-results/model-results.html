@@ -71,8 +71,12 @@
         <p class="muted field-hint">AI summary isn't configured for this deployment yet.</p>
       } @else if (aiSummaryError(); as err) {
         <p class="drop-error">{{ err }}</p>
-      } @else if (aiSummary(); as summary) {
-        <p class="ai-summary-text">{{ summary }}</p>
+      } @else if (aiSummary()) {
+        <ul class="ai-summary-list">
+          @for (point of aiSummaryPoints(); track $index) {
+            <li>{{ point }}</li>
+          }
+        </ul>
       } @else {
         <p class="muted field-hint">A short, plain-English read of the real numbers below, written on demand - nothing is generated until you ask for it.</p>
       }

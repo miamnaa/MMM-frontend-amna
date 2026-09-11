@@ -78,8 +78,15 @@
   margin: 0;
 }
 
-.ai-summary-text {
+.ai-summary-list {
   margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ai-summary-list li {
   font-size: 14px;
   line-height: 1.6;
   color: var(--text);

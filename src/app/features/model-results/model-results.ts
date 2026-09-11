@@ -313,6 +313,17 @@ export class ModelResults implements OnInit {
   readonly aiSummary = signal<string | null>(null);
   readonly aiConfigured = this.geminiService.configured;
 
+  /** Splits the real summary text into bullet lines for real <li> rendering - strips whatever bullet marker Gemini used ("- ", "• ", "* ") since the list markup itself provides the visual bullet. Falls back to one "point" (the whole text) if Gemini ever ignores the bulleted-list instruction, so the card still shows something instead of nothing. */
+  readonly aiSummaryPoints = computed(() => {
+    const text = this.aiSummary();
+    if (!text) return [];
+    const lines = text
+      .split('\n')
+      .map((line) => line.replace(/^[-•*]\s*/, '').trim())
+      .filter((line) => line.length > 0);
+    return lines.length > 0 ? lines : [text];
+  });
+
   /**
    * Every number handed to Gemini is something already computed and rendered
    * elsewhere on this exact page - the same spend/ROI/opportunity figures
@@ -379,7 +390,7 @@ export class ModelResults implements OnInit {
     this.aiSummaryError.set(null);
 
     const systemPrompt =
-      'You summarize real Marketing Mix Model results for a business audience - marketers and executives, not statisticians. Write 3-5 short sentences, plain English, no jargon, no bullet points. Only use the numbers given to you below - never invent or estimate a figure that is not explicitly provided.';
+      'You summarize real Marketing Mix Model results for a business audience - marketers and executives, not statisticians. Write 4-6 short bullet points, one per line, each line starting with "- ". Plain English, no jargon, no preamble or heading before the first bullet. Only use the numbers given to you below - never invent or estimate a figure that is not explicitly provided.';
 
     this.geminiService.summarize(systemPrompt, this.buildInsightsPrompt()).subscribe({
       next: (text) => {
