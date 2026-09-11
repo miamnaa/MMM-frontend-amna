@@ -34,8 +34,12 @@
       placeholder="000000"
       [ngModel]="code()"
       (ngModelChange)="onCodeInput($event)"
-      [disabled]="verifying()"
+      [disabled]="verifying() || lockedOut()"
     />
+
+    @if (expiresInLabel(); as label) {
+      <p class="expiry-note">{{ label }}</p>
+    }
 
     @if (requestError()) {
       <p class="error" role="alert">{{ requestError() }}</p>
@@ -44,14 +48,20 @@
       <p class="error" role="alert">{{ verifyError() }}</p>
     }
 
-    <button
-      class="signin"
-      type="button"
-      [disabled]="code().length !== 6 || verifying()"
-      (click)="submit()"
-    >
-      {{ verifying() ? 'Verifying…' : 'Verify' }}
-    </button>
+    @if (lockedOut()) {
+      <button class="signin" type="button" (click)="resend()" [disabled]="requesting()">
+        {{ requesting() ? 'Sending…' : 'Request a new code' }}
+      </button>
+    } @else {
+      <button
+        class="signin"
+        type="button"
+        [disabled]="code().length !== 6 || verifying()"
+        (click)="submit()"
+      >
+        {{ verifying() ? 'Verifying…' : 'Verify' }}
+      </button>
+    }
 
     <p class="switch">
       Didn't get a code?

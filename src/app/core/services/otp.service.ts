@@ -42,26 +42,51 @@ export class OtpService {
   /** Set once a request call actually succeeds, so the screen can say "code sent". */
   readonly codeSent = signal(false);
 
+  /**
+   * Real field from POST /auth/otp/verify's 401 body as of 2026-09-11 -
+   * null until a wrong-code response actually reports it (never guessed at
+   * client-side, since only the backend knows the real count). 0 means the
+   * real 5-attempt limit was just hit on this code - Verify should stop
+   * accepting guesses until a fresh code is requested. Reset to null on
+   * every successful request-code call, since a new code gets a clean
+   * attempt count server-side.
+   */
+  readonly attemptsRemaining = signal<number | null>(null);
+  readonly lockedOut = signal(false);
+
+  /**
+   * Real 10-minute code lifetime (confirmed by backend, 2026-09-11) - not
+   * read from any response field, just the known real duration, timed from
+   * the moment a request actually succeeds. Null until then, and reset on
+   * every new request so a resend restarts the real window instead of
+   * counting down from the old code's expiry.
+   */
+  readonly codeExpiresAt = signal<number | null>(null);
+
   requestCode(): void {
     if (this.requesting()) return;
     this.requesting.set(true);
     this.requestError.set(null);
+    this.attemptsRemaining.set(null);
+    this.lockedOut.set(false);
 
     this.http.post<void>(`${this.url}/request`, {}).subscribe({
       next: () => {
         this.requesting.set(false);
         this.codeSent.set(true);
+        this.codeExpiresAt.set(Date.now() + 10 * 60 * 1000);
       },
       error: (err: unknown) => {
         this.requesting.set(false);
         this.codeSent.set(false);
+        this.codeExpiresAt.set(null);
         this.requestError.set(this.requestErrorMessage(err));
       },
     });
   }
 
   verifyCode(code: string): void {
-    if (this.verifying()) return;
+    if (this.verifying() || this.lockedOut()) return;
     this.verifying.set(true);
     this.verifyError.set(null);
 
@@ -73,7 +98,10 @@ export class OtpService {
       },
       error: (err: unknown) => {
         this.verifying.set(false);
-        this.verifyError.set(this.verifyErrorMessage(err));
+        const remaining = this.attemptsRemainingFrom(err);
+        this.attemptsRemaining.set(remaining);
+        if (remaining === 0) this.lockedOut.set(true);
+        this.verifyError.set(this.verifyErrorMessage(err, remaining));
       },
     });
   }
@@ -83,6 +111,9 @@ export class OtpService {
     this.codeSent.set(false);
     this.requestError.set(null);
     this.verifyError.set(null);
+    this.attemptsRemaining.set(null);
+    this.lockedOut.set(false);
+    this.codeExpiresAt.set(null);
     localStorage.removeItem(VERIFIED_KEY);
   }
 
@@ -99,10 +130,28 @@ export class OtpService {
     return this.backendMessage(err, 'Could not send a verification code. Try again.');
   }
 
-  private verifyErrorMessage(err: unknown): string {
+  /** Real field, not guessed - undefined/non-numeric (an older backend response, or a non-401 error) just means "don't show a count," not "0 left." */
+  private attemptsRemainingFrom(err: unknown): number | null {
+    if (err instanceof HttpErrorResponse) {
+      const remaining: unknown = err.error?.attemptsRemaining;
+      if (typeof remaining === 'number' && Number.isFinite(remaining)) return remaining;
+    }
+    return null;
+  }
+
+  private verifyErrorMessage(err: unknown, remaining: number | null): string {
     if (err instanceof HttpErrorResponse) {
       if (err.status === 404) return 'No code was requested yet. Tap "Resend code" and try again.';
-      if (err.status === 401) return this.backendMessage(err, "That code didn't work — it may be wrong, expired, or you've tried too many times.");
+      if (err.status === 401) {
+        const message = this.backendMessage(err, "That code didn't work — it may be wrong, expired, or you've tried too many times.");
+        // remaining === 0 already reads as a real limit-hit message from the
+        // backend ("Too many incorrect attempts...") - appending a count
+        // there would be redundant, not additive.
+        if (remaining !== null && remaining > 0) {
+          return `${message} ${remaining} attempt${remaining === 1 ? '' : 's'} left.`;
+        }
+        return message;
+      }
     }
     return this.backendMessage(err, 'Could not verify that code. Try again.');
   }
