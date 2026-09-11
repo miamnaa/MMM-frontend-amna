@@ -10,6 +10,7 @@ import {
   isTerminalTrainingStatus,
 } from '../../core/services/dataset.service';
 import { computeModelStatus } from '../../core/services/model-status';
+import { GrokService } from '../../core/services/grok.service';
 import { ModelPerformanceLab } from '../model-performance-lab/model-performance-lab';
 import { BarChart, BarDatum } from '../../shared/charts/bar-chart/bar-chart';
 import { GroupedBarChart, GroupedBarDatum } from '../../shared/charts/grouped-bar-chart/grouped-bar-chart';
@@ -92,6 +93,7 @@ export class ModelResults implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly datasetService = inject(DatasetService);
+  private readonly grokService = inject(GrokService);
 
   readonly projectId = signal('');
   readonly datasetId = signal('');
@@ -302,6 +304,93 @@ export class ModelResults implements OnInit {
 
   openBudgetPlanner(): void {
     this.plannerClicked.set(true);
+  }
+
+  // ---- AI summary (Grok) ----
+
+  readonly aiSummaryLoading = signal(false);
+  readonly aiSummaryError = signal<string | null>(null);
+  readonly aiSummary = signal<string | null>(null);
+  readonly aiConfigured = this.grokService.configured;
+
+  /**
+   * Every number handed to Grok is something already computed and rendered
+   * elsewhere on this exact page - the same spend/ROI/opportunity figures
+   * the charts below show, not a fresh read of raw results. That's
+   * deliberate: the summary can't say anything that isn't already backed
+   * by a real number visible on screen, and it can't drift from what the
+   * charts say even if Grok paraphrases loosely.
+   */
+  private buildInsightsPrompt(): string {
+    const lines: string[] = [];
+    const name = this.dataset()?.name ?? 'this model';
+    lines.push(`Dataset: ${name}`);
+
+    const spend = this.totalSpend();
+    if (spend !== null) lines.push(`Total real spend across all channels: ${currency(spend)}`);
+
+    const count = this.channelsAnalyzedCount();
+    if (count !== null) lines.push(`Channels analyzed: ${count}`);
+
+    const impact = this.totalIncrementalOutcome();
+    if (impact !== null) lines.push(`Total incremental outcome (extra results beyond what would have happened anyway): ${currency(impact)}`);
+
+    const ret = this.overallReturn();
+    if (ret !== null) lines.push(`Blended overall return: ${ret.toFixed(2)}x per $1 spent`);
+
+    const spendBars = this.spendByChannelBars();
+    if (spendBars.length > 0) {
+      lines.push('Share of spend by channel: ' + spendBars.map((b) => `${b.label} ${b.display}`).join(', '));
+    }
+
+    const roiBars = this.roiPayoffBars();
+    if (roiBars.length > 0) {
+      lines.push('ROI so far and next-dollar (marginal) return by channel: ' + roiBars.map((b) => `${b.label} ${b.aDisplay} overall, ${b.bDisplay} marginal`).join(', '));
+    }
+
+    const opp = this.biggestOpportunity();
+    if (opp) {
+      lines.push(
+        `Biggest reallocation opportunity found: moving ${opp.shiftDisplay} (${opp.shiftPctDisplay} of ${opp.fromLabel}'s real spend) from ${opp.fromLabel} (${opp.fromDisplay} next-dollar return) toward ${opp.toLabel} (${opp.toDisplay} next-dollar return) points to about ${opp.gainDisplay} in additional value.`,
+      );
+    }
+
+    const baseline = this.results()?.baseline_vs_marketing;
+    if (baseline) {
+      lines.push(`Revenue split: ${baseline.marketing_percent.toFixed(1)}% attributed to marketing, ${baseline.baseline_percent.toFixed(1)}% baseline/organic demand.`);
+    }
+
+    const confidence = this.results()?.model_confidence;
+    if (confidence?.overall_accuracy_percent !== undefined) {
+      lines.push(`Model accuracy: ${confidence.overall_accuracy_percent.toFixed(1)}%`);
+    }
+
+    return lines.join('\n');
+  }
+
+  generateAiSummary(): void {
+    if (this.aiSummaryLoading()) return;
+    if (!this.aiConfigured) {
+      this.aiSummaryError.set('AI summary is not configured for this deployment yet - no Grok API key set.');
+      return;
+    }
+
+    this.aiSummaryLoading.set(true);
+    this.aiSummaryError.set(null);
+
+    const systemPrompt =
+      'You summarize real Marketing Mix Model results for a business audience - marketers and executives, not statisticians. Write 3-5 short sentences, plain English, no jargon, no bullet points. Only use the numbers given to you below - never invent or estimate a figure that is not explicitly provided.';
+
+    this.grokService.summarize(systemPrompt, this.buildInsightsPrompt()).subscribe({
+      next: (text) => {
+        this.aiSummaryLoading.set(false);
+        this.aiSummary.set(text);
+      },
+      error: (err: unknown) => {
+        this.aiSummaryLoading.set(false);
+        this.aiSummaryError.set(this.grokService.friendlyError(err));
+      },
+    });
   }
 
   ngOnInit(): void {

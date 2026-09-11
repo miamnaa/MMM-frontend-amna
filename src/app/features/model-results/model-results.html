@@ -60,6 +60,24 @@
   @if (activeTab() === 'performance') {
     <app-model-performance-lab [results]="r" />
   } @else {
+    <section class="card ai-summary-card">
+      <div class="ai-summary-head">
+        <h2 class="section-title">AI summary</h2>
+        <button type="button" class="btn btn-secondary btn-sm" [disabled]="aiSummaryLoading()" (click)="generateAiSummary()">
+          {{ aiSummaryLoading() ? 'Summarizing…' : (aiSummary() ? 'Regenerate' : 'Generate AI summary') }}
+        </button>
+      </div>
+      @if (!aiConfigured) {
+        <p class="muted field-hint">AI summary isn't configured for this deployment yet.</p>
+      } @else if (aiSummaryError(); as err) {
+        <p class="drop-error">{{ err }}</p>
+      } @else if (aiSummary(); as summary) {
+        <p class="ai-summary-text">{{ summary }}</p>
+      } @else {
+        <p class="muted field-hint">A short, plain-English read of the real numbers below, written on demand - nothing is generated until you ask for it.</p>
+      }
+    </section>
+
     <h3 class="section-title">Where the money goes</h3>
 
     <div class="kpi-row-2">

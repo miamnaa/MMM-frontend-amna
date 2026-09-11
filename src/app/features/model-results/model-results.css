@@ -62,6 +62,39 @@
   border-radius: var(--r-lg);
 }
 
+.ai-summary-card {
+  margin-bottom: 18px;
+}
+
+.ai-summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.ai-summary-head .section-title {
+  margin: 0;
+}
+
+.ai-summary-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.drop-error {
+  margin-top: 4px;
+  margin-bottom: 8px;
+  padding: 9px 12px;
+  border-radius: var(--r-md);
+  background: var(--red-50);
+  color: var(--red-600);
+  font-size: 12.5px;
+}
+
 .results-section {
   margin-bottom: 18px;
 }
