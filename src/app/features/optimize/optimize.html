@@ -285,7 +285,7 @@
         }
         @if (healthThresholdsOpen()) {
           <div class="toggle-inline">
-            <button type="button" class="param-switch-row" (click)="spendCutoffEnabled.set(!spendCutoffEnabled())" [attr.aria-pressed]="spendCutoffEnabled()">
+            <button type="button" class="param-switch-row" (click)="toggleSpendCutoffEnabled()" [attr.aria-pressed]="spendCutoffEnabled()">
               <span class="switch" [class.on]="spendCutoffEnabled()"><span class="switch-thumb"></span></span>
               <strong>Flag by spend cutoff</strong>
             </button>
@@ -310,7 +310,7 @@
           }
 
           <div class="toggle-inline">
-            <button type="button" class="param-switch-row" (click)="vifCutoffEnabled.set(!vifCutoffEnabled())" [attr.aria-pressed]="vifCutoffEnabled()">
+            <button type="button" class="param-switch-row" (click)="toggleVifCutoffEnabled()" [attr.aria-pressed]="vifCutoffEnabled()">
               <span class="switch" [class.on]="vifCutoffEnabled()"><span class="switch-thumb"></span></span>
               <strong>Flag by VIF cutoff</strong>
             </button>
@@ -319,7 +319,7 @@
           @if (vifCutoffEnabled()) {
             <div class="health-slider-row">
               <label class="health-slider-label" for="o-vif-cutoff">Flag channels above</label>
-              <input id="o-vif-cutoff" type="range" min="1" [attr.max]="maxVif()" step="0.5" [ngModel]="vifCutoffValue()" (ngModelChange)="vifCutoffValue.set($event)" />
+              <input id="o-vif-cutoff" type="range" min="1" [attr.max]="maxVif()" step="0.5" [ngModel]="vifCutoffValue()" (ngModelChange)="setVifCutoffValue($event)" />
               <span class="health-slider-value">{{ vifCutoffValue() | number: '1.1-1' }}</span>
             </div>
             <p class="muted health-slider-hint">

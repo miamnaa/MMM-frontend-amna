@@ -56,7 +56,7 @@
             <button
               type="button"
               class="switch-row"
-              (click)="spendFlagThresholdEnabled.set(!spendFlagThresholdEnabled())"
+              (click)="toggleSpendFlagThresholdEnabled()"
               [attr.aria-pressed]="spendFlagThresholdEnabled()"
             >
               <span class="switch" [class.on]="spendFlagThresholdEnabled()"><span class="switch-thumb"></span></span>

@@ -7,6 +7,7 @@ import { DatasetService } from '../../core/services/dataset.service';
 import { SessionService } from '../../core/services/notification.service';
 import { TunnelService } from '../../core/services/tunnel.service';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
+import { getLocalPref, setLocalPref } from '../../shared/utils/local-pref';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
 import { WizardTopbar } from '../../shared/ui/wizard-topbar/wizard-topbar';
 
@@ -130,12 +131,29 @@ export class Calibrate implements OnInit {
     return Math.round((50 / channelCount) * 10) / 10;
   }
 
+  /** Persists to localStorage per dataset (see local-pref.ts) - same real request as Optimize's own cutoffs: a threshold someone actually set should survive closing and reopening the browser. Hydrated once datasetId is known, in ngOnInit below. */
   readonly spendFlagThresholdEnabled = signal(true);
   readonly spendFlagThresholdPct = signal(DEFAULT_SPEND_FLAG_THRESHOLD_PCT);
   readonly spendFlagThresholdTouched = signal(false);
+  toggleSpendFlagThresholdEnabled(): void {
+    const next = !this.spendFlagThresholdEnabled();
+    this.spendFlagThresholdEnabled.set(next);
+    setLocalPref(this.datasetId(), 'spendFlagThresholdEnabled', next);
+  }
   setSpendFlagThresholdPct(value: number): void {
     this.spendFlagThresholdTouched.set(true);
     this.spendFlagThresholdPct.set(value);
+    setLocalPref(this.datasetId(), 'spendFlagThresholdPct', value);
+  }
+
+  private hydratePersistedThreshold(): void {
+    const id = this.datasetId();
+    this.spendFlagThresholdEnabled.set(getLocalPref(id, 'spendFlagThresholdEnabled', true));
+    const saved = getLocalPref<number | null>(id, 'spendFlagThresholdPct', null);
+    if (saved !== null) {
+      this.spendFlagThresholdPct.set(saved);
+      this.spendFlagThresholdTouched.set(true);
+    }
   }
 
   readonly flaggedChannels = computed(() =>
@@ -306,6 +324,8 @@ export class Calibrate implements OnInit {
   ngOnInit(): void {
     this.projectId.set(this.route.snapshot.paramMap.get('projectId') ?? '');
     this.datasetId.set(this.route.snapshot.paramMap.get('datasetId') ?? '');
+
+    this.hydratePersistedThreshold();
 
     // Real endpoint (GET /datasets/:id, confirmed working 2026-08-13) - the
     // fix for leaving this screen and coming back to a blank form even

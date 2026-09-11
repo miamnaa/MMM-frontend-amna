@@ -8,6 +8,7 @@ import { AutoCombinedGroup, ChannelHealthApiRow, DatasetService, ExposureDirecti
 import { SessionService } from '../../core/services/notification.service';
 import { SavedConfiguration, TunnelService } from '../../core/services/tunnel.service';
 import { backendErrorMessage } from '../../shared/utils/backend-error';
+import { getLocalPref, setLocalPref } from '../../shared/utils/local-pref';
 import { PageHeader } from '../../shared/ui/page-header/page-header';
 import { WizardTopbar } from '../../shared/ui/wizard-topbar/wizard-topbar';
 
@@ -862,17 +863,53 @@ export class Optimize implements OnInit {
     this.hoveredHealthPoint.set(null);
   }
 
+  /**
+   * These four persist to localStorage per dataset (see local-pref.ts) so a
+   * threshold someone actually set survives closing and reopening the
+   * browser, not just navigating within the tunnel - real request,
+   * 2026-09-11: "if I set the spend threshold to 1 it should be saved
+   * there." Hydrated once datasetId is known, in ngOnInit below.
+   */
   readonly spendCutoffEnabled = signal(true);
-  /** Real default, not a guess - see defaultSpendCutoffPct(). Overwritten once real channel data loads, unless the user has already touched the slider. */
+  toggleSpendCutoffEnabled(): void {
+    const next = !this.spendCutoffEnabled();
+    this.spendCutoffEnabled.set(next);
+    setLocalPref(this.datasetId(), 'spendCutoffEnabled', next);
+  }
+  /** Real default, not a guess - see defaultSpendCutoffPct(). Overwritten once real channel data loads, unless the user has already touched the slider (which a persisted value counts as, same as a live edit). */
   readonly spendCutoffPct = signal(3);
   readonly spendCutoffTouched = signal(false);
   setSpendCutoffPct(value: number): void {
     this.spendCutoffTouched.set(true);
     this.spendCutoffPct.set(value);
+    setLocalPref(this.datasetId(), 'spendCutoffPct', value);
   }
   readonly vifCutoffEnabled = signal(true);
-  /** 5 = the standard textbook threshold for "moderate multicollinearity concern" (10 is the usual "severe" line) - the one cutoff here that actually comes from a real statistical convention, not a guess. */
+  toggleVifCutoffEnabled(): void {
+    const next = !this.vifCutoffEnabled();
+    this.vifCutoffEnabled.set(next);
+    setLocalPref(this.datasetId(), 'vifCutoffEnabled', next);
+  }
+  /** 5 = the standard textbook threshold for "moderate multicollinearity concern" (10 is the usual "severe" line) - the one cutoff here that actually comes from a real statistical convention, not a guess, unless a saved value overrides it. */
   readonly vifCutoffValue = signal(5);
+  setVifCutoffValue(value: number): void {
+    this.vifCutoffValue.set(value);
+    setLocalPref(this.datasetId(), 'vifCutoffValue', value);
+  }
+
+  /** Restores whatever was actually saved for this dataset, called once datasetId is known in ngOnInit. A saved spend cutoff also marks the slider "touched" so loadChannelHealth's own smart default never silently overwrites it. */
+  private hydratePersistedThresholds(): void {
+    const id = this.datasetId();
+    this.spendCutoffEnabled.set(getLocalPref(id, 'spendCutoffEnabled', true));
+    this.vifCutoffEnabled.set(getLocalPref(id, 'vifCutoffEnabled', true));
+    this.vifCutoffValue.set(getLocalPref(id, 'vifCutoffValue', 5));
+
+    const savedSpendPct = getLocalPref<number | null>(id, 'spendCutoffPct', null);
+    if (savedSpendPct !== null) {
+      this.spendCutoffPct.set(savedSpendPct);
+      this.spendCutoffTouched.set(true);
+    }
+  }
 
   readonly spendFlaggedChannels = computed(() =>
     this.channelHealthPoints().filter((p) => p.spendPct < this.spendCutoffPct()).map((p) => p.name),
@@ -1000,6 +1037,8 @@ export class Optimize implements OnInit {
   ngOnInit(): void {
     this.projectId.set(this.route.snapshot.paramMap.get('projectId') ?? '');
     this.datasetId.set(this.route.snapshot.paramMap.get('datasetId') ?? '');
+
+    this.hydratePersistedThresholds();
 
     // Real endpoint (GET /datasets/:id, confirmed working 2026-08-13) - the
     // fix for leaving this screen and coming back to a blank form even
