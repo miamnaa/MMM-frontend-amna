@@ -14,8 +14,13 @@ export const environment = {
    * by explicit request, not the usual pattern. Unlike the Entra IDs above
    * (public OAuth identifiers, safe to ship), this is a real secret and
    * shipping it here means it's readable in the built browser bundle by
-   * anyone who opens dev tools. Left blank on purpose - set the real
-   * deployment key here (or via a build-time replace) before shipping.
+   * anyone who opens dev tools. Left blank here on purpose, and never
+   * committed with a real value - scripts/inject-grok-key.js overwrites
+   * this exact line at build time from the real GROK_API_KEY env var set
+   * in Vercel's project settings (Settings -> Environment Variables), so
+   * the key still ends up in the deployed bundle (that part of the
+   * tradeoff was accepted deliberately) without ever living in git
+   * history, where GitHub's own push protection already refused it once.
    */
   grokApiKey: '',
 };
