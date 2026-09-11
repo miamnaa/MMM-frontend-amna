@@ -142,9 +142,11 @@
         </h2>
         <p class="muted field-hint">No channel left out — this is the full picture, not just the extremes.</p>
         <div class="rank-legend">
-          <span><span class="rank-swatch" [style.background]="'#1BAF7A'"></span>Highest return</span>
-          <span><span class="rank-swatch" [style.background]="'#C3C2B7'"></span>Everyone else</span>
-          <span><span class="rank-swatch" [style.background]="'#E34948'"></span>Lowest return</span>
+          <span><span class="rank-swatch" [style.background]="'#00994D'"></span>Excellent (3x+)</span>
+          <span><span class="rank-swatch" [style.background]="'#8FCB92'"></span>Good (2x–3x)</span>
+          <span><span class="rank-swatch" [style.background]="'#C3C2B7'"></span>Neutral (1x–2x)</span>
+          <span><span class="rank-swatch" [style.background]="'#F0A15A'"></span>Low (0x–1x)</span>
+          <span><span class="rank-swatch" [style.background]="'#E34948'"></span>Critical (losing money)</span>
         </div>
         <app-bar-chart [data]="marginalRoiRanked()" [colors]="marginalRankedColors()" />
       </section>

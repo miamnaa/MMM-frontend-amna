@@ -38,9 +38,34 @@ const SHIFT_PCT = 0.05;
 const BRAND_DARK_GREEN = '#00994D';
 const BRAND_LIGHT_GREEN = '#8FCB92';
 const BRAND_GROUPED_COLORS: [string, string] = [BRAND_DARK_GREEN, BRAND_LIGHT_GREEN];
-const RANK_GREEN = '#1BAF7A';
-const RANK_RED = '#E34948';
-const RANK_GRAY = '#C3C2B7';
+
+/**
+ * Five real value bands for "next-dollar return," not a rank-position
+ * scheme - the old version colored whichever bar was highest green and
+ * whichever was lowest red regardless of the real number, so a channel
+ * returning a genuinely healthy 1.8x could paint red just for coming in
+ * last among a strong field. Bands are fixed to the real marginal_roi
+ * value instead, so the same number always gets the same color no matter
+ * what else is on the chart:
+ *   < 0       Critical - actively losing money on the next dollar
+ *   0 - <1    Low      - next dollar returns less than it costs
+ *   1 - <2    Neutral  - breaks even to a modest return
+ *   2 - <3    Good     - a strong return
+ *   >= 3      Excellent
+ */
+const ROI_BAND_CRITICAL = '#E34948';
+const ROI_BAND_LOW = '#F0A15A';
+const ROI_BAND_NEUTRAL = '#C3C2B7';
+const ROI_BAND_GOOD = '#8FCB92';
+const ROI_BAND_EXCELLENT = '#00994D';
+
+function roiBandColor(value: number): string {
+  if (value < 0) return ROI_BAND_CRITICAL;
+  if (value < 1) return ROI_BAND_LOW;
+  if (value < 2) return ROI_BAND_NEUTRAL;
+  if (value < 3) return ROI_BAND_GOOD;
+  return ROI_BAND_EXCELLENT;
+}
 
 /**
  * "View Model" destination from both the Models list and Results & Insights'
@@ -253,7 +278,7 @@ export class ModelResults implements OnInit {
     };
   });
 
-  /** Every real channel (no exclusions here, unlike the headline card above), ranked by real marginal_roi - highest colored green, lowest red, everyone else neutral gray. */
+  /** Every real channel (no exclusions here, unlike the headline card above), ranked by real marginal_roi. */
   readonly marginalRoiRanked = computed<BarDatum[]>(() =>
     [...this.efficiencyRows()]
       .map((row, i) => ({ label: this.channelLabel(row, i), marginal: row.marginal_roi }))
@@ -264,9 +289,8 @@ export class ModelResults implements OnInit {
 
   readonly hasMarginalRanked = computed(() => this.marginalRoiRanked().length > 0);
 
-  readonly marginalRankedColors = computed(() =>
-    this.marginalRoiRanked().map((_, i, arr) => (i === 0 ? RANK_GREEN : i === arr.length - 1 ? RANK_RED : RANK_GRAY)),
-  );
+  /** Colored by the real value band (see roiBandColor), not by rank position - the highest bar on the chart isn't automatically green if it's genuinely a weak return, and the lowest isn't automatically red if every channel here is healthy. */
+  readonly marginalRankedColors = computed(() => this.marginalRoiRanked().map((d) => roiBandColor(d.value)));
 
   readonly hasAnyInsights = computed(
     () => this.hasSpendByChannel() || this.hasSpendVsResult() || this.hasRoiPayoff() || this.hasMarginalRanked(),
