@@ -295,8 +295,20 @@ export class ModelResults implements OnInit {
 
   readonly hasMarginalRanked = computed(() => this.marginalRoiRanked().length > 0);
 
-  /** Colored by the real value band (see roiBandColor), not by rank position - the highest bar on the chart isn't automatically green if it's genuinely a weak return, and the lowest isn't automatically red if every channel here is healthy. */
-  readonly marginalRankedColors = computed(() => this.marginalRoiRanked().map((d) => roiBandColor(d.value)));
+  /**
+   * Colored by the real value band (see roiBandColor), not by rank position -
+   * the highest bar on the chart isn't automatically green if it's
+   * genuinely a weak return, and the lowest isn't automatically red if
+   * every channel here is healthy.
+   *
+   * Banded on the same rounded-to-2-decimals number the bar's own label
+   * displays (`d.display`), not the raw unrounded value - a channel
+   * showing "0.00x" has no way to look different from a real zero, so
+   * coloring it off a hidden 0.003 it can't see would just look wrong.
+   * The bar's real *length* still uses the unrounded value (below), since
+   * proportional width isn't shown as a fixed decimal the same way.
+   */
+  readonly marginalRankedColors = computed(() => this.marginalRoiRanked().map((d) => roiBandColor(Math.round(d.value * 100) / 100)));
 
   readonly hasAnyInsights = computed(
     () => this.hasSpendByChannel() || this.hasSpendVsResult() || this.hasRoiPayoff() || this.hasMarginalRanked(),
