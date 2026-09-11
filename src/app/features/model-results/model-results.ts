@@ -48,7 +48,7 @@ const BRAND_GROUPED_COLORS: [string, string] = [BRAND_DARK_GREEN, BRAND_LIGHT_GR
  * last among a strong field. Bands are fixed to the real marginal_roi
  * value instead, so the same number always gets the same color no matter
  * what else is on the chart:
- *   < 0       Critical - actively losing money on the next dollar
+ *   <= 0      Critical - the next dollar returns nothing back, or less than nothing
  *   0 - <1    Low      - next dollar returns less than it costs
  *   1 - <2    Neutral  - breaks even to a modest return
  *   2 - <3    Good     - a strong return
@@ -62,7 +62,10 @@ const ROI_BAND_GOOD = '#8FCB92';
 const ROI_BAND_EXCELLENT = '#00994D';
 
 function roiBandColor(value: number): string {
-  if (value < 0) return ROI_BAND_CRITICAL;
+  // <= 0, not < 0 - a channel whose next dollar returns exactly nothing
+  // back is just as real a problem as one returning negative, even though
+  // it isn't technically "losing money" - real request, 2026-09-11.
+  if (value <= 0) return ROI_BAND_CRITICAL;
   if (value < 1) return ROI_BAND_LOW;
   if (value < 2) return ROI_BAND_NEUTRAL;
   if (value < 3) return ROI_BAND_GOOD;
