@@ -10,17 +10,18 @@ export const environment = {
     apiScope: 'api://fa733969-d53d-46ed-81fc-119c740a5cc9/access_as_user',
   },
   /**
-   * Real xAI key for the direct-from-browser Grok call in grok.service.ts -
-   * by explicit request, not the usual pattern. Unlike the Entra IDs above
-   * (public OAuth identifiers, safe to ship), this is a real secret and
-   * shipping it here means it's readable in the built browser bundle by
-   * anyone who opens dev tools. Left blank here on purpose, and never
-   * committed with a real value - scripts/inject-grok-key.js overwrites
-   * this exact line at build time from the real GROK_API_KEY env var set
-   * in Vercel's project settings (Settings -> Environment Variables), so
-   * the key still ends up in the deployed bundle (that part of the
-   * tradeoff was accepted deliberately) without ever living in git
-   * history, where GitHub's own push protection already refused it once.
+   * Real Google AI Studio key for the direct-from-browser Gemini call in
+   * gemini.service.ts - by explicit request, not the usual pattern.
+   * Unlike the Entra IDs above (public OAuth identifiers, safe to ship),
+   * this is a real secret and shipping it here means it's readable in the
+   * built browser bundle by anyone who opens dev tools. Left blank here on
+   * purpose, and never committed with a real value -
+   * scripts/inject-gemini-key.js overwrites this exact line at build time
+   * from the real GEMINI_API_KEY env var set in Vercel's project settings
+   * (Settings -> Environment Variables), so the key still ends up in the
+   * deployed bundle (that part of the tradeoff was accepted deliberately)
+   * without ever living in git history, where GitHub's own push
+   * protection already refused a real key inline once before.
    */
-  grokApiKey: '',
+  geminiApiKey: '',
 };

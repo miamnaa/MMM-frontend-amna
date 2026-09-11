@@ -10,7 +10,7 @@ import {
   isTerminalTrainingStatus,
 } from '../../core/services/dataset.service';
 import { computeModelStatus } from '../../core/services/model-status';
-import { GrokService } from '../../core/services/grok.service';
+import { GeminiService } from '../../core/services/gemini.service';
 import { ModelPerformanceLab } from '../model-performance-lab/model-performance-lab';
 import { BarChart, BarDatum } from '../../shared/charts/bar-chart/bar-chart';
 import { GroupedBarChart, GroupedBarDatum } from '../../shared/charts/grouped-bar-chart/grouped-bar-chart';
@@ -93,7 +93,7 @@ export class ModelResults implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly datasetService = inject(DatasetService);
-  private readonly grokService = inject(GrokService);
+  private readonly geminiService = inject(GeminiService);
 
   readonly projectId = signal('');
   readonly datasetId = signal('');
@@ -306,20 +306,20 @@ export class ModelResults implements OnInit {
     this.plannerClicked.set(true);
   }
 
-  // ---- AI summary (Grok) ----
+  // ---- AI summary (Gemini) ----
 
   readonly aiSummaryLoading = signal(false);
   readonly aiSummaryError = signal<string | null>(null);
   readonly aiSummary = signal<string | null>(null);
-  readonly aiConfigured = this.grokService.configured;
+  readonly aiConfigured = this.geminiService.configured;
 
   /**
-   * Every number handed to Grok is something already computed and rendered
+   * Every number handed to Gemini is something already computed and rendered
    * elsewhere on this exact page - the same spend/ROI/opportunity figures
    * the charts below show, not a fresh read of raw results. That's
    * deliberate: the summary can't say anything that isn't already backed
    * by a real number visible on screen, and it can't drift from what the
-   * charts say even if Grok paraphrases loosely.
+   * charts say even if Gemini paraphrases loosely.
    */
   private buildInsightsPrompt(): string {
     const lines: string[] = [];
@@ -371,7 +371,7 @@ export class ModelResults implements OnInit {
   generateAiSummary(): void {
     if (this.aiSummaryLoading()) return;
     if (!this.aiConfigured) {
-      this.aiSummaryError.set('AI summary is not configured for this deployment yet - no Grok API key set.');
+      this.aiSummaryError.set('AI summary is not configured for this deployment yet - no Gemini API key set.');
       return;
     }
 
@@ -381,14 +381,14 @@ export class ModelResults implements OnInit {
     const systemPrompt =
       'You summarize real Marketing Mix Model results for a business audience - marketers and executives, not statisticians. Write 3-5 short sentences, plain English, no jargon, no bullet points. Only use the numbers given to you below - never invent or estimate a figure that is not explicitly provided.';
 
-    this.grokService.summarize(systemPrompt, this.buildInsightsPrompt()).subscribe({
+    this.geminiService.summarize(systemPrompt, this.buildInsightsPrompt()).subscribe({
       next: (text) => {
         this.aiSummaryLoading.set(false);
         this.aiSummary.set(text);
       },
       error: (err: unknown) => {
         this.aiSummaryLoading.set(false);
-        this.aiSummaryError.set(this.grokService.friendlyError(err));
+        this.aiSummaryError.set(this.geminiService.friendlyError(err));
       },
     });
   }

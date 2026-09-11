@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "node scripts/inject-grok-key.js && ng build",
+    "build": "node scripts/inject-gemini-key.js && ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },

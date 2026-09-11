@@ -20,12 +20,13 @@ export const environment = {
     apiScope: 'api://fa733969-d53d-46ed-81fc-119c740a5cc9/access_as_user',
   },
   /**
-   * Real xAI key for the direct-from-browser Grok call in grok.service.ts -
-   * by explicit request, not the usual pattern. Unlike the Entra IDs above
-   * (public OAuth identifiers, safe to ship), this is a real secret and
-   * shipping it here means it's readable in the built browser bundle by
-   * anyone who opens dev tools. Left blank on purpose - fill in your own
-   * key locally, never commit a real value here.
+   * Real Google AI Studio key for the direct-from-browser Gemini call in
+   * gemini.service.ts - by explicit request, not the usual pattern.
+   * Unlike the Entra IDs above (public OAuth identifiers, safe to ship),
+   * this is a real secret and shipping it here means it's readable in the
+   * built browser bundle by anyone who opens dev tools. Left blank on
+   * purpose - fill in your own key locally, never commit a real value
+   * here.
    */
-  grokApiKey: '',
+  geminiApiKey: '',
 };
