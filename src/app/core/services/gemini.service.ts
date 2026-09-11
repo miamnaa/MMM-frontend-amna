@@ -5,11 +5,14 @@ import { Observable, map, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 /**
- * Google AI Studio's free-tier model as of 2026-09-11 - swap this if
- * Google renames/retires it; check the current free-tier list at
- * aistudio.google.com.
+ * gemini-2.0-flash was retired live during testing 2026-09-11 - Google's
+ * own 404 response named gemini-3.6-flash as the direct replacement, so
+ * that's what this points to now. Model names get retired periodically;
+ * if this one starts 404ing too, the error body itself usually names the
+ * real current replacement - check that before guessing. Current
+ * free-tier list: aistudio.google.com.
  */
-const GEMINI_MODEL = 'gemini-2.0-flash';
+const GEMINI_MODEL = 'gemini-3.6-flash';
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 interface GeminiResponse {
