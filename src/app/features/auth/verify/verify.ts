@@ -1,6 +1,6 @@
 import { Component, OnInit, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { OtpService } from '../../../core/services/otp.service';
 import { Logo } from '../../../shared/ui/logo/logo';
@@ -15,6 +15,7 @@ import { Logo } from '../../../shared/ui/logo/logo';
 export class Verify implements OnInit {
   private readonly otpService = inject(OtpService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   readonly requesting = this.otpService.requesting;
   readonly verifying = this.otpService.verifying;
@@ -44,13 +45,28 @@ export class Verify implements OnInit {
     this.otpService.verifyCode(this.code());
   }
 
+  /**
+   * Real fix, 2026-09-11: used to always land on /projects regardless of
+   * where the otpGuard redirect actually came from, which dropped anyone
+   * mid-tunnel (e.g. Calibrate) back to square one after re-verifying -
+   * looked exactly like lost progress even though nothing was. Only trusts
+   * a same-origin, in-app path (starts with a single '/', never '//' -
+   * that's protocol-relative and would leave the app) - otherwise falls
+   * back to /projects same as before.
+   */
+  private safeReturnUrl(): string | null {
+    const raw = this.route.snapshot.queryParamMap.get('returnUrl');
+    if (raw && raw.startsWith('/') && !raw.startsWith('//')) return raw;
+    return null;
+  }
+
   constructor() {
-    // Move on the moment the service confirms verification - into the
-    // tunnel's project list, not /overview (that page still exists but
-    // nothing links to it anymore).
+    // Move on the moment the service confirms verification - back to
+    // whatever the user was actually trying to reach, or the tunnel's
+    // project list if there's nothing real to return to.
     effect(() => {
       if (this.otpService.verified()) {
-        this.router.navigate(['/projects']);
+        this.router.navigateByUrl(this.safeReturnUrl() ?? '/projects');
       }
     });
   }

@@ -16,11 +16,24 @@ export class OtpService {
   private readonly url = `${environment.apiBaseUrl}/auth/otp`;
 
   /**
-   * sessionStorage, not a plain signal - survives a page refresh (the token
-   * cache does too, via localStorage) but resets when the tab/window
-   * closes, so a brand new browser session always asks again.
+   * localStorage, not sessionStorage - real product decision, changed
+   * 2026-09-11 at explicit request: OTP used to re-ask on every new
+   * browser session (tab/window closed and reopened), which read as a
+   * broken/forgotten login even though it was working as originally
+   * specced. Now it persists the same way the Microsoft token cache
+   * already does, and only clears on an explicit sign-out (localSignOut()
+   * wipes all of localStorage) - not on any fixed schedule.
+   *
+   * Real tradeoff worth flagging to Anas/whoever owns the MFA requirement:
+   * this means anyone with access to this browser profile skips the email
+   * code step indefinitely after the first real verification, not just for
+   * one session. If the original OTP spec's intent was re-verification on
+   * every new session specifically (a compliance requirement, not just a
+   * UX default), this change may need sign-off, and a time-boxed
+   * alternative (e.g. re-ask after N days) would need a real expiry
+   * written alongside VERIFIED_KEY - there's no such expiry here yet.
    */
-  readonly verified = signal<boolean>(sessionStorage.getItem(VERIFIED_KEY) === 'true');
+  readonly verified = signal<boolean>(localStorage.getItem(VERIFIED_KEY) === 'true');
 
   readonly requesting = signal(false);
   readonly verifying = signal(false);
@@ -56,7 +69,7 @@ export class OtpService {
       next: () => {
         this.verifying.set(false);
         this.verified.set(true);
-        sessionStorage.setItem(VERIFIED_KEY, 'true');
+        localStorage.setItem(VERIFIED_KEY, 'true');
       },
       error: (err: unknown) => {
         this.verifying.set(false);
@@ -70,7 +83,7 @@ export class OtpService {
     this.codeSent.set(false);
     this.requestError.set(null);
     this.verifyError.set(null);
-    sessionStorage.removeItem(VERIFIED_KEY);
+    localStorage.removeItem(VERIFIED_KEY);
   }
 
   /**
