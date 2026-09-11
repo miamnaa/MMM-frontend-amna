@@ -62,13 +62,26 @@ export class GrokService {
       );
   }
 
-  /** Same "message" shape as the rest of this app's real backend, but xAI's error body isn't guaranteed to match it - falls back to a generic message per real HTTP status instead of assuming a field that might not be there. */
+  /**
+   * xAI's real error body, confirmed live 2026-09-11: `{ code, error }`,
+   * where `error` is a plain string, not nested under `.message` the way
+   * this app's own backend shapes its errors - a real permission-denied
+   * response (no billing/credits on the xAI team the key belongs to) was
+   * falling through to the generic fallback because of that assumption.
+   * Checked first, before the generic per-status messages below, since
+   * it's the most specific real information available when present.
+   */
   friendlyError(err: unknown): string {
     if (err instanceof HttpErrorResponse) {
+      const body = err.error as { error?: unknown; code?: string } | undefined;
+      if (typeof body?.error === 'string' && body.error) {
+        return body.code === 'permission-denied' ? `Grok rejected this request: ${body.error}` : body.error;
+      }
       if (err.status === 401) return 'The Grok API key for this deployment was rejected - it may be missing, wrong, or revoked.';
+      if (err.status === 403) return "Grok refused this request - the API key's account may not have billing/credits set up.";
       if (err.status === 429) return 'Grok is rate-limiting this deployment right now. Try again in a moment.';
       if (err.status === 0) return "Couldn't reach Grok - check your connection and try again.";
-      const message: unknown = (err.error as { error?: { message?: string } } | undefined)?.error?.message;
+      const message: unknown = (body as { message?: string } | undefined)?.message;
       if (typeof message === 'string' && message) return message;
     }
     if (err instanceof Error) return err.message;
