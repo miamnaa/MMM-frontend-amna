@@ -58,6 +58,16 @@ export class Verify implements OnInit {
     return `Code expires in ${minutes}:${seconds.toString().padStart(2, '0')}`;
   });
 
+  /** Real per-account 30s cooldown on POST /auth/otp/request (see otp.service.ts's resendCooldownUntil) - seconds left, or null once it's passed/was never hit. */
+  readonly resendCooldownSeconds = computed(() => {
+    const until = this.otpService.resendCooldownUntil();
+    if (until === null) return null;
+    const secondsLeft = Math.ceil((until - this.nowTick()) / 1000);
+    return secondsLeft > 0 ? secondsLeft : null;
+  });
+
+  readonly resendDisabled = computed(() => this.requesting() || this.resendCooldownSeconds() !== null);
+
   ngOnInit(): void {
     // Fire the first code automatically - the user shouldn't have to click
     // anything just to get the email moving.

@@ -49,8 +49,14 @@
     }
 
     @if (lockedOut()) {
-      <button class="signin" type="button" (click)="resend()" [disabled]="requesting()">
-        {{ requesting() ? 'Sending…' : 'Request a new code' }}
+      <button class="signin" type="button" (click)="resend()" [disabled]="resendDisabled()">
+        @if (requesting()) {
+          Sending…
+        } @else if (resendCooldownSeconds(); as s) {
+          Wait {{ s }}s…
+        } @else {
+          Request a new code
+        }
       </button>
     } @else {
       <button
@@ -65,7 +71,13 @@
 
     <p class="switch">
       Didn't get a code?
-      <a class="link" (click)="resend()" [class.disabled]="requesting()">Resend code</a>
+      <a class="link" (click)="resend()" [class.disabled]="resendDisabled()">
+        @if (resendCooldownSeconds(); as s) {
+          Resend code ({{ s }}s)
+        } @else {
+          Resend code
+        }
+      </a>
     </p>
   </main>
 </div>

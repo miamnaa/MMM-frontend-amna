@@ -63,8 +63,22 @@ export class OtpService {
    */
   readonly codeExpiresAt = signal<number | null>(null);
 
+  /**
+   * Real 30-second per-account cooldown on POST /auth/otp/request as of
+   * 2026-09-11 - checked against the most recently sent code whether it
+   * was used or not, so a blocked request comes back as a 400 with a real
+   * `retryAfterSeconds` count. Null until a request actually gets
+   * cooldown-blocked; Resend should stay disabled with a real countdown
+   * until this passes, not just show an error and let the next click fail
+   * the same way.
+   */
+  readonly resendCooldownUntil = signal<number | null>(null);
+
   requestCode(): void {
     if (this.requesting()) return;
+    const cooldown = this.resendCooldownUntil();
+    if (cooldown !== null && Date.now() < cooldown) return;
+
     this.requesting.set(true);
     this.requestError.set(null);
     this.attemptsRemaining.set(null);
@@ -75,12 +89,23 @@ export class OtpService {
         this.requesting.set(false);
         this.codeSent.set(true);
         this.codeExpiresAt.set(Date.now() + 10 * 60 * 1000);
+        this.resendCooldownUntil.set(null);
       },
       error: (err: unknown) => {
         this.requesting.set(false);
-        this.codeSent.set(false);
-        this.codeExpiresAt.set(null);
         this.requestError.set(this.requestErrorMessage(err));
+
+        const retryAfter = this.retryAfterSecondsFrom(err);
+        if (retryAfter !== null) {
+          // A cooldown block is real evidence a code is already out there
+          // and still live - unlike an actual send failure, this doesn't
+          // mean "no code was sent," so codeSent/codeExpiresAt from
+          // whichever request actually succeeded stay as they were.
+          this.resendCooldownUntil.set(Date.now() + retryAfter * 1000);
+        } else {
+          this.codeSent.set(false);
+          this.codeExpiresAt.set(null);
+        }
       },
     });
   }
@@ -114,6 +139,7 @@ export class OtpService {
     this.attemptsRemaining.set(null);
     this.lockedOut.set(false);
     this.codeExpiresAt.set(null);
+    this.resendCooldownUntil.set(null);
     localStorage.removeItem(VERIFIED_KEY);
   }
 
@@ -124,10 +150,28 @@ export class OtpService {
    * reading as a generic failure.
    */
   private requestErrorMessage(err: unknown): string {
-    if (err instanceof HttpErrorResponse && err.status === 500) {
-      return "Couldn't send the code right now — email delivery isn't fully set up yet. Try again shortly.";
+    if (err instanceof HttpErrorResponse) {
+      if (err.status === 500) {
+        return "Couldn't send the code right now — email delivery isn't fully set up yet. Try again shortly.";
+      }
+      // The real 400 cooldown message already reads fine on its own
+      // ("Please wait 22s before requesting another code.") - the visible
+      // countdown built from resendCooldownUntil is the honest, live
+      // version of that same number, so this text doesn't need to repeat it.
+      if (err.status === 400 && this.retryAfterSecondsFrom(err) !== null) {
+        return this.backendMessage(err, 'Please wait before requesting another code.');
+      }
     }
     return this.backendMessage(err, 'Could not send a verification code. Try again.');
+  }
+
+  /** Real field, not guessed - only a real 400 cooldown response has this; anything else means "not a cooldown block." */
+  private retryAfterSecondsFrom(err: unknown): number | null {
+    if (err instanceof HttpErrorResponse && err.status === 400) {
+      const seconds: unknown = err.error?.retryAfterSeconds;
+      if (typeof seconds === 'number' && Number.isFinite(seconds) && seconds > 0) return seconds;
+    }
+    return null;
   }
 
   /** Real field, not guessed - undefined/non-numeric (an older backend response, or a non-401 error) just means "don't show a count," not "0 left." */
