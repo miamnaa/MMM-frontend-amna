@@ -56,15 +56,24 @@ export function loadDatasetIntoTunnel(
 
 /**
  * Returns the router.navigate() commands for wherever `dataset` should open -
- * the next incomplete required step, or Configure (fully editable from
- * there, since every real saved stage is now loaded) once Configure +
- * Optimize are both done. Calibrate and Hyperparameterization stay
- * reachable from there via each screen's own real Save/Continue - this
- * never forces either one, since neither is required and neither can be
- * reliably proven "already done" vs. "on-purpose skipped." Shared by the
- * Projects page's eye icon and the Models list's Continue Setup/Edit
- * buttons - same "jump back into this model's build screens" behavior
- * either way.
+ * the next incomplete required step, or Optimize (the last step that's
+ * actually required and provably done, with every real saved stage already
+ * loaded) once Configure + Optimize are both done. Calibrate and
+ * Hyperparameterization stay reachable from there via each screen's own
+ * real Save/Continue - this never forces either one, since neither is
+ * required and neither can be reliably proven "already done" vs.
+ * "on-purpose skipped." Shared by the Projects page's eye icon and the
+ * Models list's Continue Setup/Edit buttons - same "jump back into this
+ * model's build screens" behavior either way.
+ *
+ * Real bug, fixed 2026-09-11: a 'ready' dataset used to always land back on
+ * Configure - the very first tunnel screen - even for someone who'd already
+ * gone all the way through Calibrate/Hyperparameters. Nothing was actually
+ * lost (Configure re-fetches and correctly re-fills the real saved values),
+ * but resuming several steps further back than where you'd actually been
+ * reads exactly like "my progress didn't save." Optimize is one step later
+ * and still always safe to land on, since it's the last stage this
+ * function can prove is real.
  */
 export function resumeDatasetRoute(
   tunnelService: TunnelService,
@@ -75,9 +84,8 @@ export function resumeDatasetRoute(
   loadDatasetIntoTunnel(tunnelService, projectId, dataset);
 
   if (status === 'uploaded') return ['/configure', projectId, dataset.id];
-  if (status === 'configured') return ['/optimize', projectId, dataset.id];
 
-  // 'ready' - Configure + Optimize are both real and saved, which is all
-  // Assemble/Train actually requires now.
-  return ['/configure', projectId, dataset.id];
+  // 'configured' or 'ready' - Optimize only requires Configure to be done,
+  // and is the furthest stage this function can prove is real either way.
+  return ['/optimize', projectId, dataset.id];
 }
