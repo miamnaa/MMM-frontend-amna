@@ -79,6 +79,11 @@
 }
 
 .ai-summary-list {
+  /* The app-wide `ul { list-style: none; padding: 0; }` reset in
+     styles.css strips every list's default bullet - restoring both here
+     explicitly, since this is the one place a real visible bullet marker
+     is actually the point. */
+  list-style: disc;
   margin: 0;
   padding-left: 20px;
   display: flex;
