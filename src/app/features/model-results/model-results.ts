@@ -54,7 +54,8 @@ const BRAND_GROUPED_COLORS: [string, string] = [BRAND_DARK_GREEN, BRAND_LIGHT_GR
  *   >= 3      Excellent
  */
 const ROI_BAND_CRITICAL = '#E34948';
-const ROI_BAND_LOW = '#F0A15A';
+/** A lighter, muted red - not orange - for "below breakeven but not yet actually losing money," so red itself carries the severity gradient (this band vs. Critical below) instead of switching hue. */
+const ROI_BAND_LOW = '#F0A5A0';
 const ROI_BAND_NEUTRAL = '#C3C2B7';
 const ROI_BAND_GOOD = '#8FCB92';
 const ROI_BAND_EXCELLENT = '#00994D';
